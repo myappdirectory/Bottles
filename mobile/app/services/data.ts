@@ -6,7 +6,7 @@ import {HomePage} from '../pages/home/home';
 
 @Injectable()
 export class DataService {
-	private firebaseUrl = "https://my-savings.firebaseio.com/";
+	private firebaseUrl = "https://my-bottles.firebaseio.com/";
 	public mediaServer = "http://localhost/git/savings/";
 	public db: any;
 	public appData: any;
