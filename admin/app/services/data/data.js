@@ -53,6 +53,12 @@ System.register(['angular2/core', 'rxjs/Observable', 'rxjs/add/operator/share'],
                     this.app.loading = false;
                     this._observer.next(this.app);
                 };
+                DataService.prototype.getCurrentTime = function () {
+                    var date = new Date();
+                    var fullDate = date.getFullYear() + "/" + ("0" + (date.getMonth() + 1).toString()).substr(-2) + "/" + ("0" + date.getDate().toString()).substr(-2) + " " +
+                        ("0" + date.getHours().toString()).substr(-2) + ":" + ("0" + date.getMinutes().toString()).substr(-2) + ":" + ("0" + date.getSeconds().toString()).substr(-2);
+                    return fullDate;
+                };
                 DataService.prototype.uploadImage = function (file, pathname) {
                     var _this = this;
                     return new Promise(function (resolve, reject) {
@@ -69,7 +75,7 @@ System.register(['angular2/core', 'rxjs/Observable', 'rxjs/add/operator/share'],
                                         resolve(res.imageUrl);
                                     }
                                     else {
-                                        this.doAlert({ title: 'Error', message: res.message });
+                                        _this.doAlert({ title: 'Error', message: res.message });
                                     }
                                 }
                             };
@@ -277,10 +283,13 @@ System.register(['angular2/core', 'rxjs/Observable', 'rxjs/add/operator/share'],
                         this.showLoading();
                         data = this.removeUndefined(data);
                         if (data._ref) {
+                            data.created = this.getCurrentTime();
+                            data.updated = data.created;
                             this.db.child(moduleRef).child(data._ref).update(data);
                             this.hideLoading();
                         }
                         else {
+                            data.updated = this.getCurrentTime();
                             this.db.child(moduleRef).push(data);
                             this.hideLoading();
                         }

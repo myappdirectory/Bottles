@@ -1,4 +1,4 @@
-System.register(['angular2/core', 'angular2/router', './services/data/data', './pages/login/login', './pages/dashboard/dashboard', './pages/customer/customer', './pages/plan/plan', './pages/saving/saving', './pages/transaction/transaction', './pages/admin/admin'], function(exports_1, context_1) {
+System.register(['angular2/core', 'angular2/router', './services/data/data', './pages/login/login', './pages/dashboard/dashboard', './pages/customer/customer', './pages/category/category', './pages/product/product', './pages/order/order', './pages/admin/admin'], function(exports_1, context_1) {
     "use strict";
     var __moduleName = context_1 && context_1.id;
     var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
@@ -10,7 +10,7 @@ System.register(['angular2/core', 'angular2/router', './services/data/data', './
     var __metadata = (this && this.__metadata) || function (k, v) {
         if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
     };
-    var core_1, router_1, data_1, login_1, dashboard_1, customer_1, plan_1, saving_1, transaction_1, admin_1;
+    var core_1, router_1, data_1, login_1, dashboard_1, customer_1, category_1, product_1, order_1, admin_1;
     var AppComponent;
     return {
         setters:[
@@ -32,14 +32,14 @@ System.register(['angular2/core', 'angular2/router', './services/data/data', './
             function (customer_1_1) {
                 customer_1 = customer_1_1;
             },
-            function (plan_1_1) {
-                plan_1 = plan_1_1;
+            function (category_1_1) {
+                category_1 = category_1_1;
             },
-            function (saving_1_1) {
-                saving_1 = saving_1_1;
+            function (product_1_1) {
+                product_1 = product_1_1;
             },
-            function (transaction_1_1) {
-                transaction_1 = transaction_1_1;
+            function (order_1_1) {
+                order_1 = order_1_1;
             },
             function (admin_1_1) {
                 admin_1 = admin_1_1;
@@ -52,9 +52,9 @@ System.register(['angular2/core', 'angular2/router', './services/data/data', './
                     this.menu = [
                         { 'title': 'Dashboard', 'component': 'Dashboard', 'path': '/', 'class': 'dashboard' },
                         { 'title': 'Customer', 'component': 'Customer', 'path': '/customer', 'class': 'people' },
-                        { 'title': 'Plan', 'component': 'Plan', 'path': '/plan', 'class': 'card_membership' },
-                        { 'title': 'Saving', 'component': 'Saving', 'path': '/saving', 'class': 'card_membership' },
-                        { 'title': 'Transaction', 'component': 'Transaction', 'path': '/transaction', 'class': 'card_membership' },
+                        { 'title': 'Category', 'component': 'Category', 'path': '/category', 'class': 'category' },
+                        { 'title': 'Product', 'component': 'Product', 'path': '/product', 'class': 'product' },
+                        { 'title': 'Order', 'component': 'Order', 'path': '/order', 'class': 'order' },
                         { 'title': 'Admin', 'component': 'Admin', 'path': '/admin', 'class': 'people' }
                     ];
                 }
@@ -84,9 +84,9 @@ System.register(['angular2/core', 'angular2/router', './services/data/data', './
                     router_1.RouteConfig([
                         { path: '/', name: 'Dashboard', component: dashboard_1.DashboardPage },
                         { path: '/customer', name: 'Customer', component: customer_1.CustomerPage },
-                        { path: '/plan', name: 'Plan', component: plan_1.PlanPage },
-                        { path: '/saving', name: 'Saving', component: saving_1.SavingPage },
-                        { path: '/transaction', name: 'Transaction', component: transaction_1.TransactionPage },
+                        { path: '/category', name: 'Category', component: category_1.CategoryPage },
+                        { path: '/product', name: 'Product', component: product_1.ProductPage },
+                        { path: '/order', name: 'Order', component: order_1.OrderPage },
                         { path: '/admin', name: 'Admin', component: admin_1.AdminPage }
                     ]), 
                     __metadata('design:paramtypes', [data_1.DataService, router_1.Router])

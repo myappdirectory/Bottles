@@ -42,6 +42,13 @@ export class DataService {
 		this._observer.next(this.app);
 	}
 	
+	getCurrentTime() {
+		var date = new Date();
+		var fullDate = date.getFullYear() + "/" + ("0" + (date.getMonth() + 1).toString()).substr(-2) + "/" + ("0" + date.getDate().toString()).substr(-2)  + " " + 
+						("0" + date.getHours().toString()).substr(-2)  + ":" + ("0" + date.getMinutes().toString()).substr(-2)  + ":"  + ("0" + date.getSeconds().toString()).substr(-2);
+		return fullDate;
+	}
+	
 	removeUndefined = function(object){
 		return JSON.parse(JSON.stringify(object))
 	}
@@ -54,7 +61,7 @@ export class DataService {
 				formData.append('action', 'saveImage');
 				var xhr = new XMLHttpRequest();
 				xhr.open('POST', this.backendServer+'ajax.php', true);
-				xhr.onload = function () {
+				xhr.onload = () => {
 					if (xhr.status === 200) {
 						var res = JSON.parse(xhr.responseText);
 						if(res.status == 'success') {
@@ -256,9 +263,12 @@ export class DataService {
 			this.showLoading();
 			data = this.removeUndefined(data);
 			if(data._ref) {
+				data.created = this.getCurrentTime();
+				data.updated = data.created;
 				this.db.child(moduleRef).child(data._ref).update(data);
 				this.hideLoading();
 			} else {
+				data.updated = this.getCurrentTime();
 				this.db.child(moduleRef).push(data);
 				this.hideLoading();
 			}

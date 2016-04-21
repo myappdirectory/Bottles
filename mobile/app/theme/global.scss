@@ -25,10 +25,10 @@ ion-menu {
 		color: #fff;
 		height: 40%;
 		.image {
-			max-height: 175px;
+			img { max-height: 175px; }
 			.profile-img-icon {font-size: 175px}
 		}
-		.name {font-size: 20px; text-transform: capitalize;}
+		.name {font-size: 20px; padding: 10px 0; text-transform: capitalize;}
 	}
 }
 

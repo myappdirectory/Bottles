@@ -4,9 +4,9 @@ import {DataService} from './services/data/data';
 import {LoginPage} from './pages/login/login';
 import {DashboardPage} from './pages/dashboard/dashboard';
 import {CustomerPage} from './pages/customer/customer';
-import {PlanPage} from './pages/plan/plan';
-import {SavingPage} from './pages/saving/saving';
-import {TransactionPage} from './pages/transaction/transaction';
+import {CategoryPage} from './pages/category/category';
+import {ProductPage} from './pages/product/product';
+import {OrderPage} from './pages/order/order';
 import {AdminPage} from './pages/admin/admin';
 
 @Component({
@@ -19,9 +19,9 @@ import {AdminPage} from './pages/admin/admin';
 @RouteConfig([
 	{path:'/', name: 'Dashboard', component: DashboardPage},
 	{path:'/customer', name: 'Customer', component: CustomerPage},
-	{path:'/plan', name: 'Plan', component: PlanPage},
-	{path:'/saving', name: 'Saving', component: SavingPage},
-	{path:'/transaction', name: 'Transaction', component: TransactionPage},
+	{path:'/category', name: 'Category', component: CategoryPage},
+	{path:'/product', name: 'Product', component: ProductPage},
+	{path:'/order', name: 'Order', component: OrderPage},
 	{path:'/admin', name: 'Admin', component: AdminPage}
 ])
 
@@ -33,9 +33,9 @@ export class AppComponent {
 		this.menu = [
 			{'title' : 'Dashboard', 'component' : 'Dashboard', 'path' : '/', 'class': 'dashboard'},
 			{'title' : 'Customer', 'component' : 'Customer', 'path' : '/customer', 'class': 'people'},
-			{'title' : 'Plan', 'component' : 'Plan', 'path' : '/plan', 'class': 'card_membership'},
-			{'title' : 'Saving', 'component' : 'Saving', 'path' : '/saving', 'class': 'card_membership'},
-			{'title' : 'Transaction', 'component' : 'Transaction', 'path' : '/transaction', 'class': 'card_membership'},
+			{'title' : 'Category', 'component' : 'Category', 'path' : '/category', 'class': 'category'},
+			{'title' : 'Product', 'component' : 'Product', 'path' : '/product', 'class': 'product'},
+			{'title' : 'Order', 'component' : 'Order', 'path' : '/order', 'class': 'order'},
 			{'title' : 'Admin', 'component' : 'Admin', 'path' : '/admin', 'class': 'people'}
 		];
 	}

@@ -1,0 +1,8 @@
+{
+  "firebase": "my-bottles",
+  "public": ".",
+  "ignore": [
+    "firebase.json",
+    "**/.*"
+  ]
+}
