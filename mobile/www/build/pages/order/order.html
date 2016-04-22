@@ -1,4 +1,4 @@
-<ion-content padding class="order-page">
+<ion-content class="order-page">
 	<ion-navbar *navbar class="transparent">
 		<button menuToggle *ngIf="!selectedItem"><ion-icon name="menu"></ion-icon></button>
 		<ion-title>Order Details</ion-title>
@@ -9,5 +9,8 @@
 	
 	<div class="banner">
 		Some Image/ Text here
+	</div>
+	<div class="order-success" *ngIf="showSuccess">
+		Your order placed successfully
 	</div>
 </ion-content>

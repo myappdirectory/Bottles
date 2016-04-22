@@ -1,28 +1,25 @@
 import {Page, NavController, NavParams} from 'ionic-angular';
-import {PaymentPage} from '../payment/payment';
+import {OrderPage} from '../order/order';
 import {DataService} from '../../services/data';
 import {MapToIterable, StatusLabel} from '../../pipes/custom';
 
 @Page({
-	templateUrl: 'build/pages/saving/saving.html',
+	templateUrl: 'build/pages/myorders/myorders.html',
 	pipes: [MapToIterable, StatusLabel]
 })
-export class SavingPage {
+export class MyordersPage {
 	public appData: any;
-	public savingID: any;
-	public _moduleRef = 'saving';
-	public _transRef = 'transaction';
+	public _moduleRef = 'order';
 	
 	constructor(private nav: NavController, public navParams: NavParams, public dataService: DataService) {
-		this.savingID = this.navParams.get('savingID');
+		this.appData = this.dataService.appData;
 	}
 	
 	ngOnInit() {
 		this.dataService.observable$.subscribe(res => {
 			this.appData = res;
 		});
-		this.dataService.getItem(this._moduleRef, this.savingID, 'currentSaving');
-		this.dataService.getItemsByFilter(this._transRef, 'transactions', {key: 'saving_id', value: this.savingID});
+		this.dataService.getItemsByFilter(this._moduleRef, 'orders', {key: 'uid', value: this.appData.auth.uid});
 	}
 	
 	doRefresh(refresher) {
@@ -30,7 +27,7 @@ export class SavingPage {
 		this.ngOnInit();		
 	}
 	
-	payDue(savingID) {
-		this.nav.push(PaymentPage, {'savingID': savingID});
+	viewOrder(id) {
+		this.nav.push(OrderPage, {'orderID': id});
 	}
 }

@@ -1,6 +1,6 @@
 import {Page, NavController, NavParams} from 'ionic-angular';
-import {PlansPage} from '../plans/plans';
-import {SavingPage} from '../saving/saving';
+import {ListingPage} from '../listing/listing';
+import {CartPage} from '../cart/cart';
 import {DataService} from '../../services/data';
 import {MapToIterable, StatusLabel} from '../../pipes/custom';
 
@@ -10,15 +10,15 @@ import {MapToIterable, StatusLabel} from '../../pipes/custom';
 })
 export class HomePage {
 	public appData: any;
-	public _moduleRef = 'saving';
+	public _moduleRef = 'category';
 	
 	constructor(private nav: NavController, private navParams: NavParams, public dataService: DataService) {}
 	
 	ngOnInit() {
 		this.dataService.observable$.subscribe(res => {
-			this.appData = res;			
+			this.appData = res;	console.log(this.appData);		
 		});
-		this.dataService.getMySavings(this._moduleRef);
+		this.dataService.getActiveItems(this._moduleRef, 'categories');
 	}
 	
 	doRefresh(refresher) {
@@ -26,12 +26,11 @@ export class HomePage {
 		this.ngOnInit();		
 	}
 	
-	viewPlans() {
-		this.nav.push(PlansPage);
+	viewProducts(id) {
+		this.nav.push(ListingPage, {'categoryID': id});
 	}
-	
-	savingDetail(savingID) {
-		this.nav.push(SavingPage, {'savingID': savingID});
+
+	gotoCart() {
+		this.nav.push(CartPage);
 	}
-	
 }

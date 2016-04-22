@@ -6,8 +6,8 @@ import {LandingPage} from './pages/landing/landing';
 import {StartPage} from './pages/start/start';
 import {HomePage} from './pages/home/home';
 import {ProfilePage} from './pages/profile/profile';
-import {PlansPage} from './pages/plans/plans';
-import {TransactionsPage} from './pages/transactions/transactions';
+import {ListingPage} from './pages/listing/listing';
+import {MyordersPage} from './pages/myorders/myorders';
 import {enableProdMode} from "angular2/core";
 
 enableProdMode();
@@ -29,8 +29,8 @@ class MyApp {
 		this.pages = [
 			{ title: 'Home', component: HomePage },
 			{ title: 'My Profile', component: ProfilePage },
-			{ title: 'My Transactions', component: TransactionsPage },
-			{ title: 'View all plans', component: PlansPage }
+			{ title: 'My Orders', component: MyordersPage },
+			/*{ title: 'View all plans', component: PlansPage }*/
 		];
 	}
 

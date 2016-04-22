@@ -6,11 +6,13 @@ import {DataService} from '../services/data';
 })
 
 export class MapToIterable implements PipeTransform {
-	transform(value: any, args: any[] = null): any {		
+	transform(value: any, args: any[] = null): any {
 		var arr = [];
 		for(var i in value) {
-			value[i]['_ref'] = i;
-			arr.push(value[i]);
+			if(typeof(value[i]) == 'object') { 
+				value[i]['_ref'] = i; 
+				arr.push(value[i]); 
+			}			
 		}
 		return arr;
 	}

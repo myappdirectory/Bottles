@@ -1,0 +1,30 @@
+<ion-content class="listing-page">
+	<ion-refresher (refresh)="doRefresh($event)">
+		<ion-refresher-content pullingIcon="arrow-dropdown" pullingText="Pull to refresh" refreshingSpinner="circles" refreshingText="Refreshing..."></ion-refresher-content>
+	</ion-refresher>
+	<ion-navbar *navbar class="transparent">
+		<button menuToggle *ngIf="!selectedItem"><ion-icon name="menu"></ion-icon></button>
+		<ion-title *ngIf="appData">{{appData.selectedCategory ? appData.selectedCategory.name : 'All Products'}}</ion-title>
+		<ion-buttons end>
+			<button class="cart-icon" (click)="gotoCart()"><ion-icon name="cart"></ion-icon></button>
+		</ion-buttons>
+	</ion-navbar>
+	
+	<div class="main-content" *ngIf="appData">
+		<div class="banner category-banner top-padding">
+			<span>Some Image/ Text here</span>
+		</div>
+		<ion-list class="product-list custom-list" *ngIf="appData.products">
+			<ion-item *ngFor="#product of appData.products | MapToIterable">
+				<ion-checkbox [checked]="appData.cart && appData.cart[product._ref]" (click)="swichSelection(product._ref)"></ion-checkbox>
+				<ion-avatar item-left><img [src]="product.image"></ion-avatar>
+				<ion-label>					
+					<h2>{{product.name}}</h2>
+					<p>{{product.description}}</p>
+				</ion-label>
+				<ion-icon class="ion-chevron-right item-icon" item-right></ion-icon>
+			</ion-item>
+		</ion-list>
+		<ion-buttons padding><button block (click)="saveCart();">save cart</button></ion-buttons>
+	</div>
+</ion-content>

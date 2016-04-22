@@ -1,15 +1,15 @@
 import {Page, NavController, NavParams} from 'ionic-angular';
-import {PlanPage} from '../plan/plan';
+import {CheckoutPage} from '../checkout/checkout';
 import {DataService} from '../../services/data';
 import {MapToIterable} from '../../pipes/custom';
 
 @Page({
-	templateUrl: 'build/pages/plans/plans.html',
+	templateUrl: 'build/pages/cart/cart.html',
 	pipes: [MapToIterable]
 })
-export class PlansPage {
+export class CartPage {
 	public appData: any;
-	public _moduleRef = 'plan';
+	public _moduleRef = 'cart';
 	
 	constructor(private nav: NavController, navParams: NavParams, public dataService: DataService) {}
 	
@@ -17,7 +17,7 @@ export class PlansPage {
 		this.dataService.observable$.subscribe(res => {
 			this.appData = res;
 		});
-		this.dataService.getItems(this._moduleRef, 'plans');
+		this.dataService.getCart('cart');
 	}
 	
 	doRefresh(refresher) {
@@ -25,7 +25,16 @@ export class PlansPage {
 		this.ngOnInit();		
 	}
 	
-	planDetail(planID) {
-		this.nav.push(PlanPage, {'planID': planID});
+	isValid(product) {
+		return (typeof(product) == 'object') ? true: false;
 	}
+	
+	removeItem(ref) {
+		this.dataService.deleteItem(this._moduleRef, this.appData.auth.uid + '/' + ref);
+	}
+	
+	orderNow() {
+		this.nav.push(CheckoutPage);
+	}
+	
 }

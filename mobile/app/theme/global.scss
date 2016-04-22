@@ -12,9 +12,16 @@ button.button{ height: 45px; }
 }
 ion-navbar {
 	.toolbar-background { background-color: map-get($colors, primary); }
-	.bar-button-default, .toolbar-title{ color: #fff; }
+	.bar-button-default, .toolbar-title{ color: #fff; text-align: center;}
 	&.transparent{ 
+		position: absolute; 
+		top: 0;
+		width: 100%;
 		.toolbar-background {background-color: transparent;}
+	}
+	ion-buttons {
+		margin: 0 4px;
+		.cart-icon { min-width: 44px; }
 	}
 }
 

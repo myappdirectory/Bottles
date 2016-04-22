@@ -15,7 +15,8 @@ export class DataService {
 	
 	public _adminRef = 'admin';
 	public _userRef = 'users';
-	public _configRef = 'config';
+	public _cartRef = 'cart';
+	public _configRef = 'config';	
 	
 	public observable$: Observable<Object>;
 	private _observer: any;	
@@ -296,6 +297,19 @@ export class DataService {
 	//Common Functions
 	getItems(moduleRef, name) {
 		this.showLoading();
+		this.db.child(moduleRef).on('value', (res) => {
+			if(name) {
+				this.appData[name] = res.val();
+			} else {
+				this.appData[moduleRef] = res.val();
+			}
+			this.hideLoading();
+			this._observer.next(this.appData);
+		})
+	}
+	
+	getActiveItems(moduleRef, name) {
+		this.showLoading();
 		this.db.child(moduleRef).orderByChild('status').equalTo('1').on('value', (res) => {
 			if(name) {
 				this.appData[name] = res.val();
@@ -330,6 +344,12 @@ export class DataService {
 		})
 	}
 	
+	setItem(moduleRef, itemRef, data) {
+		this.showLoading();
+		this.db.child(moduleRef).child(itemRef).set(data);		
+		this.hideLoading();
+	}
+	
 	saveItem(moduleRef, data) {
 		if(data) {
 			this.showLoading();
@@ -353,11 +373,13 @@ export class DataService {
 	}
 	
 	//Specific Funtions
-	getMySavings(_moduleRef) {
-		this.getItemsByFilter(_moduleRef, 'savings', {key: 'uid', value: this.appData.auth.uid});
+	getCart(key) {
+		this.getItem(this._cartRef, this.appData.auth.uid, key);
 	}
 	
-	getMyTransactions(_moduleRef) {
-		this.getItemsByFilter(_moduleRef, 'transactions', {key: 'uid', value: this.appData.auth.uid});
+	saveCart(cart) {
+		this.setItem(this._cartRef, this.appData.auth.uid, cart)
+		this.appData.cart = cart;
+		this._observer.next(this.appData);
 	}
 }

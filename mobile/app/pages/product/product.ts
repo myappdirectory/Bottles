@@ -1,25 +1,24 @@
 import {Page, NavController, NavParams, Alert} from 'ionic-angular';
-import {PlanSelectedPage} from '../planselected/planselected';
 import {DataService} from '../../services/data';
 
 @Page({
-	templateUrl: 'build/pages/plan/plan.html'
+	templateUrl: 'build/pages/product/product.html'
 })
-export class PlanPage {
+export class ProductPage {
 	public appData: any;
-	public planID: any;
-	public _moduleRef = 'plan';
-	public _savingRef = 'saving';
+	public productID: any;
+	public _moduleRef = 'product';
+	public _cartRef = 'cart';
 	
 	constructor(private nav: NavController, public navParams: NavParams, public dataService: DataService) {
-		this.planID = this.navParams.get('planID');
+		this.productID = this.navParams.get('productID');
 	}
 	
 	ngOnInit() {
 		this.dataService.observable$.subscribe(res => {
 			this.appData = res;
 		});
-		this.dataService.getItem(this._moduleRef, this.planID, 'currentPlan');
+		this.dataService.getItem(this._moduleRef, this.productID, 'selectedProduct');
 	}
 	
 	doRefresh(refresher) {
@@ -27,7 +26,7 @@ export class PlanPage {
 		this.ngOnInit();		
 	}
 	
-	selectPlan(planID) {
+	/*selectPlan(planID) {
 		let alert = Alert.create({title: 'Saving', message: 'Enter the name for this saving',
 			inputs: [
 				{name: 'name', placeholder: 'Name'}
@@ -68,5 +67,5 @@ export class PlanPage {
 		this.dataService.saveItem(this._savingRef, data).then((res) => {
 			this.nav.setRoot(PlanSelectedPage, {savingID: res.key()});
 		});
-	}
+	}*/
 }

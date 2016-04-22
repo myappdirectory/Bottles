@@ -1,39 +1,40 @@
-.home-page {
-	.banner {
-		background-image: url('../../img/start-bg.jpg');
-		background-size: cover;
+.banner {
+	background-image: url('../../img/start-bg.jpg');
+	background-size: cover;
+	color: #fff;
+	height: 200px;
+	padding: 20px;
+	text-align: center;
+	.title {
+		font-size: 13px;
+		line-height: 20px;
+		padding: 20px 0;
+		text-transform: capitalize;
+		strong { display: block; font-size: 16px; line-height: 30px;}
+	}
+	button[outline] {
+		border-color: #fff;
 		color: #fff;
-		padding: 20px;
-		text-align: center;
-		.title {
-			font-size: 13px;
-			line-height: 20px;
-			padding: 20px 0;
-			text-transform: capitalize;
-			strong { display: block; font-size: 16px; line-height: 30px;}
-		}
-		table {
-			text-transform: capitalize;
-			width: 100%;
-			th {font-size: 13px; font-weight: normal; line-height: 20px;}
-			td {font-size: 14px; line-height: 16px;}
-		}
-		.due-detail { padding: 10px 0;}
-		button[outline] {
-			border-color: #fff;
-			color: #fff;
-		}
+	}
+	&.top-padding {
+		padding-top: 5.6rem;
 	}
 }
-.status-label {
-	background-color: map-get($colors, primary);
-	color: #fff;
-	display: inline-block;
-	font-size: 12px;
-	padding: 2px 5px;
+.custom-list {
+	ion-item {
+		border-bottom: 1px solid #dedede;
+		.item-inner { border-bottom: none;}
+		ion-avatar {
+			margin: 0 16px 0 0;
+			img {
+				border-radius: 0;
+			}
+		}
+	}
+	
 }
-.card-footer{
-	button {
-		text-align: left;
+.home-page {
+	.banner {
+		
 	}
 }

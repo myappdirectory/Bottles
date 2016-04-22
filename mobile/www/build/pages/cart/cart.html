@@ -1,0 +1,27 @@
+<ion-content class="listing-page">
+	<ion-refresher (refresh)="doRefresh($event)">
+		<ion-refresher-content pullingIcon="arrow-dropdown" pullingText="Pull to refresh" refreshingSpinner="circles" refreshingText="Refreshing..."></ion-refresher-content>
+	</ion-refresher>
+	<ion-navbar *navbar class="transparent">
+		<button menuToggle *ngIf="!selectedItem"><ion-icon name="menu"></ion-icon></button>
+		<ion-title>Cart</ion-title>
+		<ion-buttons end>
+			<button class="cart-icon"><ion-icon name="cart"></ion-icon></button>
+		</ion-buttons>
+	</ion-navbar>
+	
+	<div class="main-content" *ngIf="appData">
+		<div class="banner cart-banner top-padding">
+			<span>Some Image/ Text here</span>
+		</div>
+		<ion-list class="product-list custom-list" *ngIf="appData.cart">
+			<ion-item *ngFor="#product of appData.cart | MapToIterable">
+				<ion-avatar item-left><img [src]="product.image"></ion-avatar>
+				<h2>{{product.name}}</h2>
+				<p>{{product.price}}</p>
+				<ion-icon name="trash" item-right (click)="removeItem(product._ref)"></ion-icon>
+			</ion-item>
+		</ion-list>
+		<ion-buttons padding><button block (click)="orderNow();">Order Now</button></ion-buttons>
+	</div>
+</ion-content>
