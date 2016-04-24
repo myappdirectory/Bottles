@@ -10,17 +10,25 @@ import {HomePage} from '../home/home';
 	directives: [ControlMessages]
 })
 export class SigninPage {
+	public appData: any;
 	public mode = 'singin';
 	public signinForm: any;
 	public passwordForm: any;
 	
 	constructor(private nav: NavController, navParams: NavParams, public dataService: DataService, public fb:FormBuilder) {
+		this.appData = this.dataService.appData;
 		this.signinForm = fb.group({
 			email: ["", Validators.compose([Validators.required, ValidationService.emailValidator])],
 			password: ["", Validators.compose([Validators.required, ValidationService.passwordValidator])]
 		});
 		this.passwordForm = fb.group({
 			email: ["", Validators.compose([Validators.required, ValidationService.emailValidator])]
+		});
+	}
+	
+	ngOnInit() {
+		this.dataService.observable$.subscribe(res => {
+			this.appData = res;
 		});
 	}
 	

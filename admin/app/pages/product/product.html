@@ -91,7 +91,7 @@
 										<div class="col-md-6">
 											<div class="md-input" [class.filled]="selectedItem.image">
 												<input type="hidden" class="textbox" ngControl="image" [ngModel]="selectedItem.image" accept="image/*"/>
-												<input type="file" class="textbox" (change)="saveImage($event, 'image', selectedItem.email)"/>
+												<input type="file" class="textbox" (change)="saveImage($event, 'image', selectedItem._ref)"/>
 												<control-messages control="image"></control-messages>
 											</div>
 										</div>								

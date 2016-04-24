@@ -5,7 +5,7 @@ import 'rxjs/add/operator/share';
 @Injectable()
 export class DataService {
 	private firebaseUrl = "https://my-bottles.firebaseio.com/";
-	public backendServer = "http://localhost/git/savings/";
+	public mediaServer = "http://localhost/git/bottles/";
 	public db: any;
 	public app: any;
 	
@@ -60,7 +60,7 @@ export class DataService {
 				formData.append('images['+pathname+']', file);
 				formData.append('action', 'saveImage');
 				var xhr = new XMLHttpRequest();
-				xhr.open('POST', this.backendServer+'ajax.php', true);
+				xhr.open('POST', this.mediaServer+'ajax.php', true);
 				xhr.onload = () => {
 					if (xhr.status === 200) {
 						var res = JSON.parse(xhr.responseText);
@@ -233,7 +233,7 @@ export class DataService {
 			}
 			this.hideLoading();
 			this._observer.next(this.app);
-		})
+		});
 	}
 	
 	getActiveItems(moduleRef, name) {
@@ -247,6 +247,19 @@ export class DataService {
 			this.hideLoading();
 			this._observer.next(this.app);
 		})
+	}
+	
+	getLimitedItems(moduleRef, name, limit) {
+		this.showLoading();
+		this.db.child(moduleRef).endAt().limit(limit).on('value', (res) => {
+			if(name) {
+				this.app[name] = res.val();
+			} else {
+				this.app[moduleRef] = res.val();
+			}
+			this.hideLoading();
+			this._observer.next(this.app);
+		});
 	}
 	
 	getItem(moduleRef, itemRef, name) {

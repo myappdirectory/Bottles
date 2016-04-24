@@ -1,52 +1,64 @@
 <ion-content class="payment-page">
-	<ion-navbar *navbar class="transparent">
-		<button menuToggle *ngIf="!selectedItem"><ion-icon name="menu"></ion-icon></button>
-		<ion-title>Pay Now</ion-title>
-	</ion-navbar>
 	<ion-refresher (refresh)="doRefresh($event)">
 		<ion-refresher-content pullingIcon="arrow-dropdown" pullingText="Pull to refresh" refreshingSpinner="circles" refreshingText="Refreshing..."></ion-refresher-content>
 	</ion-refresher>
-	<div class="banner">
-		Some Image/ Text here
-	</div>
-	<div class="form" padding>
-		<div class="fields">
-			<form (ngSubmit)="placeOrder()" [ngFormModel]="form">
-				<ion-list>
-					<ion-item>
-						<ion-label><ion-icon name="person"></ion-icon></ion-label>
-						<ion-input type="text" placeholder="Name" ngControl="user_name" autofocus="!user_name.valid" [ngModel]="appData.profile.firstname+' '+appData.profile.lastname"></ion-input>
-					</ion-item>
-					<control-messages control="user_name"></control-messages>
-					<ion-item>
-						<ion-label><ion-icon name="mail"></ion-icon></ion-label>
-						<ion-input type="email" placeholder="Email" ngControl="user_email" autofocus="!user_email.valid" [ngModel]="appData.profile.email"></ion-input>
-					</ion-item>
-					<control-messages control="user_email"></control-messages>
-					<ion-item>
-						<ion-label><ion-icon name="lock"></ion-icon></ion-label>
-						<ion-input type="text" placeholder="Number" ngControl="user_phone" autofocus="!user_phone.valid" [ngModel]="appData.profile.phone"></ion-input>
-					</ion-item>
-					<control-messages control="user_phone"></control-messages>
-					<ion-item>
-						<ion-label><ion-icon name="location"></ion-icon></ion-label>
-						<ion-input type="text" placeholder="Address" ngControl="user_address" autofocus="!user_address.valid" [ngModel]="appData.profile.address"></ion-input>
-					</ion-item>
-					<control-messages control="user_address"></control-messages>
-					<ion-item class="icon_select item item-select item-multiple-inputs">
-						<ion-label><ion-icon name="calendar"></ion-icon><span class="text">Convinient Time</span></ion-label>
-						<ion-select ngControl="convinient_day" autofocus="!convinient_day.valid">
-							<ion-option value="{{option.code}}" *ngFor="#option of appData.config.convinient_day | MapToIterable">{{option.label}}</ion-option>
-						</ion-select>
-						<ion-select ngControl="convinient_time" autofocus="!convinient_time.valid">
-							<ion-option value="{{option.code}}" *ngFor="#option of appData.config.convinient_time | MapToIterable">{{option.label}}</ion-option>
-						</ion-select>
-					</ion-item>
-				</ion-list>
-				<div class="buttons">
-					<button block type="submit" [disabled]="!form.valid">Submit</button>
-				</div>
-			</form>
+	<ion-navbar *navbar class="transparent">
+		<button menuToggle *ngIf="!selectedItem"><ion-icon name="menu"></ion-icon></button>
+		<ion-title *ngIf="appData">Place order</ion-title>
+		<ion-buttons end>
+			<button class="cart-icon" (click)="gotoCart()"><ion-icon name="cart"></ion-icon></button>
+		</ion-buttons>
+	</ion-navbar>
+	<div class="main-content" *ngIf="appData">
+		<div class="banner top-padding">
+			
+		</div>
+		<div class="form" padding>
+			<div class="fields">
+				<form (ngSubmit)="placeOrder()" [ngFormModel]="form">
+					<ion-list>
+						<ion-item>
+							<ion-label><ion-icon name="person"></ion-icon></ion-label>
+							<ion-input type="text" placeholder="Name" ngControl="user_name" autofocus="!user_name.valid" [ngModel]="appData.profile.firstname+' '+appData.profile.lastname"></ion-input>
+						</ion-item>
+						<control-messages control="user_name"></control-messages>
+						<ion-item>
+							<ion-label><ion-icon name="mail"></ion-icon></ion-label>
+							<ion-input type="email" placeholder="Email" ngControl="user_email" autofocus="!user_email.valid" [ngModel]="appData.profile.email"></ion-input>
+						</ion-item>
+						<control-messages control="user_email"></control-messages>
+						<ion-item>
+							<ion-label><ion-icon name="lock"></ion-icon></ion-label>
+							<ion-input type="text" placeholder="Number" ngControl="user_phone" autofocus="!user_phone.valid" [ngModel]="appData.profile.phone"></ion-input>
+						</ion-item>
+						<control-messages control="user_phone"></control-messages>
+						<ion-item>
+							<ion-label><ion-icon name="pin"></ion-icon></ion-label>
+							<ion-input type="text" placeholder="Address" ngControl="user_address" autofocus="!user_address.valid" [ngModel]="appData.profile.address"></ion-input>
+						</ion-item>
+						<control-messages control="user_address"></control-messages>
+						<ion-item class="icon_select">
+							<ion-label><ion-icon name="pin"></ion-icon><span class="text">Location</span></ion-label>
+							<ion-select ngControl="user_location" autofocus="!user_location.valid" *ngIf="appData.config">
+								<ion-option value="{{option.code}}" *ngFor="#option of appData.config.location | MapToIterable">{{option.label}}</ion-option>
+							</ion-select>
+						</ion-item>
+						<control-messages control="user_location"></control-messages>
+						<ion-item class="icon_select item item-select item-multiple-inputs">
+							<ion-label><ion-icon name="calendar"></ion-icon><span class="text">Convinient Time</span></ion-label>
+							<ion-select ngControl="convinient_day" autofocus="!convinient_day.valid">
+								<ion-option value="{{option.code}}" *ngFor="#option of appData.config.convinient_day | MapToIterable">{{option.label}}</ion-option>
+							</ion-select>
+							<ion-select ngControl="convinient_time" autofocus="!convinient_time.valid">
+								<ion-option value="{{option.code}}" *ngFor="#option of appData.config.convinient_time | MapToIterable">{{option.label}}</ion-option>
+							</ion-select>
+						</ion-item>
+					</ion-list>
+					<div class="buttons">
+						<button block type="submit" [disabled]="!form.valid">Submit</button>
+					</div>
+				</form>
+			</div>
 		</div>
 	</div>
 </ion-content>

@@ -8,8 +8,15 @@ import {DataService} from '../../services/data';
 	templateUrl: 'build/pages/start/start.html'
 })
 export class StartPage {
+	public appData: any;
 	
-	constructor(private nav: NavController, private navParams: NavParams, public dataService: DataService) {	
+	constructor(private nav: NavController, private navParams: NavParams, public dataService: DataService) {}
+	
+	ngOnInit() {
+		this.dataService.observable$.subscribe(res => {
+			this.appData = res;
+		});
+		this.dataService.getConfig();
 	}
 	
 	gotoSignin() {

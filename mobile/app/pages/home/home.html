@@ -8,21 +8,26 @@
 	</ion-buttons>
 </ion-navbar>
 
-<ion-content class="home-page" *ngIf="appData">
+<ion-content class="home-page">
 	<ion-refresher (refresh)="doRefresh($event)">
-		<ion-refresher-content pullingIcon="arrow-dropdown" pullingText="Pull to refresh" refreshingSpinner="circles" refreshingText="Refreshing..."></ion-refresher-content>
+		<ion-refresher-content pullingIcon="arrow-dropdown" pullingText="Pull to refresh" refreshingSpinner="circles" refreshingText="Refreshing...">
+		</ion-refresher-content>
 	</ion-refresher>
 	<div class="main-content" *ngIf="appData">
 		<div class="banner">
-			<p>Some text content goes here</p>
+			<h2 class="welcome-title" *ngIf="appData.config">{{appData.config.welcomeTitle}}</h2>
+			<div class="welcome-text" *ngIf="appData.config">{{appData.config.welcomeText}}</div>
 		</div>
 		<ion-list class="category-list custom-list" *ngIf="appData.categories">
-			<ion-item *ngFor="#category of appData.categories | MapToIterable" (click)="viewProducts(category._ref)">
-				<ion-avatar item-left>
+			<ion-item *ngFor="#category of appData.categories | MapToIterable; #i = index" (click)="viewProducts(category._ref)">
+				<ion-thumbnail item-left *ngIf="i%2 == 0">
 					<img [src]="category.image">
-				</ion-avatar>
+				</ion-thumbnail>
+				<ion-thumbnail item-right *ngIf="i%2 != 0">
+					<img [src]="category.image">
+				</ion-thumbnail>
 				<h2>{{category.name}}</h2>
-				<p>{{category.description}}</p>				
+				<p>{{category.description}}</p>	
 			</ion-item>
 		</ion-list>
 		<ion-buttons padding><button block (click)="viewProducts('all');">View All Products</button></ion-buttons>

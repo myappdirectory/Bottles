@@ -1,16 +1,55 @@
 <ion-content class="order-page">
-	<ion-navbar *navbar class="transparent">
-		<button menuToggle *ngIf="!selectedItem"><ion-icon name="menu"></ion-icon></button>
-		<ion-title>Order Details</ion-title>
-	</ion-navbar>
 	<ion-refresher (refresh)="doRefresh($event)">
 		<ion-refresher-content pullingIcon="arrow-dropdown" pullingText="Pull to refresh" refreshingSpinner="circles" refreshingText="Refreshing..."></ion-refresher-content>
 	</ion-refresher>
+	<ion-navbar *navbar class="transparent">
+		<button menuToggle *ngIf="!selectedItem"><ion-icon name="menu"></ion-icon></button>
+		<ion-title>order details</ion-title>
+		<ion-buttons end>
+			<button class="cart-icon" (click)="gotoCart()"><ion-icon name="cart"></ion-icon></button>
+		</ion-buttons>
+	</ion-navbar>
 	
-	<div class="banner">
-		Some Image/ Text here
-	</div>
-	<div class="order-success" *ngIf="showSuccess">
-		Your order placed successfully
+	<div class="main-content" *ngIf="appData && appData.selectedOrder">
+		<div class="banner top-padding order-banner order-status-{{appData.selectedOrder.status}}">
+			<h2>{{appData.selectedOrder.code}}</h2>
+			<div class="order-status-label">{{appData.selectedOrder.status | StatusLabel}}</div>
+			<div class="order-success" *ngIf="showSuccess">
+				Your order has been placed successfully
+			</div>
+		</div>		
+		<div class="order-info" *ngIf="appData.selectedOrder">
+			<ion-list class=" custom-list">
+				<ion-item>
+					<p>Contact Name</p>
+					<button clear item-right>{{appData.selectedOrder.user_name}}</button>
+				</ion-item>
+				<ion-item>
+					<p>Contact Email</p>
+					<button clear item-right>{{appData.selectedOrder.user_email}}</button>
+				</ion-item>
+				<ion-item>
+					<p>Contact Phone</p>
+					<button clear item-right>{{appData.selectedOrder.user_phone}}</button>
+				</ion-item>
+				<ion-item>
+					<p>Address</p>
+					<button clear item-right>{{appData.selectedOrder.user_address}}</button>
+				</ion-item>
+				<ion-item>
+					<p>Location</p>
+					<button clear item-right>{{appData.selectedOrder.user_location | LocationLabel}}</button>
+				</ion-item>
+				<ion-item *ngFor="#item of appData.selectedOrder.ordered_items | MapToIterable">
+					<ion-thumbnail item-left>
+						<img [src]="item.image" class="thumbnail">
+					</ion-thumbnail>
+					<h2>{{item.name}}</h2>
+					<p>Rs. {{item.price}}</p>
+					<button clear item-right>{{appData.selectedOrder.user_location}}</button>
+				</ion-item>
+			</ion-list>
+			<ion-buttons padding *ngIf="appData.selectedOrder.status <= 2"><button block (click)="cancelOrder();">Cancel Order</button></ion-buttons>
+		</div>
 	</div>
 </ion-content>

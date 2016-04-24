@@ -1,11 +1,12 @@
 import {Page, NavController, NavParams} from 'ionic-angular';
 import {OrderPage} from '../order/order';
 import {DataService} from '../../services/data';
-import {MapToIterable, StatusLabel} from '../../pipes/custom';
+import {MapToIterable, StatusLabel, LocationLabel} from '../../pipes/custom';
+import {CartPage} from '../cart/cart';
 
 @Page({
 	templateUrl: 'build/pages/myorders/myorders.html',
-	pipes: [MapToIterable, StatusLabel]
+	pipes: [MapToIterable, StatusLabel, LocationLabel]
 })
 export class MyordersPage {
 	public appData: any;
@@ -25,6 +26,10 @@ export class MyordersPage {
 	doRefresh(refresher) {
 		refresher.complete();
 		this.ngOnInit();		
+	}
+	
+	gotoCart() {
+		this.nav.push(CartPage);
 	}
 	
 	viewOrder(id) {

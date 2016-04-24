@@ -30,6 +30,10 @@
 												<span *ngIf="field.code != 'status' && field.code != 'location'">{{item[field.code]}}</span>
 											</span>
 											<img [src]="item[field.code]" class="thumb" *ngIf="field.type == 'image'"/>
+											<div class="value" *ngIf="app.users && field.type == 'user'">{{app.users[item[field.code]].firstname}}</div>
+											<div class="value" *ngIf="field.type == 'ordered_items'">
+												<p *ngFor="#value of item[field.code] | MapToIterable">{{value.name}}</p>
+											</div>
 										</td>
 										<td class="a-center">
 											<a href="javascript:;" class="edit-link" (click)="editItem(item._ref)">
@@ -108,23 +112,24 @@
 									</div>	
 									<div class="row">
 										<div class="col-md-6">
-											<div class="md-select" [class.filled]="selectedItem.ordered_items">
+											<div class="md-select multiselect" [class.filled]="selectedItem.ordered_items">
 												<span class="placeholder">Ordered Items</span>
-												<select class="selectbox" ngControl="ordered_items" [ngModel]="selectedItem.ordered_items" (change)="selectedItem.ordered_items = $event.target.value" multiple="true">
-													<option *ngFor="#product of app.products | MapToIterable" [value]="product._ref">{{product.name}}</option>
+												<input type="hidden" ngControl="ordered_items" [ngModel]="selectedItem.ordered_items">
+												<select class="selectbox" (change)="updateItems($event)" multiple="true">
+													<option *ngFor="#product of app.products | MapToIterable" value="{{product.price}}" [selected]="selectedItem.ordered_items[product._ref]">
+														{{product.name}}
+													</option>
 												</select>		
 												<control-messages control="ordered_items"></control-messages>
 											</div>
 										</div>
 										<div class="col-md-6">
-											<div class="md-select" [class.filled]="selectedItem.collected_items">
-												<span class="placeholder">Collected Items</span>
-												<select class="selectbox" ngControl="collected_items" [ngModel]="selectedItem.collected_items" (change)="selectedItem.collected_items = $event.target.value" multiple="true">
-													<option *ngFor="#product of app.products | MapToIterable" [value]="product._ref">{{product.name}}</option>
-												</select>		
-												<control-messages control="collected_items"></control-messages>
+											<div class="md-input" [class.filled]="selectedItem.grand_total">
+												<span class="placeholder">Grand Total</span>
+												<input type="text" class="textbox" ngControl="grand_total" [ngModel]="selectedItem.grand_total"/>
+												<control-messages control="grand_total"></control-messages>
 											</div>
-										</div>
+										</div>	
 									</div>
 									<div class="row">
 										<div class="col-md-6">
@@ -147,13 +152,6 @@
 										</div>
 									</div>
 									<div class="row">
-										<div class="col-md-6">
-											<div class="md-input" [class.filled]="selectedItem.grand_total">
-												<span class="placeholder">Grand Total</span>
-												<input type="text" class="textbox" ngControl="grand_total" [ngModel]="selectedItem.grand_total"/>
-												<control-messages control="grand_total"></control-messages>
-											</div>
-										</div>	
 										<div class="col-md-6">
 											<div class="md-select" [class.filled]="selectedItem.status">
 												<span class="placeholder">Status</span>

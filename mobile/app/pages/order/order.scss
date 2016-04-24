@@ -1,0 +1,37 @@
+.order-info {
+	.thumbnail { max-width: 100px; }
+}
+.order-banner {
+	.order-status-label {
+		color: #fff;
+		display: inline-block;
+		padding: 10px 30px;
+	}
+	&.order-status-1 {
+		background: #32db64;
+		.order-status-label {
+			background: #008000;
+		}
+	}
+	&.order-status-2 {
+		background: #169cf1;
+		.order-status-label {
+			background: #0000FF;
+		}
+	}
+	&.order-status-3 {
+		background: #999999;
+		.order-status-label {
+			background: #808080;
+		}
+	}
+	&.order-status-4 {
+		background: #FF8080;
+		.order-status-label {
+			background: #FF0000;
+		}
+	}
+}
+.order-success {
+	padding: 20px;
+}

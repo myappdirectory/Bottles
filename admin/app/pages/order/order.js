@@ -50,7 +50,6 @@ System.register(['angular2/core', 'angular2/common', '../../services/data/data',
                         user_phone: ["", common_1.Validators.required],
                         user_address: ["", common_1.Validators.required],
                         ordered_items: ["", common_1.Validators.required],
-                        collected_items: ["", common_1.Validators.required],
                         convinient_day: ["", common_1.Validators.required],
                         convinient_time: ["", common_1.Validators.required],
                         grand_total: ["", common_1.Validators.required],
@@ -60,11 +59,10 @@ System.register(['angular2/core', 'angular2/common', '../../services/data/data',
                         title: 'Manage Order',
                         fields: [
                             { code: 'code', title: 'Code', type: 'text', 'formatter': '' },
-                            { code: 'uid', title: 'Customer', type: 'text', 'formatter': '' },
-                            { code: 'user_email', title: 'Email', type: 'text', 'formatter': '' },
-                            { code: 'user_name', title: 'User Nmae', type: 'text', 'formatter': '' },
-                            { code: 'ordered_items', title: 'Ordered Items', type: 'text', 'formatter': '' },
-                            { code: 'collected_items', title: 'Collected Items', type: 'text', 'formatter': '' },
+                            { code: 'uid', title: 'Customer', type: 'user', 'formatter': '' },
+                            { code: 'user_email', title: 'Contact Email', type: 'text', 'formatter': '' },
+                            { code: 'user_name', title: 'Contact Nmae', type: 'text', 'formatter': '' },
+                            { code: 'ordered_items', title: 'Ordered Items', type: 'ordered_items', 'formatter': '' },
                             { code: 'grand_total', title: 'Grand Total', type: 'text', 'formatter': '' },
                             { code: 'status', title: 'Status', type: 'text', 'formatter': 'StatusLabel' }
                         ]
@@ -94,9 +92,14 @@ System.register(['angular2/core', 'angular2/common', '../../services/data/data',
                     this.selectedItem = null;
                     this.mode = 'list';
                 };
+                OrderPage.prototype.updateItems = function ($event) {
+                    console.log($event.target.selectedOptions);
+                };
                 OrderPage.prototype.saveItem = function () {
                     if (this.form.valid) {
                         var data = this.form.value;
+                        console.log(data);
+                        return false;
                         this.dataService.saveItem(this._moduleRef, data);
                         this.selectedItem = null;
                         this.mode = 'list';

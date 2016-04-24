@@ -23,10 +23,10 @@ export class ListingPage {
 			this.appData = res;
 		});
 		this.dataService.getCart('cart');
+		this.dataService.getItem(this._categoryRef, this.categoryID, 'selectedCategory');
 		if(this.categoryID != 'all') {
-			this.dataService.getItem(this._categoryRef, this.categoryID, 'selectedCategory');
 			this.dataService.getItemsByFilter(this._moduleRef, 'products', {key: 'category_id', value: this.categoryID});
-		} else {			
+		} else {
 			this.dataService.getActiveItems(this._moduleRef, 'products');
 		}
 	}

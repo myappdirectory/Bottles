@@ -1,11 +1,36 @@
-<ion-navbar *navbar>
-	<button menuToggle *ngIf="!selectedItem"><ion-icon name="menu"></ion-icon></button>
-	<ion-title *ngIf="appData & appData.selectedProduct">{{appData.selectedProduct.name}}</ion-title>
-</ion-navbar>
-
-<ion-content padding class="plan-page" *ngIf="appData.currentPlan">
+<ion-content class="product-page">
 	<ion-refresher (refresh)="doRefresh($event)">
 		<ion-refresher-content pullingIcon="arrow-dropdown" pullingText="Pull to refresh" refreshingSpinner="circles" refreshingText="Refreshing..."></ion-refresher-content>
 	</ion-refresher>
-	product page
+	<ion-navbar *navbar class="transparent">
+		<button menuToggle *ngIf="!selectedItem"><ion-icon name="menu"></ion-icon></button>
+		<ion-title *ngIf="appData && appData.selectedProduct">{{appData.selectedProduct.name}}</ion-title>
+		<ion-buttons end>
+			<button class="cart-icon" (click)="gotoCart()"><ion-icon name="cart"></ion-icon></button>
+		</ion-buttons>
+	</ion-navbar>
+	
+	<div class="main-content" *ngIf="appData && appData.selectedProduct">
+		<div class="banner product-banner top-padding" style="background-image: url({{appData.selectedProduct.image}})">
+			
+		</div>
+		<div class="product-info" padding>
+			<ion-card>
+				<ion-card-content>
+					<ion-card-title>{{appData.selectedProduct.name}}</ion-card-title>
+					<p>{{appData.selectedProduct.description}}</p>
+				</ion-card-content>
+				<ion-item>
+					<button primary clear item-left>
+						<ion-icon name="text"></ion-icon>
+						<div>{{appData.selectedProduct.category_id | CategoryLabel}}</div>
+					</button>
+					<button primary clear item-right>
+						<ion-icon name="pricetag"></ion-icon>
+						<div>Rs. {{appData.selectedProduct.price}}</div>
+					</button>
+				</ion-item>
+			</ion-card>
+		</div>
+	</div>
 </ion-content>

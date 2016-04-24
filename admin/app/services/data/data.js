@@ -26,7 +26,7 @@ System.register(['angular2/core', 'rxjs/Observable', 'rxjs/add/operator/share'],
                 function DataService() {
                     var _this = this;
                     this.firebaseUrl = "https://my-bottles.firebaseio.com/";
-                    this.backendServer = "http://localhost/git/savings/";
+                    this.mediaServer = "http://localhost/git/bottles/";
                     this._adminRef = 'admin';
                     this._userRef = 'users';
                     this._configRef = 'config';
@@ -67,7 +67,7 @@ System.register(['angular2/core', 'rxjs/Observable', 'rxjs/add/operator/share'],
                             formData.append('images[' + pathname + ']', file);
                             formData.append('action', 'saveImage');
                             var xhr = new XMLHttpRequest();
-                            xhr.open('POST', _this.backendServer + 'ajax.php', true);
+                            xhr.open('POST', _this.mediaServer + 'ajax.php', true);
                             xhr.onload = function () {
                                 if (xhr.status === 200) {
                                     var res = JSON.parse(xhr.responseText);
@@ -259,6 +259,20 @@ System.register(['angular2/core', 'rxjs/Observable', 'rxjs/add/operator/share'],
                     var _this = this;
                     this.showLoading();
                     this.db.child(moduleRef).orderByChild('status').equalTo('1').on('value', function (res) {
+                        if (name) {
+                            _this.app[name] = res.val();
+                        }
+                        else {
+                            _this.app[moduleRef] = res.val();
+                        }
+                        _this.hideLoading();
+                        _this._observer.next(_this.app);
+                    });
+                };
+                DataService.prototype.getLimitedItems = function (moduleRef, name, limit) {
+                    var _this = this;
+                    this.showLoading();
+                    this.db.child(moduleRef).endAt().limit(limit).on('value', function (res) {
                         if (name) {
                             _this.app[name] = res.val();
                         }

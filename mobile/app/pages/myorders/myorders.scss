@@ -1,0 +1,18 @@
+.order-status {
+	background-color: map-get($colors, primary);
+	color: #fff;
+	font-size: 12px;
+	padding: 5px;
+	&.order-status-1 {
+		background: #008000;
+	}
+	&.order-status-2 {
+		background: #0000FF;
+	}
+	&.order-status-3 {
+		background: #808080;
+	}
+	&.order-status-4 {
+		background: #FF0000;
+	}
+}

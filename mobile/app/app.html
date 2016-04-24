@@ -1,7 +1,7 @@
-<ion-menu [content]="content" *ngIf="appData">
+<ion-menu [content]="content">
 	<ion-content>
-		<div class="banner" *ngIf="appData.profile">
-			<div class="table">
+		<div class="banner">
+			<div class="table" *ngIf="appData && appData.profile">
 				<div class="table-cell">
 					<div class="image">
 						<img [src]="appData.profile.image" class="thumb" *ngIf="appData.profile.image">

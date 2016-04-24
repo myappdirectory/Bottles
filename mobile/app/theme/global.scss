@@ -3,8 +3,10 @@
 .inline {display: inline; }
 .table { display: table; height: 100%; width: 100%;}
 .table-cell { display: table-cell; text-align: center; vertical-align: middle; }
+.a-left {text-align: left;}
 .w-half{ width: 50%;}
 button.button{ height: 45px; }
+scroll-content{ overflow-y: auto;}
 .logo {
 	color: #fff;
 	font-size: 32px;
@@ -12,7 +14,8 @@ button.button{ height: 45px; }
 }
 ion-navbar {
 	.toolbar-background { background-color: map-get($colors, primary); }
-	.bar-button-default, .toolbar-title{ color: #fff; text-align: center;}
+	.bar-button-default, .toolbar-title{ color: #fff; text-transform: capitalize;}
+	ion-title { text-align:center; }
 	&.transparent{ 
 		position: absolute; 
 		top: 0;
@@ -32,7 +35,7 @@ ion-menu {
 		color: #fff;
 		height: 40%;
 		.image {
-			img { max-height: 175px; }
+			img { border-radius: 50%; max-height: 150px; }
 			.profile-img-icon {font-size: 175px}
 		}
 		.name {font-size: 20px; padding: 10px 0; text-transform: capitalize;}
@@ -157,4 +160,30 @@ control-messages {color: $error-color; display: block; padding: 5px 0; text-tran
 a {
 	text-align: center;
 	text-transform: capitalize;
+}
+button, a {
+    position: relative;
+    overflow: hidden;
+    outline: none !important; /* remove dotted border */
+}
+button:after, a:after {
+    content: "";
+    background: rgba(255,255,255,0.3);
+    display: block;
+    position: absolute;
+    //border-radius: 50%;
+    padding-top: 240%;
+    padding-left: 240%;
+    margin-top: -120%;
+    margin-left: -120%;
+    opacity: 0;
+    transition: all .5s;
+}
+button:active:after, a:active:after {
+    padding-top: 0;
+    padding-left: 0;
+    margin-top: 0;
+    margin-left: 0;
+    opacity: 1;
+    transition: 0s;
 }

@@ -16,8 +16,9 @@ export class HomePage {
 	
 	ngOnInit() {
 		this.dataService.observable$.subscribe(res => {
-			this.appData = res;	console.log(this.appData);		
+			this.appData = res;
 		});
+		this.dataService.getConfig();
 		this.dataService.getActiveItems(this._moduleRef, 'categories');
 	}
 	

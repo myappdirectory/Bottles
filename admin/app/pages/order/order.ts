@@ -12,7 +12,6 @@ import {MapToIterable, StatusLabel, LocationLabel} from '../../pipes/custom.pipe
 	pipes: [MapToIterable, LocationLabel, StatusLabel]
 })
 
-
 export class OrderPage {
 	public app: any;
 	public _moduleRef = 'order';
@@ -34,7 +33,6 @@ export class OrderPage {
 			user_phone: ["", Validators.required],
 			user_address: ["", Validators.required],
 			ordered_items: ["", Validators.required],
-			collected_items: ["", Validators.required],
 			convinient_day: ["", Validators.required],
 			convinient_time: ["", Validators.required],
 			grand_total: ["", Validators.required],
@@ -44,11 +42,10 @@ export class OrderPage {
 			title: 'Manage Order',
 			fields : [
 				{code: 'code', title: 'Code', type: 'text', 'formatter': ''},
-				{code: 'uid', title: 'Customer', type: 'text', 'formatter': ''},
-				{code: 'user_email', title: 'Email', type: 'text', 'formatter': ''},
-				{code: 'user_name', title: 'User Nmae', type: 'text', 'formatter': ''},
-				{code: 'ordered_items', title: 'Ordered Items', type: 'text', 'formatter': ''},
-				{code: 'collected_items', title: 'Collected Items', type: 'text', 'formatter': ''},
+				{code: 'uid', title: 'Customer', type: 'user', 'formatter': ''},
+				{code: 'user_email', title: 'Contact Email', type: 'text', 'formatter': ''},
+				{code: 'user_name', title: 'Contact Nmae', type: 'text', 'formatter': ''},
+				{code: 'ordered_items', title: 'Ordered Items', type: 'ordered_items', 'formatter': ''},
 				{code: 'grand_total', title: 'Grand Total', type: 'text', 'formatter': ''},
 				{code: 'status', title: 'Status', type: 'text', 'formatter': 'StatusLabel'}
 			]
@@ -82,9 +79,13 @@ export class OrderPage {
 		this.mode = 'list';
 	}
 	
+	updateItems($event) {
+		console.log($event.target.selectedOptions);
+	}
+	
 	saveItem() {
 		if(this.form.valid) {
-			var data = this.form.value;
+			var data = this.form.value;console.log(data);return false;
 			this.dataService.saveItem(this._moduleRef, data);
 			this.selectedItem = null;
 			this.mode = 'list';

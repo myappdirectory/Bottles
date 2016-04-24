@@ -16,10 +16,12 @@
 		</div>
 		<ion-list class="product-list custom-list" *ngIf="appData.orders">
 			<ion-item *ngFor="#order of appData.orders | MapToIterable" (click)="viewOrder(order._ref)">
-				<ion-avatar item-left><img [src]="order.image"></ion-avatar>
-				<h2>{{order.user_name}}</h2>
-				<p>{{order.user_address}}</p>
-				<ion-icon class="ion-chevron-right item-icon" item-right></ion-icon>
+				<ion-label item-left>
+					<h2>{{order.user_name}}</h2>
+					<h3>{{order.created}} <br/> {{order.user_location | LocationLabel}}</h3>
+					<p>{{order.grand_total}}</p>
+				</ion-label>
+				<div class="order-status order-status-{{order.status}}" item-right>{{order.status | StatusLabel}}</div>
 			</ion-item>
 		</ion-list>
 	</div>

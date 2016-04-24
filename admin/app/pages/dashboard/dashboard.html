@@ -1,3 +1,77 @@
 <section class="content">
-	Dashboard Page
+	<div class="container">
+		<div class="row">
+			<div class="col-md-12">
+				<div class="inner-content">
+					
+					<div class="md-card margin1 padding1">
+						<div class="list-title">
+							<h2>{{orderList.title}}</h2>
+						</div>
+						<div class="table-container res-table">
+							<table>
+								<thead>
+									<tr class="title">
+										<td class="id-cell">S.no</td>
+										<td class="image-cell" *ngFor="#field of orderList.fields">{{field.title}}</td>
+									</tr>
+								</thead>
+								<tbody *ngIf="app && app.orders">
+									<tr *ngFor="#item of app.orders | MapToIterable; #i=index">
+										<td>{{i + 1}}</td>
+										<td *ngFor="#field of orderList.fields">
+											<span class="value" *ngIf="field.type == 'text'">
+												<span *ngIf="field.code == 'location'">{{item[field.code] | LocationLabel}}</span>
+												<span *ngIf="field.code == 'status'">{{item[field.code] | StatusLabel}}</span>												
+												<span *ngIf="field.code != 'status' && field.code != 'location'">{{item[field.code]}}</span>
+											</span>
+											<img [src]="item[field.code]" class="thumbnail" *ngIf="field.type == 'image'"/>
+											<div class="value" *ngIf="app.users && field.type == 'user'">{{app.users[item[field.code]].firstname}}</div>
+											<div class="value" *ngIf="field.type == 'ordered_items'">
+												<p *ngFor="#value of item[field.code] | MapToIterable">{{value.name}}</p>
+											</div>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+					
+					<div class="md-card margin1 padding1">
+						<div class="list-title">
+							<h2>{{userList.title}}</h2>
+						</div>
+						<div class="table-container res-table">
+							<table>
+								<thead>
+									<tr class="title">
+										<td class="id-cell">S.no</td>
+										<td class="image-cell" *ngFor="#field of userList.fields">{{field.title}}</td>
+									</tr>
+								</thead>
+								<tbody *ngIf="app && app.users">
+									<tr *ngFor="#item of app.users | MapToIterable; #i=index">
+										<td>{{i + 1}}</td>
+										<td *ngFor="#field of userList.fields">
+											<span class="value" *ngIf="field.type == 'text'">
+												<span *ngIf="field.code == 'location'">{{item[field.code] | LocationLabel}}</span>
+												<span *ngIf="field.code == 'status'">{{item[field.code] | StatusLabel}}</span>												
+												<span *ngIf="field.code != 'status' && field.code != 'location'">{{item[field.code]}}</span>
+											</span>
+											<img [src]="item[field.code]" class="thumbnail" *ngIf="field.type == 'image'"/>
+											<div class="value" *ngIf="app.users && field.type == 'user'">{{app.users[item[field.code]].firstname}}</div>
+											<div class="value" *ngIf="field.type == 'ordered_items'">
+												<p *ngFor="#value of item[field.code] | MapToIterable">{{value.name}}</p>
+											</div>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+					
+				</div>
+			</div>
+		</div>
+	</div>
 </section>

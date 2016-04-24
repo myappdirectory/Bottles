@@ -12,7 +12,7 @@
 	
 	<div class="main-content" *ngIf="appData">
 		<div class="banner cart-banner top-padding">
-			<span>Some Image/ Text here</span>
+			
 		</div>
 		<ion-list class="product-list custom-list" *ngIf="appData.cart">
 			<ion-item *ngFor="#product of appData.cart | MapToIterable">
@@ -22,6 +22,10 @@
 				<ion-icon name="trash" item-right (click)="removeItem(product._ref)"></ion-icon>
 			</ion-item>
 		</ion-list>
-		<ion-buttons padding><button block (click)="orderNow();">Order Now</button></ion-buttons>
+		<ion-buttons padding><button block (click)="orderNow();" *ngIf="appData.cart">Order Now</button></ion-buttons>
+		
+		<div class="empty-cart" *ngIf="!appData.cart">
+			<h2>You have no items in your cart</h2>
+		</div>
 	</div>
 </ion-content>

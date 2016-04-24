@@ -1,8 +1,8 @@
 <?php 
 header("Access-Control-Allow-Origin: *");
 $uploadDir = "uploads/";
-$allowedImgTypes = array('jpeg', 'png', 'gif', 'jpg');
-$allowedImgSize = 2048;
+$allowedImgTypes = array('jpeg', 'png', 'gif', 'jpg', 'svg');
+$allowedImgSize = 2000000; //bytes = 2MB
 $get = $_GET;
 $post = $_POST;
 $files = $_FILES;
@@ -17,7 +17,7 @@ if(isset($post['action']) && $post['action'] == 'saveImage') {
 		$target = $uploadDir.$key.".".$type;
 		
 		if(in_array($type, $allowedImgTypes)) {
-			if($size <= 2048) {
+			if($size <= $allowedImgSize) {
 				if (move_uploaded_file($tmpName, $target)) {
 					$response = array('status' => 'success', 'imageUrl' => $currentUrl.'/'.$target);
 				} else {

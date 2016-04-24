@@ -65,3 +65,29 @@ export class LocationLabel implements PipeTransform {
 	}
 	
 }
+
+@Pipe({
+  name: 'CategoryLabel'
+})
+export class CategoryLabel implements PipeTransform {
+	public appData: any;
+	
+	constructor(public dataService: DataService) {
+		this.appData = this.dataService.appData;
+	}
+	
+	ngOnInit() {
+		this.dataService.observable$.subscribe(res => {
+			this.appData = res;
+		});
+	}
+	
+	transform(value: any, args: any[] = null): any {
+		if(this.appData && this.appData.categories) {
+			return this.appData.categories[value]['name'];
+		} else {
+			this.dataService.getItems('category', 'categories');
+		}
+	}
+	
+}

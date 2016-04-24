@@ -7,7 +7,7 @@ import {HomePage} from '../pages/home/home';
 @Injectable()
 export class DataService {
 	private firebaseUrl = "https://my-bottles.firebaseio.com/";
-	public mediaServer = "http://localhost/git/savings/";
+	public mediaServer = "http://localhost/git/bottles/";
 	public db: any;
 	public appData: any;
 	public loading: any;
@@ -48,15 +48,17 @@ export class DataService {
 	showLoading() {
 		if(!this.loading) {
 			let nav = this.app.getComponent('nav');
-			if (this.platform.is('android')) {
-				this.loading = Loading.create({
-					spinner: 'hide',
-					content: '<div class="loader"><svg class="circular" viewBox="25 25 50 50"><circle class="path" cx="50" cy="50" r="20" fill="none" stroke-width="3" stroke-miterlimit="10"/></svg></div>'
-				});
-			} else {
-				this.loading = Loading.create();
+			if(nav) {
+				if (this.platform.is('android')) {
+					this.loading = Loading.create({
+						spinner: 'hide',
+						content: '<div class="loader"><svg class="circular" viewBox="25 25 50 50"><circle class="path" cx="50" cy="50" r="20" fill="none" stroke-width="3" stroke-miterlimit="10"/></svg></div>'
+					});
+				} else {
+					this.loading = Loading.create();
+				}
+				nav.present(this.loading);
 			}
-			nav.present(this.loading);
 		}
 	}
 	
@@ -95,9 +97,10 @@ export class DataService {
 				xhr.onload = function () {
 					if (xhr.status === 200) {
 						var res = JSON.parse(xhr.responseText);
-						if(res.status == 'success') {
+						if(typeof(res) == 'object' && res.status == 'success') {
 							resolve(res.imageUrl);
 						} else {
+							this.hideLoading();
 							this.doAlert({title: 'Error', message: res.message});
 						}
 					}
@@ -107,23 +110,27 @@ export class DataService {
 		});
 	}
 	
+	checkConnection() {
+		this.platform.ready().then(() => {
+			this.db.child('.info/connected').on('value', (res) => {
+				if(!res.val()) {
+					this.appData.connectionError = {type: 'connection-error', message: 'Netowork connection failed'};
+					this.hideLoading();
+				} else {
+					this.appData.connectionError = false;
+					this._observer.next(this.appData);
+				}
+			});
+		});
+	}
+	
 	initialize() {
 		this.appData.auth = this.db.getAuth();
-		this.db.child('.info/connected').on('value', (res) => {
-			if(res.val()) {
-				this.appData.connectionError = false;
-				this.appData.auth = this.db.getAuth();
-				if(this.appData.auth && this.appData.auth.uid) {
-					this.getItem(this._userRef, this.appData.auth.uid, 'profile');
-					this._observer.next(this.appData);
-				} else {
-					this._observer.next(this.appData);
-				}				
-			} else {
-				//this.appData.connectionError = {'type': 'connection-error', 'message': 'Waiting for network connection...'};
-				this._observer.next(this.appData);
-			}
-		});
+		this._observer.next(this.appData);
+		if(this.appData.auth && this.appData.auth.uid) {
+			this.getItem(this._userRef, this.appData.auth.uid, 'profile');
+			setTimeout(() => {this.checkConnection();}, 3000);
+		}
 	}
 	
 	getConfig() {
@@ -297,7 +304,7 @@ export class DataService {
 	//Common Functions
 	getItems(moduleRef, name) {
 		this.showLoading();
-		this.db.child(moduleRef).on('value', (res) => {
+		this.db.child(moduleRef).on('value', (res, error) => {
 			if(name) {
 				this.appData[name] = res.val();
 			} else {
@@ -355,12 +362,12 @@ export class DataService {
 			this.showLoading();
 			data = this.removeUndefined(data);
 			if(data._ref) {
-				data.created = this.getCurrentTime();
 				data.updated = this.getCurrentTime();
 				var res = this.db.child(moduleRef).child(data._ref).update(data);
 				this.hideLoading();
 			} else {
-				data.updated = this.getCurrentTime();
+				data.created = this.getCurrentTime();
+				data.updated = data.created;
 				var res = this.db.child(moduleRef).push(data);
 				this.hideLoading();
 			}

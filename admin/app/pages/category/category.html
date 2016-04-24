@@ -29,7 +29,7 @@
 												<span *ngIf="field.code == 'status'">{{item[field.code] | StatusLabel}}</span>												
 												<span *ngIf="field.code != 'status' && field.code != 'location'">{{item[field.code]}}</span>
 											</span>
-											<img [src]="item[field.code]" class="thumb" *ngIf="field.type == 'image'"/>
+											<img [src]="item[field.code]" class="thumbnail" *ngIf="field.type == 'image'"/>
 										</td>
 										<td class="a-center">
 											<a href="javascript:;" class="edit-link" (click)="editItem(item._ref)">
@@ -53,7 +53,7 @@
 								<div class="title-box table">
 									<div class="image table-cell" *ngIf="selectedItem.image"><img class="thumbnail" [src]="selectedItem.image"/></div>
 									<div class="detail table-cell">
-										<div class="title">{{selectedItem.firstname ? selectedItem.name : 'Add New'}}</div>
+										<div class="title">{{selectedItem.name ? selectedItem.name : 'Add New'}}</div>
 										<div class="sub-title">{{selectedItem.code}}</div>
 									</div>
 									<div class="actions table-cell">										
@@ -82,7 +82,7 @@
 										<div class="col-md-6">
 											<div class="md-input" [class.filled]="selectedItem.image">
 												<input type="hidden" class="textbox" ngControl="image" [ngModel]="selectedItem.image" accept="image/*"/>
-												<input type="file" class="textbox" (change)="saveImage($event, 'image', selectedItem.email)"/>
+												<input type="file" class="textbox" (change)="saveImage($event, 'image', selectedItem._ref)"/>
 												<control-messages control="image"></control-messages>
 											</div>
 										</div>

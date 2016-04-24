@@ -224,7 +224,9 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var ionic_angular_1 = require('ionic-angular');
 var common_1 = require('angular2/common');
 var order_1 = require('../order/order');
+var cart_1 = require('../cart/cart');
 var data_1 = require('../../services/data');
+var validation_1 = require('../../services/validation');
 var custom_1 = require('../../pipes/custom');
 var common_2 = require('../../directives/common');
 var CheckoutPage = (function () {
@@ -239,9 +241,10 @@ var CheckoutPage = (function () {
         this.appData = this.dataService.appData;
         this.form = fb.group({
             user_name: ["", common_1.Validators.compose([common_1.Validators.required])],
-            user_email: ["", common_1.Validators.compose([common_1.Validators.required])],
+            user_email: ["", common_1.Validators.compose([common_1.Validators.required, validation_1.ValidationService.emailValidator])],
             user_phone: ["", common_1.Validators.compose([common_1.Validators.required])],
             user_address: ["", common_1.Validators.compose([common_1.Validators.required])],
+            user_location: ["", common_1.Validators.compose([common_1.Validators.required])],
             convinient_day: ["", common_1.Validators.compose([common_1.Validators.required])],
             convinient_time: ["", common_1.Validators.compose([common_1.Validators.required])],
         });
@@ -256,10 +259,14 @@ var CheckoutPage = (function () {
         refresher.complete();
         this.ngOnInit();
     };
+    CheckoutPage.prototype.gotoCart = function () {
+        this.nav.push(cart_1.CartPage);
+    };
     CheckoutPage.prototype.placeOrder = function () {
         var _this = this;
         if (this.form.valid) {
             var data = this.form.value;
+            data.code = Math.random().toString(16).slice(-4) + Math.random().toString(16).slice(-2);
             data.uid = this.appData.auth.uid;
             data.ordered_items = this.appData.cart;
             data.status = '1';
@@ -267,6 +274,7 @@ var CheckoutPage = (function () {
             this.dataService.saveItem(this._moduleRef, data).then(function (res) {
                 var orderID = res.key();
                 _this.appData.profile.phone = _this.appData.profile.phone ? _this.appData.profile.phone : data.user_phone;
+                _this.appData.profile.location = _this.appData.profile.location ? _this.appData.profile.location : data.user_location;
                 _this.appData.profile.address = _this.appData.profile.address ? _this.appData.profile.address : data.user_address;
                 _this.dataService.deleteItem(_this._cartRef, _this.appData.auth.uid);
                 _this.dataService.saveItem(_this._userRef, _this.appData.profile).then(function (res) {
@@ -286,7 +294,7 @@ var CheckoutPage = (function () {
     return CheckoutPage;
 }());
 exports.CheckoutPage = CheckoutPage;
-},{"../../directives/common":2,"../../pipes/custom":15,"../../services/data":16,"../order/order":9,"angular2/common":18,"ionic-angular":352}],5:[function(require,module,exports){
+},{"../../directives/common":2,"../../pipes/custom":15,"../../services/data":16,"../../services/validation":17,"../cart/cart":3,"../order/order":9,"angular2/common":18,"ionic-angular":352}],5:[function(require,module,exports){
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -313,8 +321,8 @@ var HomePage = (function () {
         var _this = this;
         this.dataService.observable$.subscribe(function (res) {
             _this.appData = res;
-            console.log(_this.appData);
         });
+        this.dataService.getConfig();
         this.dataService.getActiveItems(this._moduleRef, 'categories');
     };
     HomePage.prototype.doRefresh = function (refresher) {
@@ -362,7 +370,6 @@ var LandingPage = (function () {
     LandingPage.prototype.ngOnInit = function () {
         this.appData.auth = this.dataService.db.getAuth();
         if (this.appData && this.appData.auth) {
-            this.dataService.getConfig();
             this.nav.setRoot(home_1.HomePage);
         }
         else if (this.appData && this.appData.auth === null) {
@@ -410,8 +417,8 @@ var ListingPage = (function () {
             _this.appData = res;
         });
         this.dataService.getCart('cart');
+        this.dataService.getItem(this._categoryRef, this.categoryID, 'selectedCategory');
         if (this.categoryID != 'all') {
-            this.dataService.getItem(this._categoryRef, this.categoryID, 'selectedCategory');
             this.dataService.getItemsByFilter(this._moduleRef, 'products', { key: 'category_id', value: this.categoryID });
         }
         else {
@@ -465,6 +472,7 @@ var ionic_angular_1 = require('ionic-angular');
 var order_1 = require('../order/order');
 var data_1 = require('../../services/data');
 var custom_1 = require('../../pipes/custom');
+var cart_1 = require('../cart/cart');
 var MyordersPage = (function () {
     function MyordersPage(nav, navParams, dataService) {
         this.nav = nav;
@@ -484,20 +492,23 @@ var MyordersPage = (function () {
         refresher.complete();
         this.ngOnInit();
     };
+    MyordersPage.prototype.gotoCart = function () {
+        this.nav.push(cart_1.CartPage);
+    };
     MyordersPage.prototype.viewOrder = function (id) {
         this.nav.push(order_1.OrderPage, { 'orderID': id });
     };
     MyordersPage = __decorate([
         ionic_angular_1.Page({
             templateUrl: 'build/pages/myorders/myorders.html',
-            pipes: [custom_1.MapToIterable, custom_1.StatusLabel]
+            pipes: [custom_1.MapToIterable, custom_1.StatusLabel, custom_1.LocationLabel]
         }), 
         __metadata('design:paramtypes', [ionic_angular_1.NavController, ionic_angular_1.NavParams, data_1.DataService])
     ], MyordersPage);
     return MyordersPage;
 }());
 exports.MyordersPage = MyordersPage;
-},{"../../pipes/custom":15,"../../services/data":16,"../order/order":9,"ionic-angular":352}],9:[function(require,module,exports){
+},{"../../pipes/custom":15,"../../services/data":16,"../cart/cart":3,"../order/order":9,"ionic-angular":352}],9:[function(require,module,exports){
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -511,6 +522,8 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var ionic_angular_1 = require('ionic-angular');
 var home_1 = require('../home/home');
 var data_1 = require('../../services/data');
+var custom_1 = require('../../pipes/custom');
+var cart_1 = require('../cart/cart');
 var OrderPage = (function () {
     function OrderPage(nav, navParams, dataService) {
         this.nav = nav;
@@ -525,25 +538,33 @@ var OrderPage = (function () {
         this.dataService.observable$.subscribe(function (res) {
             _this.appData = res;
         });
-        this.dataService.getItem(this._moduleRef, this.orderID, 'currentOrder');
+        this.dataService.getItem(this._moduleRef, this.orderID, 'selectedOrder');
     };
     OrderPage.prototype.doRefresh = function (refresher) {
         refresher.complete();
         this.ngOnInit();
     };
+    OrderPage.prototype.gotoCart = function () {
+        this.nav.push(cart_1.CartPage);
+    };
     OrderPage.prototype.gotoHome = function () {
         this.nav.setRoot(home_1.HomePage);
     };
+    OrderPage.prototype.cancelOrder = function () {
+        var data = { '_ref': this.orderID, 'status': '4' };
+        this.dataService.saveItem(this._moduleRef, data);
+    };
     OrderPage = __decorate([
         ionic_angular_1.Page({
-            templateUrl: 'build/pages/order/order.html'
+            templateUrl: 'build/pages/order/order.html',
+            pipes: [custom_1.MapToIterable, custom_1.StatusLabel, custom_1.LocationLabel]
         }), 
         __metadata('design:paramtypes', [ionic_angular_1.NavController, ionic_angular_1.NavParams, data_1.DataService])
     ], OrderPage);
     return OrderPage;
 }());
 exports.OrderPage = OrderPage;
-},{"../../services/data":16,"../home/home":5,"ionic-angular":352}],10:[function(require,module,exports){
+},{"../../pipes/custom":15,"../../services/data":16,"../cart/cart":3,"../home/home":5,"ionic-angular":352}],10:[function(require,module,exports){
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -555,7 +576,9 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var ionic_angular_1 = require('ionic-angular');
+var cart_1 = require('../cart/cart');
 var data_1 = require('../../services/data');
+var custom_1 = require('../../pipes/custom');
 var ProductPage = (function () {
     function ProductPage(nav, navParams, dataService) {
         this.nav = nav;
@@ -576,16 +599,20 @@ var ProductPage = (function () {
         refresher.complete();
         this.ngOnInit();
     };
+    ProductPage.prototype.gotoCart = function () {
+        this.nav.push(cart_1.CartPage);
+    };
     ProductPage = __decorate([
         ionic_angular_1.Page({
-            templateUrl: 'build/pages/product/product.html'
+            templateUrl: 'build/pages/product/product.html',
+            pipes: [custom_1.MapToIterable, custom_1.CategoryLabel]
         }), 
         __metadata('design:paramtypes', [ionic_angular_1.NavController, ionic_angular_1.NavParams, data_1.DataService])
     ], ProductPage);
     return ProductPage;
 }());
 exports.ProductPage = ProductPage;
-},{"../../services/data":16,"ionic-angular":352}],11:[function(require,module,exports){
+},{"../../pipes/custom":15,"../../services/data":16,"../cart/cart":3,"ionic-angular":352}],11:[function(require,module,exports){
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -600,8 +627,11 @@ var ionic_angular_1 = require('ionic-angular');
 var common_1 = require('angular2/common');
 var data_1 = require('../../services/data');
 var common_2 = require('../../directives/common');
+var cart_1 = require('../cart/cart');
 var ProfilePage = (function () {
-    function ProfilePage(dataService, fb) {
+    function ProfilePage(nav, navParams, dataService, fb) {
+        this.nav = nav;
+        this.navParams = navParams;
         this.dataService = dataService;
         this.fb = fb;
         this._moduleRef = 'users';
@@ -627,6 +657,22 @@ var ProfilePage = (function () {
         refresher.complete();
         this.ngOnInit();
     };
+    ProfilePage.prototype.gotoCart = function () {
+        this.nav.push(cart_1.CartPage);
+    };
+    ProfilePage.prototype.saveProfileImage = function (event) {
+        var _this = this;
+        this.dataService.showLoading();
+        var file = event.target.files[0];
+        var uid = this.appData.auth.uid.replace(/[^a-zA-Z0-9]/g, '');
+        if (file && file.type.match('image.*')) {
+            this.dataService.uploadImage(file, uid).then(function (imageUrl) {
+                var data = { '_ref': _this.appData.auth.uid, 'image': imageUrl };
+                _this.dataService.saveItem(_this._moduleRef, data);
+                _this.dataService.hideLoading();
+            });
+        }
+    };
     ProfilePage.prototype.saveProfile = function () {
         if (this.profileForm.valid) {
             var data = this.profileForm.value;
@@ -638,12 +684,12 @@ var ProfilePage = (function () {
             templateUrl: 'build/pages/profile/profile.html',
             directives: [common_2.ControlMessages]
         }), 
-        __metadata('design:paramtypes', [data_1.DataService, common_1.FormBuilder])
+        __metadata('design:paramtypes', [ionic_angular_1.NavController, ionic_angular_1.NavParams, data_1.DataService, common_1.FormBuilder])
     ], ProfilePage);
     return ProfilePage;
 }());
 exports.ProfilePage = ProfilePage;
-},{"../../directives/common":2,"../../services/data":16,"angular2/common":18,"ionic-angular":352}],12:[function(require,module,exports){
+},{"../../directives/common":2,"../../services/data":16,"../cart/cart":3,"angular2/common":18,"ionic-angular":352}],12:[function(require,module,exports){
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -666,6 +712,7 @@ var SigninPage = (function () {
         this.dataService = dataService;
         this.fb = fb;
         this.mode = 'singin';
+        this.appData = this.dataService.appData;
         this.signinForm = fb.group({
             email: ["", common_1.Validators.compose([common_1.Validators.required, validation_1.ValidationService.emailValidator])],
             password: ["", common_1.Validators.compose([common_1.Validators.required, validation_1.ValidationService.passwordValidator])]
@@ -674,6 +721,12 @@ var SigninPage = (function () {
             email: ["", common_1.Validators.compose([common_1.Validators.required, validation_1.ValidationService.emailValidator])]
         });
     }
+    SigninPage.prototype.ngOnInit = function () {
+        var _this = this;
+        this.dataService.observable$.subscribe(function (res) {
+            _this.appData = res;
+        });
+    };
     SigninPage.prototype.forgotPassword = function () {
         this.mode = 'password';
         return false;
@@ -725,12 +778,14 @@ var common_1 = require('angular2/common');
 var data_1 = require('../../services/data');
 var validation_1 = require('../../services/validation');
 var common_2 = require('../../directives/common');
+var custom_1 = require('../../pipes/custom');
 var home_1 = require('../home/home');
 var SignupPage = (function () {
     function SignupPage(nav, navParams, dataService, fb) {
         this.nav = nav;
         this.dataService = dataService;
         this.fb = fb;
+        this.appData = this.dataService.appData;
         this.signupForm = fb.group({
             firstname: ["", common_1.Validators.required],
             lastname: ["", common_1.Validators.required],
@@ -740,6 +795,12 @@ var SignupPage = (function () {
             location: [""]
         });
     }
+    SignupPage.prototype.ngOnInit = function () {
+        var _this = this;
+        this.dataService.observable$.subscribe(function (res) {
+            _this.appData = res;
+        });
+    };
     SignupPage.prototype.signUp = function () {
         var _this = this;
         if (this.signupForm.valid) {
@@ -754,14 +815,15 @@ var SignupPage = (function () {
     SignupPage = __decorate([
         ionic_angular_1.Page({
             templateUrl: 'build/pages/signup/signup.html',
-            directives: [common_2.ControlMessages]
+            directives: [common_2.ControlMessages],
+            pipes: [custom_1.MapToIterable]
         }), 
         __metadata('design:paramtypes', [ionic_angular_1.NavController, ionic_angular_1.NavParams, data_1.DataService, common_1.FormBuilder])
     ], SignupPage);
     return SignupPage;
 }());
 exports.SignupPage = SignupPage;
-},{"../../directives/common":2,"../../services/data":16,"../../services/validation":17,"../home/home":5,"angular2/common":18,"ionic-angular":352}],14:[function(require,module,exports){
+},{"../../directives/common":2,"../../pipes/custom":15,"../../services/data":16,"../../services/validation":17,"../home/home":5,"angular2/common":18,"ionic-angular":352}],14:[function(require,module,exports){
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -783,6 +845,13 @@ var StartPage = (function () {
         this.navParams = navParams;
         this.dataService = dataService;
     }
+    StartPage.prototype.ngOnInit = function () {
+        var _this = this;
+        this.dataService.observable$.subscribe(function (res) {
+            _this.appData = res;
+        });
+        this.dataService.getConfig();
+    };
     StartPage.prototype.gotoSignin = function () {
         this.nav.push(signin_1.SigninPage);
     };
@@ -905,6 +974,35 @@ var LocationLabel = (function () {
     return LocationLabel;
 }());
 exports.LocationLabel = LocationLabel;
+var CategoryLabel = (function () {
+    function CategoryLabel(dataService) {
+        this.dataService = dataService;
+        this.appData = this.dataService.appData;
+    }
+    CategoryLabel.prototype.ngOnInit = function () {
+        var _this = this;
+        this.dataService.observable$.subscribe(function (res) {
+            _this.appData = res;
+        });
+    };
+    CategoryLabel.prototype.transform = function (value, args) {
+        if (args === void 0) { args = null; }
+        if (this.appData && this.appData.categories) {
+            return this.appData.categories[value]['name'];
+        }
+        else {
+            this.dataService.getItems('category', 'categories');
+        }
+    };
+    CategoryLabel = __decorate([
+        core_1.Pipe({
+            name: 'CategoryLabel'
+        }), 
+        __metadata('design:paramtypes', [data_1.DataService])
+    ], CategoryLabel);
+    return CategoryLabel;
+}());
+exports.CategoryLabel = CategoryLabel;
 },{"../services/data":16,"angular2/core":20}],16:[function(require,module,exports){
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
@@ -926,7 +1024,7 @@ var DataService = (function () {
         this.app = app;
         this.platform = platform;
         this.firebaseUrl = "https://my-bottles.firebaseio.com/";
-        this.mediaServer = "http://localhost/git/savings/";
+        this.mediaServer = "http://localhost/git/bottles/";
         this._adminRef = 'admin';
         this._userRef = 'users';
         this._cartRef = 'cart';
@@ -953,16 +1051,18 @@ var DataService = (function () {
     DataService.prototype.showLoading = function () {
         if (!this.loading) {
             var nav = this.app.getComponent('nav');
-            if (this.platform.is('android')) {
-                this.loading = ionic_angular_1.Loading.create({
-                    spinner: 'hide',
-                    content: '<div class="loader"><svg class="circular" viewBox="25 25 50 50"><circle class="path" cx="50" cy="50" r="20" fill="none" stroke-width="3" stroke-miterlimit="10"/></svg></div>'
-                });
+            if (nav) {
+                if (this.platform.is('android')) {
+                    this.loading = ionic_angular_1.Loading.create({
+                        spinner: 'hide',
+                        content: '<div class="loader"><svg class="circular" viewBox="25 25 50 50"><circle class="path" cx="50" cy="50" r="20" fill="none" stroke-width="3" stroke-miterlimit="10"/></svg></div>'
+                    });
+                }
+                else {
+                    this.loading = ionic_angular_1.Loading.create();
+                }
+                nav.present(this.loading);
             }
-            else {
-                this.loading = ionic_angular_1.Loading.create();
-            }
-            nav.present(this.loading);
         }
     };
     DataService.prototype.hideLoading = function () {
@@ -998,10 +1098,11 @@ var DataService = (function () {
                 xhr.onload = function () {
                     if (xhr.status === 200) {
                         var res = JSON.parse(xhr.responseText);
-                        if (res.status == 'success') {
+                        if (typeof (res) == 'object' && res.status == 'success') {
                             resolve(res.imageUrl);
                         }
                         else {
+                            this.hideLoading();
                             this.doAlert({ title: 'Error', message: res.message });
                         }
                     }
@@ -1010,26 +1111,29 @@ var DataService = (function () {
             }
         });
     };
+    DataService.prototype.checkConnection = function () {
+        var _this = this;
+        this.platform.ready().then(function () {
+            _this.db.child('.info/connected').on('value', function (res) {
+                if (!res.val()) {
+                    _this.appData.connectionError = { type: 'connection-error', message: 'Netowork connection failed' };
+                    _this.hideLoading();
+                }
+                else {
+                    _this.appData.connectionError = false;
+                    _this._observer.next(_this.appData);
+                }
+            });
+        });
+    };
     DataService.prototype.initialize = function () {
         var _this = this;
         this.appData.auth = this.db.getAuth();
-        this.db.child('.info/connected').on('value', function (res) {
-            if (res.val()) {
-                _this.appData.connectionError = false;
-                _this.appData.auth = _this.db.getAuth();
-                if (_this.appData.auth && _this.appData.auth.uid) {
-                    _this.getItem(_this._userRef, _this.appData.auth.uid, 'profile');
-                    _this._observer.next(_this.appData);
-                }
-                else {
-                    _this._observer.next(_this.appData);
-                }
-            }
-            else {
-                //this.appData.connectionError = {'type': 'connection-error', 'message': 'Waiting for network connection...'};
-                _this._observer.next(_this.appData);
-            }
-        });
+        this._observer.next(this.appData);
+        if (this.appData.auth && this.appData.auth.uid) {
+            this.getItem(this._userRef, this.appData.auth.uid, 'profile');
+            setTimeout(function () { _this.checkConnection(); }, 3000);
+        }
     };
     DataService.prototype.getConfig = function () {
         var _this = this;
@@ -1210,7 +1314,7 @@ var DataService = (function () {
     DataService.prototype.getItems = function (moduleRef, name) {
         var _this = this;
         this.showLoading();
-        this.db.child(moduleRef).on('value', function (res) {
+        this.db.child(moduleRef).on('value', function (res, error) {
             if (name) {
                 _this.appData[name] = res.val();
             }
@@ -1271,13 +1375,13 @@ var DataService = (function () {
             this.showLoading();
             data = this.removeUndefined(data);
             if (data._ref) {
-                data.created = this.getCurrentTime();
                 data.updated = this.getCurrentTime();
                 var res = this.db.child(moduleRef).child(data._ref).update(data);
                 this.hideLoading();
             }
             else {
-                data.updated = this.getCurrentTime();
+                data.created = this.getCurrentTime();
+                data.updated = data.created;
                 var res = this.db.child(moduleRef).push(data);
                 this.hideLoading();
             }
@@ -1348,7 +1452,8 @@ var ValidationService = (function () {
 }());
 exports.ValidationService = ValidationService;
 },{}],18:[function(require,module,exports){
-'use strict';function __export(m) {
+'use strict';"use strict";
+function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 }
 __export(require('./src/common/pipes'));
@@ -1356,7 +1461,8 @@ __export(require('./src/common/directives'));
 __export(require('./src/common/forms'));
 __export(require('./src/common/common_directives'));
 },{"./src/common/common_directives":31,"./src/common/directives":32,"./src/common/forms":41,"./src/common/pipes":65}],19:[function(require,module,exports){
-'use strict';function __export(m) {
+'use strict';"use strict";
+function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 }
 /**
@@ -1368,7 +1474,8 @@ __export(require('./src/compiler/url_resolver'));
 __export(require('./src/compiler/xhr'));
 __export(require('./src/compiler/compiler'));
 },{"./src/compiler/compiler":81,"./src/compiler/url_resolver":103,"./src/compiler/xhr":106}],20:[function(require,module,exports){
-'use strict';function __export(m) {
+'use strict';"use strict";
+function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 }
 /**
@@ -1408,7 +1515,8 @@ __export(require('./src/core/platform_common_providers'));
 __export(require('./src/core/application_common_providers'));
 __export(require('./src/core/reflection/reflection'));
 },{"./src/core/application_common_providers":108,"./src/core/application_ref":109,"./src/core/application_tokens":110,"./src/core/change_detection":111,"./src/core/debug/debug_node":142,"./src/core/di":144,"./src/core/linker":153,"./src/core/metadata":171,"./src/core/platform_common_providers":177,"./src/core/platform_directives_and_pipes":178,"./src/core/prod_mode":179,"./src/core/reflection/reflection":183,"./src/core/render":187,"./src/core/testability/testability":190,"./src/core/util":191,"./src/core/zone":193,"./src/facade/facade":202,"angular2/src/facade/lang":204}],21:[function(require,module,exports){
-'use strict';/**
+'use strict';"use strict";
+/**
  * @module
  * @description
  * The http module provides services to perform http requests. To get started, see the {@link Http}
@@ -1719,16 +1827,19 @@ exports.JSONP_PROVIDERS = [
  */
 exports.JSON_BINDINGS = exports.JSONP_PROVIDERS;
 },{"./src/http/backends/browser_jsonp":207,"./src/http/backends/browser_xhr":208,"./src/http/backends/jsonp_backend":209,"./src/http/backends/xhr_backend":210,"./src/http/base_request_options":211,"./src/http/base_response_options":212,"./src/http/enums":213,"./src/http/headers":214,"./src/http/http":215,"./src/http/interfaces":217,"./src/http/static_request":218,"./src/http/static_response":219,"./src/http/url_search_params":220,"angular2/core":20}],22:[function(require,module,exports){
-'use strict';var profile_1 = require('./src/core/profile/profile');
+'use strict';"use strict";
+var profile_1 = require('./src/core/profile/profile');
 exports.wtfCreateScope = profile_1.wtfCreateScope;
 exports.wtfLeave = profile_1.wtfLeave;
 exports.wtfStartTimeRange = profile_1.wtfStartTimeRange;
 exports.wtfEndTimeRange = profile_1.wtfEndTimeRange;
 },{"./src/core/profile/profile":180}],23:[function(require,module,exports){
-'use strict';var angular_entrypoint_1 = require('angular2/src/core/angular_entrypoint');
+'use strict';"use strict";
+var angular_entrypoint_1 = require('angular2/src/core/angular_entrypoint');
 exports.AngularEntrypoint = angular_entrypoint_1.AngularEntrypoint;
 var browser_common_1 = require('angular2/src/platform/browser_common');
 exports.BROWSER_PROVIDERS = browser_common_1.BROWSER_PROVIDERS;
+exports.CACHED_TEMPLATE_PROVIDER = browser_common_1.CACHED_TEMPLATE_PROVIDER;
 exports.ELEMENT_PROBE_PROVIDERS = browser_common_1.ELEMENT_PROBE_PROVIDERS;
 exports.ELEMENT_PROBE_PROVIDERS_PROD_MODE = browser_common_1.ELEMENT_PROBE_PROVIDERS_PROD_MODE;
 exports.inspectNativeElement = browser_common_1.inspectNativeElement;
@@ -1828,8 +1939,9 @@ function bootstrap(appComponentType, customProviders) {
     return core_1.platform(browser_common_2.BROWSER_PROVIDERS).application(appProviders).bootstrap(appComponentType);
 }
 exports.bootstrap = bootstrap;
-},{"angular2/compiler":19,"angular2/core":20,"angular2/src/core/angular_entrypoint":107,"angular2/src/core/di":144,"angular2/src/core/reflection/reflection_capabilities":184,"angular2/src/facade/lang":204,"angular2/src/platform/browser/xhr_impl":227,"angular2/src/platform/browser_common":228}],24:[function(require,module,exports){
-'use strict';function __export(m) {
+},{"angular2/compiler":19,"angular2/core":20,"angular2/src/core/angular_entrypoint":107,"angular2/src/core/di":144,"angular2/src/core/reflection/reflection_capabilities":184,"angular2/src/facade/lang":204,"angular2/src/platform/browser/xhr_impl":228,"angular2/src/platform/browser_common":229}],24:[function(require,module,exports){
+'use strict';"use strict";
+function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 }
 /**
@@ -1854,12 +1966,13 @@ exports.EventManager = event_manager_1.EventManager;
 exports.EventManagerPlugin = event_manager_1.EventManagerPlugin;
 __export(require('angular2/src/platform/dom/debug/by'));
 __export(require('angular2/src/platform/dom/debug/ng_probe'));
-},{"angular2/src/platform/dom/debug/by":229,"angular2/src/platform/dom/debug/ng_probe":230,"angular2/src/platform/dom/dom_adapter":231,"angular2/src/platform/dom/dom_renderer":232,"angular2/src/platform/dom/dom_tokens":233,"angular2/src/platform/dom/events/dom_events":234,"angular2/src/platform/dom/events/event_manager":235,"angular2/src/platform/dom/shared_styles_host":239}],25:[function(require,module,exports){
+},{"angular2/src/platform/dom/debug/by":230,"angular2/src/platform/dom/debug/ng_probe":231,"angular2/src/platform/dom/dom_adapter":232,"angular2/src/platform/dom/dom_renderer":233,"angular2/src/platform/dom/dom_tokens":234,"angular2/src/platform/dom/events/dom_events":235,"angular2/src/platform/dom/events/event_manager":236,"angular2/src/platform/dom/shared_styles_host":240}],25:[function(require,module,exports){
 'use strict';/**
  * @module
  * @description
  * Maps application URLs into application states, to support deep-linking and navigation.
  */
+"use strict";
 function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 }
@@ -1887,7 +2000,6 @@ exports.PathLocationStrategy = path_location_strategy_1.PathLocationStrategy;
 var location_1 = require('./src/router/location/location');
 exports.Location = location_1.Location;
 __export(require('./src/router/route_config/route_config_decorator'));
-__export(require('./src/router/route_definition'));
 var lifecycle_annotations_1 = require('./src/router/lifecycle/lifecycle_annotations');
 exports.CanActivate = lifecycle_annotations_1.CanActivate;
 var instruction_2 = require('./src/router/instruction');
@@ -1926,8 +2038,9 @@ var lang_1 = require('./src/facade/lang');
  * ```
  */
 exports.ROUTER_DIRECTIVES = lang_1.CONST_EXPR([router_outlet_2.RouterOutlet, router_link_2.RouterLink]);
-},{"./src/facade/lang":204,"./src/router/directives/router_link":241,"./src/router/directives/router_outlet":242,"./src/router/instruction":243,"./src/router/lifecycle/lifecycle_annotations":244,"./src/router/location/hash_location_strategy":248,"./src/router/location/location":249,"./src/router/location/location_strategy":250,"./src/router/location/path_location_strategy":251,"./src/router/location/platform_location":252,"./src/router/route_config/route_config_decorator":253,"./src/router/route_definition":256,"./src/router/route_registry":257,"./src/router/router":258,"angular2/core":20,"angular2/src/router/router_providers":259,"angular2/src/router/router_providers_common":260}],26:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+},{"./src/facade/lang":204,"./src/router/directives/router_link":242,"./src/router/directives/router_outlet":243,"./src/router/instruction":244,"./src/router/lifecycle/lifecycle_annotations":245,"./src/router/location/hash_location_strategy":249,"./src/router/location/location":250,"./src/router/location/location_strategy":251,"./src/router/location/path_location_strategy":252,"./src/router/location/platform_location":253,"./src/router/route_config/route_config_decorator":254,"./src/router/route_registry":257,"./src/router/router":258,"angular2/core":20,"angular2/src/router/router_providers":259,"angular2/src/router/router_providers_common":260}],26:[function(require,module,exports){
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var math_1 = require('angular2/src/facade/math');
 var util_1 = require('angular2/src/platform/dom/util');
 var collection_1 = require('angular2/src/facade/collection');
@@ -2106,10 +2219,11 @@ var Animation = (function () {
         return lang_1.StringWrapper.replaceAll(str, lang_1.RegExpWrapper.create('[^0-9]+$', ''), '');
     };
     return Animation;
-})();
+}());
 exports.Animation = Animation;
-},{"angular2/src/facade/collection":199,"angular2/src/facade/lang":204,"angular2/src/facade/math":205,"angular2/src/platform/dom/dom_adapter":231,"angular2/src/platform/dom/util":240}],27:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+},{"angular2/src/facade/collection":199,"angular2/src/facade/lang":204,"angular2/src/facade/math":205,"angular2/src/platform/dom/dom_adapter":232,"angular2/src/platform/dom/util":241}],27:[function(require,module,exports){
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -2139,10 +2253,11 @@ var AnimationBuilder = (function () {
         __metadata('design:paramtypes', [browser_details_1.BrowserDetails])
     ], AnimationBuilder);
     return AnimationBuilder;
-})();
+}());
 exports.AnimationBuilder = AnimationBuilder;
 },{"./browser_details":28,"./css_animation_builder":29,"angular2/src/core/di":144}],28:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -2187,7 +2302,7 @@ var BrowserDetails = (function () {
         __metadata('design:paramtypes', [])
     ], BrowserDetails);
     return BrowserDetails;
-})();
+}());
 exports.BrowserDetails = BrowserDetails;
 var RafQueue = (function () {
     function RafQueue(callback, frames) {
@@ -2214,9 +2329,10 @@ var RafQueue = (function () {
         this.currentFrameId = null;
     };
     return RafQueue;
-})();
-},{"angular2/src/core/di":144,"angular2/src/facade/math":205,"angular2/src/platform/dom/dom_adapter":231}],29:[function(require,module,exports){
-'use strict';var css_animation_options_1 = require('./css_animation_options');
+}());
+},{"angular2/src/core/di":144,"angular2/src/facade/math":205,"angular2/src/platform/dom/dom_adapter":232}],29:[function(require,module,exports){
+'use strict';"use strict";
+var css_animation_options_1 = require('./css_animation_options');
 var animation_1 = require('./animation');
 var CssAnimationBuilder = (function () {
     /**
@@ -2299,10 +2415,11 @@ var CssAnimationBuilder = (function () {
         return new animation_1.Animation(element, this.data, this.browserDetails);
     };
     return CssAnimationBuilder;
-})();
+}());
 exports.CssAnimationBuilder = CssAnimationBuilder;
 },{"./animation":26,"./css_animation_options":30}],30:[function(require,module,exports){
-'use strict';var CssAnimationOptions = (function () {
+'use strict';"use strict";
+var CssAnimationOptions = (function () {
     function CssAnimationOptions() {
         /** classes to be added to the element */
         this.classesToAdd = [];
@@ -2312,10 +2429,11 @@ exports.CssAnimationBuilder = CssAnimationBuilder;
         this.animationClasses = [];
     }
     return CssAnimationOptions;
-})();
+}());
 exports.CssAnimationOptions = CssAnimationOptions;
 },{}],31:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var forms_1 = require('./forms');
 var directives_1 = require('./directives');
 /**
@@ -2363,7 +2481,8 @@ var directives_1 = require('./directives');
  */
 exports.COMMON_DIRECTIVES = lang_1.CONST_EXPR([directives_1.CORE_DIRECTIVES, forms_1.FORM_DIRECTIVES]);
 },{"./directives":32,"./forms":41,"angular2/src/facade/lang":204}],32:[function(require,module,exports){
-'use strict';function __export(m) {
+'use strict';"use strict";
+function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 }
 /**
@@ -2391,7 +2510,8 @@ __export(require('./directives/observable_list_diff'));
 var core_directives_1 = require('./directives/core_directives');
 exports.CORE_DIRECTIVES = core_directives_1.CORE_DIRECTIVES;
 },{"./directives/core_directives":33,"./directives/ng_class":34,"./directives/ng_for":35,"./directives/ng_if":36,"./directives/ng_plural":37,"./directives/ng_style":38,"./directives/ng_switch":39,"./directives/observable_list_diff":40}],33:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var ng_class_1 = require('./ng_class');
 var ng_for_1 = require('./ng_for');
 var ng_if_1 = require('./ng_if');
@@ -2450,7 +2570,8 @@ exports.CORE_DIRECTIVES = lang_1.CONST_EXPR([
     ng_plural_1.NgPluralCase
 ]);
 },{"./ng_class":34,"./ng_for":35,"./ng_if":36,"./ng_plural":37,"./ng_style":38,"./ng_switch":39,"angular2/src/facade/lang":204}],34:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -2634,10 +2755,11 @@ var NgClass = (function () {
         __metadata('design:paramtypes', [core_1.IterableDiffers, core_1.KeyValueDiffers, core_1.ElementRef, core_1.Renderer])
     ], NgClass);
     return NgClass;
-})();
+}());
 exports.NgClass = NgClass;
 },{"angular2/core":20,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204}],35:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -2659,6 +2781,8 @@ var exceptions_1 = require("../../facade/exceptions");
  * `NgFor` provides several exported values that can be aliased to local variables:
  *
  * * `index` will be set to the current loop iteration for each template context.
+ * * `first` will be set to a boolean value indicating whether the item is the first one in the
+ *   iteration.
  * * `last` will be set to a boolean value indicating whether the item is the last one in the
  *   iteration.
  * * `even` will be set to a boolean value indicating whether this item has an even index.
@@ -2762,6 +2886,7 @@ var NgFor = (function () {
         }
         for (var i = 0, ilen = this._viewContainer.length; i < ilen; i++) {
             var viewRef = this._viewContainer.get(i);
+            viewRef.setLocal('first', i === 0);
             viewRef.setLocal('last', i === ilen - 1);
         }
         changes.forEachIdentityChange(function (record) {
@@ -2812,7 +2937,7 @@ var NgFor = (function () {
         __metadata('design:paramtypes', [core_1.ViewContainerRef, core_1.TemplateRef, core_1.IterableDiffers, core_1.ChangeDetectorRef])
     ], NgFor);
     return NgFor;
-})();
+}());
 exports.NgFor = NgFor;
 var RecordViewTuple = (function () {
     function RecordViewTuple(record, view) {
@@ -2820,9 +2945,10 @@ var RecordViewTuple = (function () {
         this.view = view;
     }
     return RecordViewTuple;
-})();
+}());
 },{"../../facade/exceptions":201,"angular2/core":20,"angular2/src/facade/lang":204}],36:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -2880,10 +3006,11 @@ var NgIf = (function () {
         __metadata('design:paramtypes', [core_1.ViewContainerRef, core_1.TemplateRef])
     ], NgIf);
     return NgIf;
-})();
+}());
 exports.NgIf = NgIf;
 },{"angular2/core":20,"angular2/src/facade/lang":204}],37:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -2904,7 +3031,7 @@ var NgLocalization = (function () {
     function NgLocalization() {
     }
     return NgLocalization;
-})();
+}());
 exports.NgLocalization = NgLocalization;
 /**
  * `ngPlural` is an i18n directive that displays DOM sub-trees that match the switch expression
@@ -2972,7 +3099,7 @@ var NgPluralCase = (function () {
         __metadata('design:paramtypes', [String, core_1.TemplateRef, core_1.ViewContainerRef])
     ], NgPluralCase);
     return NgPluralCase;
-})();
+}());
 exports.NgPluralCase = NgPluralCase;
 var NgPlural = (function () {
     function NgPlural(_localization) {
@@ -3043,10 +3170,11 @@ var NgPlural = (function () {
         __metadata('design:paramtypes', [NgLocalization])
     ], NgPlural);
     return NgPlural;
-})();
+}());
 exports.NgPlural = NgPlural;
 },{"./ng_switch":39,"angular2/core":20,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204}],38:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -3146,10 +3274,11 @@ var NgStyle = (function () {
         __metadata('design:paramtypes', [core_1.KeyValueDiffers, core_1.ElementRef, core_1.Renderer])
     ], NgStyle);
     return NgStyle;
-})();
+}());
 exports.NgStyle = NgStyle;
 },{"angular2/core":20,"angular2/src/facade/lang":204}],39:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -3173,7 +3302,7 @@ var SwitchView = (function () {
     SwitchView.prototype.create = function () { this._viewContainerRef.createEmbeddedView(this._templateRef); };
     SwitchView.prototype.destroy = function () { this._viewContainerRef.clear(); };
     return SwitchView;
-})();
+}());
 exports.SwitchView = SwitchView;
 /**
  * Adds or removes DOM sub-trees when their match expressions match the switch expression.
@@ -3321,7 +3450,7 @@ var NgSwitch = (function () {
         __metadata('design:paramtypes', [])
     ], NgSwitch);
     return NgSwitch;
-})();
+}());
 exports.NgSwitch = NgSwitch;
 /**
  * Insert the sub-tree when the `ngSwitchWhen` expression evaluates to the same value as the
@@ -3353,7 +3482,7 @@ var NgSwitchWhen = (function () {
         __metadata('design:paramtypes', [core_1.ViewContainerRef, core_1.TemplateRef, NgSwitch])
     ], NgSwitchWhen);
     return NgSwitchWhen;
-})();
+}());
 exports.NgSwitchWhen = NgSwitchWhen;
 /**
  * Default case statements are displayed when no match expression matches the switch expression
@@ -3371,12 +3500,14 @@ var NgSwitchDefault = (function () {
         __metadata('design:paramtypes', [core_1.ViewContainerRef, core_1.TemplateRef, NgSwitch])
     ], NgSwitchDefault);
     return NgSwitchDefault;
-})();
+}());
 exports.NgSwitchDefault = NgSwitchDefault;
 },{"angular2/core":20,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204}],40:[function(require,module,exports){
 'use strict';// TS does not have Observables
+"use strict";
 },{}],41:[function(require,module,exports){
-'use strict';/**
+'use strict';"use strict";
+/**
  * @module
  * @description
  * This module is used for handling user input, by defining and building a {@link ControlGroup} that
@@ -3457,7 +3588,8 @@ exports.FORM_PROVIDERS = lang_1.CONST_EXPR([form_builder_2.FormBuilder, radio_co
  */
 exports.FORM_BINDINGS = exports.FORM_PROVIDERS;
 },{"./forms/directives":42,"./forms/directives/abstract_control_directive":43,"./forms/directives/checkbox_value_accessor":44,"./forms/directives/control_container":45,"./forms/directives/control_value_accessor":46,"./forms/directives/default_value_accessor":47,"./forms/directives/ng_control":48,"./forms/directives/ng_control_group":49,"./forms/directives/ng_control_name":50,"./forms/directives/ng_control_status":51,"./forms/directives/ng_form":52,"./forms/directives/ng_form_control":53,"./forms/directives/ng_form_model":54,"./forms/directives/ng_model":55,"./forms/directives/radio_control_value_accessor":58,"./forms/directives/select_control_value_accessor":59,"./forms/directives/validators":61,"./forms/form_builder":62,"./forms/model":63,"./forms/validators":64,"angular2/src/facade/lang":204}],42:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var ng_control_name_1 = require('./directives/ng_control_name');
 var ng_form_control_1 = require('./directives/ng_form_control');
 var ng_model_1 = require('./directives/ng_model');
@@ -3540,7 +3672,8 @@ exports.FORM_DIRECTIVES = lang_1.CONST_EXPR([
     validators_1.PatternValidator
 ]);
 },{"./directives/checkbox_value_accessor":44,"./directives/default_value_accessor":47,"./directives/ng_control":48,"./directives/ng_control_group":49,"./directives/ng_control_name":50,"./directives/ng_control_status":51,"./directives/ng_form":52,"./directives/ng_form_control":53,"./directives/ng_form_model":54,"./directives/ng_model":55,"./directives/number_value_accessor":57,"./directives/radio_control_value_accessor":58,"./directives/select_control_value_accessor":59,"./directives/validators":61,"angular2/src/facade/lang":204}],43:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var exceptions_1 = require('angular2/src/facade/exceptions');
 /**
  * Base class for control directives.
@@ -3598,10 +3731,11 @@ var AbstractControlDirective = (function () {
         configurable: true
     });
     return AbstractControlDirective;
-})();
+}());
 exports.AbstractControlDirective = AbstractControlDirective;
 },{"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],44:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -3643,10 +3777,11 @@ var CheckboxControlValueAccessor = (function () {
         __metadata('design:paramtypes', [core_1.Renderer, core_1.ElementRef])
     ], CheckboxControlValueAccessor);
     return CheckboxControlValueAccessor;
-})();
+}());
 exports.CheckboxControlValueAccessor = CheckboxControlValueAccessor;
 },{"./control_value_accessor":46,"angular2/core":20,"angular2/src/facade/lang":204}],45:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -3679,10 +3814,11 @@ var ControlContainer = (function (_super) {
         configurable: true
     });
     return ControlContainer;
-})(abstract_control_directive_1.AbstractControlDirective);
+}(abstract_control_directive_1.AbstractControlDirective));
 exports.ControlContainer = ControlContainer;
 },{"./abstract_control_directive":43}],46:[function(require,module,exports){
-'use strict';var core_1 = require('angular2/core');
+'use strict';"use strict";
+var core_1 = require('angular2/core');
 var lang_1 = require('angular2/src/facade/lang');
 /**
  * Used to provide a {@link ControlValueAccessor} for form controls.
@@ -3691,7 +3827,8 @@ var lang_1 = require('angular2/src/facade/lang');
  */
 exports.NG_VALUE_ACCESSOR = lang_1.CONST_EXPR(new core_1.OpaqueToken("NgValueAccessor"));
 },{"angular2/core":20,"angular2/src/facade/lang":204}],47:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -3738,10 +3875,11 @@ var DefaultValueAccessor = (function () {
         __metadata('design:paramtypes', [core_1.Renderer, core_1.ElementRef])
     ], DefaultValueAccessor);
     return DefaultValueAccessor;
-})();
+}());
 exports.DefaultValueAccessor = DefaultValueAccessor;
 },{"./control_value_accessor":46,"angular2/core":20,"angular2/src/facade/lang":204}],48:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -3772,10 +3910,11 @@ var NgControl = (function (_super) {
         configurable: true
     });
     return NgControl;
-})(abstract_control_directive_1.AbstractControlDirective);
+}(abstract_control_directive_1.AbstractControlDirective));
 exports.NgControl = NgControl;
 },{"./abstract_control_directive":43,"angular2/src/facade/exceptions":201}],49:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -3828,8 +3967,7 @@ var controlGroupProvider = lang_1.CONST_EXPR(new core_1.Provider(control_contain
  *         <pre>{{valueOf(f)}}</pre>
  *       </form>
  *     </div>
- *   `,
- *   directives: [FORM_DIRECTIVES]
+ *   `
  * })
  * export class App {
  *   valueOf(cg: NgControlGroup): string {
@@ -3906,10 +4044,11 @@ var NgControlGroup = (function (_super) {
         __metadata('design:paramtypes', [control_container_1.ControlContainer, Array, Array])
     ], NgControlGroup);
     return NgControlGroup;
-})(control_container_1.ControlContainer);
+}(control_container_1.ControlContainer));
 exports.NgControlGroup = NgControlGroup;
 },{"../validators":64,"./control_container":45,"./shared":60,"angular2/core":20,"angular2/src/facade/lang":204}],50:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -4064,10 +4203,11 @@ var NgControlName = (function (_super) {
         __metadata('design:paramtypes', [control_container_1.ControlContainer, Array, Array, Array])
     ], NgControlName);
     return NgControlName;
-})(ng_control_1.NgControl);
+}(ng_control_1.NgControl));
 exports.NgControlName = NgControlName;
 },{"../validators":64,"./control_container":45,"./control_value_accessor":46,"./ng_control":48,"./shared":60,"angular2/core":20,"angular2/src/facade/async":196,"angular2/src/facade/lang":204}],51:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -4148,10 +4288,11 @@ var NgControlStatus = (function () {
         __metadata('design:paramtypes', [ng_control_1.NgControl])
     ], NgControlStatus);
     return NgControlStatus;
-})();
+}());
 exports.NgControlStatus = NgControlStatus;
 },{"./ng_control":48,"angular2/core":20,"angular2/src/facade/lang":204}],52:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -4342,10 +4483,11 @@ var NgForm = (function (_super) {
         __metadata('design:paramtypes', [Array, Array])
     ], NgForm);
     return NgForm;
-})(control_container_1.ControlContainer);
+}(control_container_1.ControlContainer));
 exports.NgForm = NgForm;
 },{"../model":63,"../validators":64,"./control_container":45,"./shared":60,"angular2/core":20,"angular2/src/facade/async":196,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204}],53:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -4484,10 +4626,11 @@ var NgFormControl = (function (_super) {
         __metadata('design:paramtypes', [Array, Array, Array])
     ], NgFormControl);
     return NgFormControl;
-})(ng_control_1.NgControl);
+}(ng_control_1.NgControl));
 exports.NgFormControl = NgFormControl;
 },{"../validators":64,"./control_value_accessor":46,"./ng_control":48,"./shared":60,"angular2/core":20,"angular2/src/facade/async":196,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204}],54:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -4670,10 +4813,11 @@ var NgFormModel = (function (_super) {
         __metadata('design:paramtypes', [Array, Array])
     ], NgFormModel);
     return NgFormModel;
-})(control_container_1.ControlContainer);
+}(control_container_1.ControlContainer));
 exports.NgFormModel = NgFormModel;
 },{"../validators":64,"./control_container":45,"./shared":60,"angular2/core":20,"angular2/src/facade/async":196,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204}],55:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -4788,10 +4932,11 @@ var NgModel = (function (_super) {
         __metadata('design:paramtypes', [Array, Array, Array])
     ], NgModel);
     return NgModel;
-})(ng_control_1.NgControl);
+}(ng_control_1.NgControl));
 exports.NgModel = NgModel;
 },{"../model":63,"../validators":64,"./control_value_accessor":46,"./ng_control":48,"./shared":60,"angular2/core":20,"angular2/src/facade/async":196,"angular2/src/facade/lang":204}],56:[function(require,module,exports){
-'use strict';function normalizeValidator(validator) {
+'use strict';"use strict";
+function normalizeValidator(validator) {
     if (validator.validate !== undefined) {
         return function (c) { return validator.validate(c); };
     }
@@ -4810,7 +4955,8 @@ function normalizeAsyncValidator(validator) {
 }
 exports.normalizeAsyncValidator = normalizeAsyncValidator;
 },{}],57:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -4859,10 +5005,11 @@ var NumberValueAccessor = (function () {
         __metadata('design:paramtypes', [core_1.Renderer, core_1.ElementRef])
     ], NumberValueAccessor);
     return NumberValueAccessor;
-})();
+}());
 exports.NumberValueAccessor = NumberValueAccessor;
 },{"./control_value_accessor":46,"angular2/core":20,"angular2/src/facade/lang":204}],58:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -4908,7 +5055,7 @@ var RadioControlRegistry = (function () {
         __metadata('design:paramtypes', [])
     ], RadioControlRegistry);
     return RadioControlRegistry;
-})();
+}());
 exports.RadioControlRegistry = RadioControlRegistry;
 /**
  * The value provided by the forms API for radio buttons.
@@ -4919,7 +5066,7 @@ var RadioButtonState = (function () {
         this.value = value;
     }
     return RadioButtonState;
-})();
+}());
 exports.RadioButtonState = RadioButtonState;
 /**
  * The accessor for writing a radio control value and listening to changes that is used by the
@@ -4982,10 +5129,11 @@ var RadioControlValueAccessor = (function () {
         __metadata('design:paramtypes', [core_1.Renderer, core_1.ElementRef, RadioControlRegistry, core_1.Injector])
     ], RadioControlValueAccessor);
     return RadioControlValueAccessor;
-})();
+}());
 exports.RadioControlValueAccessor = RadioControlValueAccessor;
 },{"angular2/core":20,"angular2/src/common/forms/directives/control_value_accessor":46,"angular2/src/common/forms/directives/ng_control":48,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204}],59:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -4998,10 +5146,71 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 var core_1 = require('angular2/core');
-var async_1 = require('angular2/src/facade/async');
 var control_value_accessor_1 = require('./control_value_accessor');
 var lang_1 = require('angular2/src/facade/lang');
+var collection_1 = require('angular2/src/facade/collection');
 var SELECT_VALUE_ACCESSOR = lang_1.CONST_EXPR(new core_1.Provider(control_value_accessor_1.NG_VALUE_ACCESSOR, { useExisting: core_1.forwardRef(function () { return SelectControlValueAccessor; }), multi: true }));
+function _buildValueString(id, value) {
+    if (lang_1.isBlank(id))
+        return "" + value;
+    if (!lang_1.isPrimitive(value))
+        value = "Object";
+    return lang_1.StringWrapper.slice(id + ": " + value, 0, 50);
+}
+function _extractId(valueString) {
+    return valueString.split(":")[0];
+}
+/**
+ * The accessor for writing a value and listening to changes on a select element.
+ */
+var SelectControlValueAccessor = (function () {
+    function SelectControlValueAccessor(_renderer, _elementRef) {
+        this._renderer = _renderer;
+        this._elementRef = _elementRef;
+        /** @internal */
+        this._optionMap = new Map();
+        /** @internal */
+        this._idCounter = 0;
+        this.onChange = function (_) { };
+        this.onTouched = function () { };
+    }
+    SelectControlValueAccessor.prototype.writeValue = function (value) {
+        this.value = value;
+        var valueString = _buildValueString(this._getOptionId(value), value);
+        this._renderer.setElementProperty(this._elementRef.nativeElement, 'value', valueString);
+    };
+    SelectControlValueAccessor.prototype.registerOnChange = function (fn) {
+        var _this = this;
+        this.onChange = function (valueString) { fn(_this._getOptionValue(valueString)); };
+    };
+    SelectControlValueAccessor.prototype.registerOnTouched = function (fn) { this.onTouched = fn; };
+    /** @internal */
+    SelectControlValueAccessor.prototype._registerOption = function () { return (this._idCounter++).toString(); };
+    /** @internal */
+    SelectControlValueAccessor.prototype._getOptionId = function (value) {
+        for (var _i = 0, _a = collection_1.MapWrapper.keys(this._optionMap); _i < _a.length; _i++) {
+            var id = _a[_i];
+            if (lang_1.looseIdentical(this._optionMap.get(id), value))
+                return id;
+        }
+        return null;
+    };
+    /** @internal */
+    SelectControlValueAccessor.prototype._getOptionValue = function (valueString) {
+        var value = this._optionMap.get(_extractId(valueString));
+        return lang_1.isPresent(value) ? value : valueString;
+    };
+    SelectControlValueAccessor = __decorate([
+        core_1.Directive({
+            selector: 'select[ngControl],select[ngFormControl],select[ngModel]',
+            host: { '(input)': 'onChange($event.target.value)', '(blur)': 'onTouched()' },
+            providers: [SELECT_VALUE_ACCESSOR]
+        }), 
+        __metadata('design:paramtypes', [core_1.Renderer, core_1.ElementRef])
+    ], SelectControlValueAccessor);
+    return SelectControlValueAccessor;
+}());
+exports.SelectControlValueAccessor = SelectControlValueAccessor;
 /**
  * Marks `<option>` as dynamic, so Angular can be notified when options change.
  *
@@ -5014,50 +5223,65 @@ var SELECT_VALUE_ACCESSOR = lang_1.CONST_EXPR(new core_1.Provider(control_value_
  * ```
  */
 var NgSelectOption = (function () {
-    function NgSelectOption() {
+    function NgSelectOption(_element, _renderer, _select) {
+        this._element = _element;
+        this._renderer = _renderer;
+        this._select = _select;
+        if (lang_1.isPresent(this._select))
+            this.id = this._select._registerOption();
     }
+    Object.defineProperty(NgSelectOption.prototype, "ngValue", {
+        set: function (value) {
+            if (this._select == null)
+                return;
+            this._select._optionMap.set(this.id, value);
+            this._setElementValue(_buildValueString(this.id, value));
+            this._select.writeValue(this._select.value);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(NgSelectOption.prototype, "value", {
+        set: function (value) {
+            this._setElementValue(value);
+            if (lang_1.isPresent(this._select))
+                this._select.writeValue(this._select.value);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    /** @internal */
+    NgSelectOption.prototype._setElementValue = function (value) {
+        this._renderer.setElementProperty(this._element.nativeElement, 'value', value);
+    };
+    NgSelectOption.prototype.ngOnDestroy = function () {
+        if (lang_1.isPresent(this._select)) {
+            this._select._optionMap.delete(this.id);
+            this._select.writeValue(this._select.value);
+        }
+    };
+    __decorate([
+        core_1.Input('ngValue'), 
+        __metadata('design:type', Object), 
+        __metadata('design:paramtypes', [Object])
+    ], NgSelectOption.prototype, "ngValue", null);
+    __decorate([
+        core_1.Input('value'), 
+        __metadata('design:type', Object), 
+        __metadata('design:paramtypes', [Object])
+    ], NgSelectOption.prototype, "value", null);
     NgSelectOption = __decorate([
-        core_1.Directive({ selector: 'option' }), 
-        __metadata('design:paramtypes', [])
+        core_1.Directive({ selector: 'option' }),
+        __param(2, core_1.Optional()),
+        __param(2, core_1.Host()), 
+        __metadata('design:paramtypes', [core_1.ElementRef, core_1.Renderer, SelectControlValueAccessor])
     ], NgSelectOption);
     return NgSelectOption;
-})();
+}());
 exports.NgSelectOption = NgSelectOption;
-/**
- * The accessor for writing a value and listening to changes on a select element.
- */
-var SelectControlValueAccessor = (function () {
-    function SelectControlValueAccessor(_renderer, _elementRef, query) {
-        this._renderer = _renderer;
-        this._elementRef = _elementRef;
-        this.onChange = function (_) { };
-        this.onTouched = function () { };
-        this._updateValueWhenListOfOptionsChanges(query);
-    }
-    SelectControlValueAccessor.prototype.writeValue = function (value) {
-        this.value = value;
-        this._renderer.setElementProperty(this._elementRef.nativeElement, 'value', value);
-    };
-    SelectControlValueAccessor.prototype.registerOnChange = function (fn) { this.onChange = fn; };
-    SelectControlValueAccessor.prototype.registerOnTouched = function (fn) { this.onTouched = fn; };
-    SelectControlValueAccessor.prototype._updateValueWhenListOfOptionsChanges = function (query) {
-        var _this = this;
-        async_1.ObservableWrapper.subscribe(query.changes, function (_) { return _this.writeValue(_this.value); });
-    };
-    SelectControlValueAccessor = __decorate([
-        core_1.Directive({
-            selector: 'select[ngControl],select[ngFormControl],select[ngModel]',
-            host: { '(input)': 'onChange($event.target.value)', '(blur)': 'onTouched()' },
-            bindings: [SELECT_VALUE_ACCESSOR]
-        }),
-        __param(2, core_1.Query(NgSelectOption, { descendants: true })), 
-        __metadata('design:paramtypes', [core_1.Renderer, core_1.ElementRef, core_1.QueryList])
-    ], SelectControlValueAccessor);
-    return SelectControlValueAccessor;
-})();
-exports.SelectControlValueAccessor = SelectControlValueAccessor;
-},{"./control_value_accessor":46,"angular2/core":20,"angular2/src/facade/async":196,"angular2/src/facade/lang":204}],60:[function(require,module,exports){
-'use strict';var collection_1 = require('angular2/src/facade/collection');
+},{"./control_value_accessor":46,"angular2/core":20,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204}],60:[function(require,module,exports){
+'use strict';"use strict";
+var collection_1 = require('angular2/src/facade/collection');
 var lang_1 = require('angular2/src/facade/lang');
 var exceptions_1 = require('angular2/src/facade/exceptions');
 var validators_1 = require('../validators');
@@ -5158,7 +5382,8 @@ function selectValueAccessor(dir, valueAccessors) {
 }
 exports.selectValueAccessor = selectValueAccessor;
 },{"../validators":64,"./checkbox_value_accessor":44,"./default_value_accessor":47,"./normalize_validator":56,"./number_value_accessor":57,"./radio_control_value_accessor":58,"./select_control_value_accessor":59,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],61:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -5174,7 +5399,8 @@ var core_1 = require('angular2/core');
 var lang_1 = require('angular2/src/facade/lang');
 var validators_1 = require('../validators');
 var lang_2 = require("angular2/src/facade/lang");
-var REQUIRED_VALIDATOR = lang_1.CONST_EXPR(new core_1.Provider(validators_1.NG_VALIDATORS, { useValue: validators_1.Validators.required, multi: true }));
+var REQUIRED = validators_1.Validators.required;
+var REQUIRED_VALIDATOR = lang_1.CONST_EXPR(new core_1.Provider(validators_1.NG_VALIDATORS, { useValue: REQUIRED, multi: true }));
 /**
  * A Directive that adds the `required` validator to any controls marked with the
  * `required` attribute, via the {@link NG_VALIDATORS} binding.
@@ -5196,7 +5422,7 @@ var RequiredValidator = (function () {
         __metadata('design:paramtypes', [])
     ], RequiredValidator);
     return RequiredValidator;
-})();
+}());
 exports.RequiredValidator = RequiredValidator;
 /**
  * Provivder which adds {@link MinLengthValidator} to {@link NG_VALIDATORS}.
@@ -5224,7 +5450,7 @@ var MinLengthValidator = (function () {
         __metadata('design:paramtypes', [String])
     ], MinLengthValidator);
     return MinLengthValidator;
-})();
+}());
 exports.MinLengthValidator = MinLengthValidator;
 /**
  * Provider which adds {@link MaxLengthValidator} to {@link NG_VALIDATORS}.
@@ -5252,7 +5478,7 @@ var MaxLengthValidator = (function () {
         __metadata('design:paramtypes', [String])
     ], MaxLengthValidator);
     return MaxLengthValidator;
-})();
+}());
 exports.MaxLengthValidator = MaxLengthValidator;
 /**
  * A Directive that adds the `pattern` validator to any controls marked with the
@@ -5281,10 +5507,11 @@ var PatternValidator = (function () {
         __metadata('design:paramtypes', [String])
     ], PatternValidator);
     return PatternValidator;
-})();
+}());
 exports.PatternValidator = PatternValidator;
 },{"../validators":64,"angular2/core":20,"angular2/src/facade/lang":204}],62:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -5405,10 +5632,11 @@ var FormBuilder = (function () {
         __metadata('design:paramtypes', [])
     ], FormBuilder);
     return FormBuilder;
-})();
+}());
 exports.FormBuilder = FormBuilder;
 },{"./model":63,"angular2/core":20,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204}],63:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -5663,7 +5891,7 @@ var AbstractControl = (function () {
         return exports.VALID;
     };
     return AbstractControl;
-})();
+}());
 exports.AbstractControl = AbstractControl;
 /**
  * Defines a part of a form that cannot be divided into other controls. `Control`s have values and
@@ -5725,7 +5953,7 @@ var Control = (function (_super) {
      */
     Control.prototype.registerOnChange = function (fn) { this._onChange = fn; };
     return Control;
-})(AbstractControl);
+}(AbstractControl));
 exports.Control = Control;
 /**
  * Defines a part of a form, of fixed length, that can contain other controls.
@@ -5826,7 +6054,7 @@ var ControlGroup = (function (_super) {
         return !isOptional || collection_1.StringMapWrapper.get(this._optionals, controlName);
     };
     return ControlGroup;
-})(AbstractControl);
+}(AbstractControl));
 exports.ControlGroup = ControlGroup;
 /**
  * Defines a part of a form, of variable length, that can contain other controls.
@@ -5908,10 +6136,11 @@ var ControlArray = (function (_super) {
         this.controls.forEach(function (control) { control.setParent(_this); });
     };
     return ControlArray;
-})(AbstractControl);
+}(AbstractControl));
 exports.ControlArray = ControlArray;
 },{"angular2/src/facade/async":196,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204,"angular2/src/facade/promise":206}],64:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var promise_1 = require('angular2/src/facade/promise');
 var async_1 = require('angular2/src/facade/async');
 var collection_1 = require('angular2/src/facade/collection');
@@ -6027,7 +6256,7 @@ var Validators = (function () {
         };
     };
     return Validators;
-})();
+}());
 exports.Validators = Validators;
 function _convertToPromise(obj) {
     return promise_1.PromiseWrapper.isPromise(obj) ? obj : async_1.ObservableWrapper.toPromise(obj);
@@ -6050,6 +6279,7 @@ function _mergeErrors(arrayOfErrors) {
  * @description
  * This module provides a set of common Pipes.
  */
+"use strict";
 var async_pipe_1 = require('./pipes/async_pipe');
 exports.AsyncPipe = async_pipe_1.AsyncPipe;
 var date_pipe_1 = require('./pipes/date_pipe');
@@ -6076,7 +6306,8 @@ exports.I18nSelectPipe = i18n_select_pipe_1.I18nSelectPipe;
 var common_pipes_1 = require('./pipes/common_pipes');
 exports.COMMON_PIPES = common_pipes_1.COMMON_PIPES;
 },{"./pipes/async_pipe":66,"./pipes/common_pipes":67,"./pipes/date_pipe":68,"./pipes/i18n_plural_pipe":69,"./pipes/i18n_select_pipe":70,"./pipes/json_pipe":72,"./pipes/lowercase_pipe":73,"./pipes/number_pipe":74,"./pipes/replace_pipe":75,"./pipes/slice_pipe":76,"./pipes/uppercase_pipe":77}],66:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -6098,7 +6329,7 @@ var ObservableStrategy = (function () {
     ObservableStrategy.prototype.dispose = function (subscription) { async_1.ObservableWrapper.dispose(subscription); };
     ObservableStrategy.prototype.onDestroy = function (subscription) { async_1.ObservableWrapper.dispose(subscription); };
     return ObservableStrategy;
-})();
+}());
 var PromiseStrategy = (function () {
     function PromiseStrategy() {
     }
@@ -6108,7 +6339,7 @@ var PromiseStrategy = (function () {
     PromiseStrategy.prototype.dispose = function (subscription) { };
     PromiseStrategy.prototype.onDestroy = function (subscription) { };
     return PromiseStrategy;
-})();
+}());
 var _promiseStrategy = new PromiseStrategy();
 var _observableStrategy = new ObservableStrategy();
 var __unused; // avoid unused import when Promise union types are erased
@@ -6209,10 +6440,11 @@ var AsyncPipe = (function () {
         __metadata('design:paramtypes', [core_1.ChangeDetectorRef])
     ], AsyncPipe);
     return AsyncPipe;
-})();
+}());
 exports.AsyncPipe = AsyncPipe;
 },{"./invalid_pipe_argument_exception":71,"angular2/core":20,"angular2/src/facade/async":196,"angular2/src/facade/lang":204}],67:[function(require,module,exports){
-'use strict';/**
+'use strict';"use strict";
+/**
  * @module
  * @description
  * This module provides a set of common Pipes.
@@ -6250,7 +6482,8 @@ exports.COMMON_PIPES = lang_1.CONST_EXPR([
     i18n_select_pipe_1.I18nSelectPipe
 ]);
 },{"./async_pipe":66,"./date_pipe":68,"./i18n_plural_pipe":69,"./i18n_select_pipe":70,"./json_pipe":72,"./lowercase_pipe":73,"./number_pipe":74,"./replace_pipe":75,"./slice_pipe":76,"./uppercase_pipe":77,"angular2/src/facade/lang":204}],68:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -6369,10 +6602,11 @@ var DatePipe = (function () {
         __metadata('design:paramtypes', [])
     ], DatePipe);
     return DatePipe;
-})();
+}());
 exports.DatePipe = DatePipe;
 },{"./invalid_pipe_argument_exception":71,"angular2/core":20,"angular2/src/facade/collection":199,"angular2/src/facade/intl":203,"angular2/src/facade/lang":204}],69:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -6438,10 +6672,11 @@ var I18nPluralPipe = (function () {
         __metadata('design:paramtypes', [])
     ], I18nPluralPipe);
     return I18nPluralPipe;
-})();
+}());
 exports.I18nPluralPipe = I18nPluralPipe;
 },{"./invalid_pipe_argument_exception":71,"angular2/core":20,"angular2/src/facade/lang":204}],70:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -6501,10 +6736,11 @@ var I18nSelectPipe = (function () {
         __metadata('design:paramtypes', [])
     ], I18nSelectPipe);
     return I18nSelectPipe;
-})();
+}());
 exports.I18nSelectPipe = I18nSelectPipe;
 },{"./invalid_pipe_argument_exception":71,"angular2/core":20,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204}],71:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -6517,10 +6753,11 @@ var InvalidPipeArgumentException = (function (_super) {
         _super.call(this, "Invalid argument '" + value + "' for pipe '" + lang_1.stringify(type) + "'");
     }
     return InvalidPipeArgumentException;
-})(exceptions_1.BaseException);
+}(exceptions_1.BaseException));
 exports.InvalidPipeArgumentException = InvalidPipeArgumentException;
 },{"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],72:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -6551,10 +6788,11 @@ var JsonPipe = (function () {
         __metadata('design:paramtypes', [])
     ], JsonPipe);
     return JsonPipe;
-})();
+}());
 exports.JsonPipe = JsonPipe;
 },{"angular2/core":20,"angular2/src/facade/lang":204}],73:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -6592,10 +6830,11 @@ var LowerCasePipe = (function () {
         __metadata('design:paramtypes', [])
     ], LowerCasePipe);
     return LowerCasePipe;
-})();
+}());
 exports.LowerCasePipe = LowerCasePipe;
 },{"./invalid_pipe_argument_exception":71,"angular2/core":20,"angular2/src/facade/lang":204}],74:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -6662,7 +6901,7 @@ var NumberPipe = (function () {
         __metadata('design:paramtypes', [])
     ], NumberPipe);
     return NumberPipe;
-})();
+}());
 exports.NumberPipe = NumberPipe;
 /**
  * WARNING: this pipe uses the Internationalization API.
@@ -6706,7 +6945,7 @@ var DecimalPipe = (function (_super) {
         __metadata('design:paramtypes', [])
     ], DecimalPipe);
     return DecimalPipe;
-})(NumberPipe);
+}(NumberPipe));
 exports.DecimalPipe = DecimalPipe;
 /**
  * WARNING: this pipe uses the Internationalization API.
@@ -6740,7 +6979,7 @@ var PercentPipe = (function (_super) {
         __metadata('design:paramtypes', [])
     ], PercentPipe);
     return PercentPipe;
-})(NumberPipe);
+}(NumberPipe));
 exports.PercentPipe = PercentPipe;
 /**
  * WARNING: this pipe uses the Internationalization API.
@@ -6780,10 +7019,11 @@ var CurrencyPipe = (function (_super) {
         __metadata('design:paramtypes', [])
     ], CurrencyPipe);
     return CurrencyPipe;
-})(NumberPipe);
+}(NumberPipe));
 exports.CurrencyPipe = CurrencyPipe;
 },{"./invalid_pipe_argument_exception":71,"angular2/core":20,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/intl":203,"angular2/src/facade/lang":204}],75:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -6868,10 +7108,11 @@ var ReplacePipe = (function () {
         __metadata('design:paramtypes', [])
     ], ReplacePipe);
     return ReplacePipe;
-})();
+}());
 exports.ReplacePipe = ReplacePipe;
 },{"./invalid_pipe_argument_exception":71,"angular2/core":20,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],76:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -6963,10 +7204,11 @@ var SlicePipe = (function () {
         __metadata('design:paramtypes', [])
     ], SlicePipe);
     return SlicePipe;
-})();
+}());
 exports.SlicePipe = SlicePipe;
 },{"./invalid_pipe_argument_exception":71,"angular2/core":20,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],77:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -7004,10 +7246,11 @@ var UpperCasePipe = (function () {
         __metadata('design:paramtypes', [])
     ], UpperCasePipe);
     return UpperCasePipe;
-})();
+}());
 exports.UpperCasePipe = UpperCasePipe;
 },{"./invalid_pipe_argument_exception":71,"angular2/core":20,"angular2/src/facade/lang":204}],78:[function(require,module,exports){
-'use strict';var lang_1 = require('../facade/lang');
+'use strict';"use strict";
+var lang_1 = require('../facade/lang');
 var exceptions_1 = require('../facade/exceptions');
 function assertArrayOfStrings(identifier, value) {
     if (!lang_1.assertionsEnabled() || lang_1.isBlank(value)) {
@@ -7024,7 +7267,8 @@ function assertArrayOfStrings(identifier, value) {
 }
 exports.assertArrayOfStrings = assertArrayOfStrings;
 },{"../facade/exceptions":201,"../facade/lang":204}],79:[function(require,module,exports){
-'use strict';var collection_1 = require('angular2/src/facade/collection');
+'use strict';"use strict";
+var collection_1 = require('angular2/src/facade/collection');
 var lang_1 = require('angular2/src/facade/lang');
 var reflection_1 = require('angular2/src/core/reflection/reflection');
 var change_detection_1 = require('angular2/src/core/change_detection/change_detection');
@@ -7175,7 +7419,7 @@ var ProtoViewVisitor = (function () {
         return null;
     };
     return ProtoViewVisitor;
-})();
+}());
 function createChangeDefinitions(pvVisitors, componentType, genConfig) {
     var pvVariableNames = _collectNestedProtoViewsVariableNames(pvVisitors);
     return pvVisitors.map(function (pvVisitor) {
@@ -7192,7 +7436,8 @@ function _collectNestedProtoViewsVariableNames(pvVisitors) {
     return nestedPvVariableNames;
 }
 },{"./template_ast":98,"angular2/src/core/change_detection/change_detection":114,"angular2/src/core/linker/interfaces":160,"angular2/src/core/reflection/reflection":183,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204}],80:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -7274,10 +7519,11 @@ var ChangeDetectionCompiler = (function () {
         __metadata('design:paramtypes', [change_detection_1.ChangeDetectorGenConfig])
     ], ChangeDetectionCompiler);
     return ChangeDetectionCompiler;
-})();
+}());
 exports.ChangeDetectionCompiler = ChangeDetectionCompiler;
 },{"./change_definition_factory":79,"./source_module":95,"./util":104,"angular2/src/core/change_detection/abstract_change_detector":112,"angular2/src/core/change_detection/change_detection":114,"angular2/src/core/change_detection/change_detection_jit_generator":115,"angular2/src/core/change_detection/change_detection_util":116,"angular2/src/core/change_detection/constants":122,"angular2/src/core/di":144,"angular2/src/facade/lang":204,"angular2/src/transform/template_compiler/change_detector_codegen":270}],81:[function(require,module,exports){
-'use strict';function __export(m) {
+'use strict';"use strict";
+function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 }
 var runtime_compiler_1 = require("./runtime_compiler");
@@ -7342,7 +7588,8 @@ exports.COMPILER_PROVIDERS = lang_1.CONST_EXPR([
     url_resolver_1.UrlResolver
 ]);
 },{"./directive_metadata":82,"./runtime_compiler":89,"./source_module":95,"./template_compiler":99,"angular2/src/compiler/change_detector_compiler":80,"angular2/src/compiler/html_parser":85,"angular2/src/compiler/proto_view_compiler":88,"angular2/src/compiler/runtime_compiler":89,"angular2/src/compiler/runtime_metadata":90,"angular2/src/compiler/schema/dom_element_schema_registry":91,"angular2/src/compiler/schema/element_schema_registry":92,"angular2/src/compiler/style_compiler":96,"angular2/src/compiler/template_ast":98,"angular2/src/compiler/template_compiler":99,"angular2/src/compiler/template_normalizer":100,"angular2/src/compiler/template_parser":101,"angular2/src/compiler/url_resolver":103,"angular2/src/compiler/view_compiler":105,"angular2/src/core/change_detection/change_detection":114,"angular2/src/core/di":144,"angular2/src/core/linker/compiler":154,"angular2/src/core/platform_directives_and_pipes":178,"angular2/src/facade/lang":204}],82:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -7361,25 +7608,19 @@ var HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))$/g;
 var CompileMetadataWithIdentifier = (function () {
     function CompileMetadataWithIdentifier() {
     }
-    CompileMetadataWithIdentifier.fromJson = function (data) {
-        return _COMPILE_METADATA_FROM_JSON[data['class']](data);
-    };
     Object.defineProperty(CompileMetadataWithIdentifier.prototype, "identifier", {
         get: function () { return exceptions_1.unimplemented(); },
         enumerable: true,
         configurable: true
     });
     return CompileMetadataWithIdentifier;
-})();
+}());
 exports.CompileMetadataWithIdentifier = CompileMetadataWithIdentifier;
 var CompileMetadataWithType = (function (_super) {
     __extends(CompileMetadataWithType, _super);
     function CompileMetadataWithType() {
         _super.apply(this, arguments);
     }
-    CompileMetadataWithType.fromJson = function (data) {
-        return _COMPILE_METADATA_FROM_JSON[data['class']](data);
-    };
     Object.defineProperty(CompileMetadataWithType.prototype, "type", {
         get: function () { return exceptions_1.unimplemented(); },
         enumerable: true,
@@ -7391,33 +7632,43 @@ var CompileMetadataWithType = (function (_super) {
         configurable: true
     });
     return CompileMetadataWithType;
-})(CompileMetadataWithIdentifier);
+}(CompileMetadataWithIdentifier));
 exports.CompileMetadataWithType = CompileMetadataWithType;
+function metadataFromJson(data) {
+    return _COMPILE_METADATA_FROM_JSON[data['class']](data);
+}
+exports.metadataFromJson = metadataFromJson;
 var CompileIdentifierMetadata = (function () {
     function CompileIdentifierMetadata(_a) {
-        var _b = _a === void 0 ? {} : _a, runtime = _b.runtime, name = _b.name, moduleUrl = _b.moduleUrl, prefix = _b.prefix, constConstructor = _b.constConstructor;
+        var _b = _a === void 0 ? {} : _a, runtime = _b.runtime, name = _b.name, moduleUrl = _b.moduleUrl, prefix = _b.prefix, constConstructor = _b.constConstructor, value = _b.value;
         this.runtime = runtime;
         this.name = name;
         this.prefix = prefix;
         this.moduleUrl = moduleUrl;
         this.constConstructor = constConstructor;
+        this.value = value;
     }
     CompileIdentifierMetadata.fromJson = function (data) {
+        var value = lang_1.isArray(data['value']) ? arrayFromJson(data['value'], metadataFromJson) :
+            objFromJson(data['value'], metadataFromJson);
         return new CompileIdentifierMetadata({
             name: data['name'],
             prefix: data['prefix'],
             moduleUrl: data['moduleUrl'],
-            constConstructor: data['constConstructor']
+            constConstructor: data['constConstructor'],
+            value: value
         });
     };
     CompileIdentifierMetadata.prototype.toJson = function () {
+        var value = lang_1.isArray(this.value) ? arrayToJson(this.value) : objToJson(this.value);
         return {
             // Note: Runtime type can't be serialized...
             'class': 'Identifier',
             'name': this.name,
             'moduleUrl': this.moduleUrl,
             'prefix': this.prefix,
-            'constConstructor': this.constConstructor
+            'constConstructor': this.constConstructor,
+            'value': value
         };
     };
     Object.defineProperty(CompileIdentifierMetadata.prototype, "identifier", {
@@ -7426,7 +7677,7 @@ var CompileIdentifierMetadata = (function () {
         configurable: true
     });
     return CompileIdentifierMetadata;
-})();
+}());
 exports.CompileIdentifierMetadata = CompileIdentifierMetadata;
 var CompileDiDependencyMetadata = (function () {
     function CompileDiDependencyMetadata(_a) {
@@ -7466,7 +7717,7 @@ var CompileDiDependencyMetadata = (function () {
         };
     };
     return CompileDiDependencyMetadata;
-})();
+}());
 exports.CompileDiDependencyMetadata = CompileDiDependencyMetadata;
 var CompileProviderMetadata = (function () {
     function CompileProviderMetadata(_a) {
@@ -7482,49 +7733,79 @@ var CompileProviderMetadata = (function () {
     CompileProviderMetadata.fromJson = function (data) {
         return new CompileProviderMetadata({
             token: objFromJson(data['token'], CompileIdentifierMetadata.fromJson),
-            useClass: objFromJson(data['useClass'], CompileTypeMetadata.fromJson)
+            useClass: objFromJson(data['useClass'], CompileTypeMetadata.fromJson),
+            useExisting: objFromJson(data['useExisting'], CompileIdentifierMetadata.fromJson),
+            useValue: objFromJson(data['useValue'], CompileIdentifierMetadata.fromJson),
+            useFactory: objFromJson(data['useFactory'], CompileFactoryMetadata.fromJson)
         });
     };
     CompileProviderMetadata.prototype.toJson = function () {
         return {
             // Note: Runtime type can't be serialized...
+            'class': 'Provider',
             'token': objToJson(this.token),
-            'useClass': objToJson(this.useClass)
+            'useClass': objToJson(this.useClass),
+            'useExisting': objToJson(this.useExisting),
+            'useValue': objToJson(this.useValue),
+            'useFactory': objToJson(this.useFactory)
         };
     };
     return CompileProviderMetadata;
-})();
+}());
 exports.CompileProviderMetadata = CompileProviderMetadata;
 var CompileFactoryMetadata = (function () {
     function CompileFactoryMetadata(_a) {
-        var runtime = _a.runtime, name = _a.name, moduleUrl = _a.moduleUrl, constConstructor = _a.constConstructor, diDeps = _a.diDeps;
+        var runtime = _a.runtime, name = _a.name, moduleUrl = _a.moduleUrl, prefix = _a.prefix, constConstructor = _a.constConstructor, diDeps = _a.diDeps, value = _a.value;
         this.runtime = runtime;
         this.name = name;
+        this.prefix = prefix;
         this.moduleUrl = moduleUrl;
         this.diDeps = diDeps;
         this.constConstructor = constConstructor;
+        this.value = value;
     }
     Object.defineProperty(CompileFactoryMetadata.prototype, "identifier", {
         get: function () { return this; },
         enumerable: true,
         configurable: true
     });
-    CompileFactoryMetadata.prototype.toJson = function () { return null; };
+    CompileFactoryMetadata.fromJson = function (data) {
+        return new CompileFactoryMetadata({
+            name: data['name'],
+            prefix: data['prefix'],
+            moduleUrl: data['moduleUrl'],
+            constConstructor: data['constConstructor'],
+            value: data['value'],
+            diDeps: arrayFromJson(data['diDeps'], CompileDiDependencyMetadata.fromJson)
+        });
+    };
+    CompileFactoryMetadata.prototype.toJson = function () {
+        return {
+            'class': 'Factory',
+            'name': this.name,
+            'prefix': this.prefix,
+            'moduleUrl': this.moduleUrl,
+            'constConstructor': this.constConstructor,
+            'value': this.value,
+            'diDeps': arrayToJson(this.diDeps)
+        };
+    };
     return CompileFactoryMetadata;
-})();
+}());
 exports.CompileFactoryMetadata = CompileFactoryMetadata;
 /**
  * Metadata regarding compilation of a type.
  */
 var CompileTypeMetadata = (function () {
     function CompileTypeMetadata(_a) {
-        var _b = _a === void 0 ? {} : _a, runtime = _b.runtime, name = _b.name, moduleUrl = _b.moduleUrl, prefix = _b.prefix, isHost = _b.isHost, constConstructor = _b.constConstructor, diDeps = _b.diDeps;
+        var _b = _a === void 0 ? {} : _a, runtime = _b.runtime, name = _b.name, moduleUrl = _b.moduleUrl, prefix = _b.prefix, isHost = _b.isHost, constConstructor = _b.constConstructor, value = _b.value, diDeps = _b.diDeps;
         this.runtime = runtime;
         this.name = name;
         this.moduleUrl = moduleUrl;
         this.prefix = prefix;
         this.isHost = lang_1.normalizeBool(isHost);
         this.constConstructor = constConstructor;
+        this.value = value;
         this.diDeps = lang_1.normalizeBlank(diDeps);
     }
     CompileTypeMetadata.fromJson = function (data) {
@@ -7534,6 +7815,7 @@ var CompileTypeMetadata = (function () {
             prefix: data['prefix'],
             isHost: data['isHost'],
             constConstructor: data['constConstructor'],
+            value: data['value'],
             diDeps: arrayFromJson(data['diDeps'], CompileDiDependencyMetadata.fromJson)
         });
     };
@@ -7556,11 +7838,12 @@ var CompileTypeMetadata = (function () {
             'prefix': this.prefix,
             'isHost': this.isHost,
             'constConstructor': this.constConstructor,
+            'value': this.value,
             'diDeps': arrayToJson(this.diDeps)
         };
     };
     return CompileTypeMetadata;
-})();
+}());
 exports.CompileTypeMetadata = CompileTypeMetadata;
 var CompileQueryMetadata = (function () {
     function CompileQueryMetadata(_a) {
@@ -7588,7 +7871,7 @@ var CompileQueryMetadata = (function () {
         };
     };
     return CompileQueryMetadata;
-})();
+}());
 exports.CompileQueryMetadata = CompileQueryMetadata;
 /**
  * Metadata regarding compilation of a template.
@@ -7626,7 +7909,7 @@ var CompileTemplateMetadata = (function () {
         };
     };
     return CompileTemplateMetadata;
-})();
+}());
 exports.CompileTemplateMetadata = CompileTemplateMetadata;
 /**
  * Metadata regarding compilation of a directive.
@@ -7648,8 +7931,8 @@ var CompileDirectiveMetadata = (function () {
         this.lifecycleHooks = lifecycleHooks;
         this.providers = lang_1.normalizeBlank(providers);
         this.viewProviders = lang_1.normalizeBlank(viewProviders);
-        this.queries = queries;
-        this.viewQueries = viewQueries;
+        this.queries = lang_1.normalizeBlank(queries);
+        this.viewQueries = lang_1.normalizeBlank(viewQueries);
         this.template = template;
     }
     CompileDirectiveMetadata.create = function (_a) {
@@ -7732,7 +8015,10 @@ var CompileDirectiveMetadata = (function () {
             lifecycleHooks: data['lifecycleHooks'].map(function (hookValue) { return interfaces_1.LIFECYCLE_HOOKS_VALUES[hookValue]; }),
             template: lang_1.isPresent(data['template']) ? CompileTemplateMetadata.fromJson(data['template']) :
                 data['template'],
-            providers: arrayFromJson(data['providers'], CompileProviderMetadata.fromJson)
+            providers: arrayFromJson(data['providers'], metadataFromJson),
+            viewProviders: arrayFromJson(data['viewProviders'], metadataFromJson),
+            queries: arrayFromJson(data['queries'], CompileQueryMetadata.fromJson),
+            viewQueries: arrayFromJson(data['viewQueries'], CompileQueryMetadata.fromJson)
         });
     };
     CompileDirectiveMetadata.prototype.toJson = function () {
@@ -7752,11 +8038,14 @@ var CompileDirectiveMetadata = (function () {
             'hostAttributes': this.hostAttributes,
             'lifecycleHooks': this.lifecycleHooks.map(function (hook) { return lang_1.serializeEnum(hook); }),
             'template': lang_1.isPresent(this.template) ? this.template.toJson() : this.template,
-            'providers': arrayToJson(this.providers)
+            'providers': arrayToJson(this.providers),
+            'viewProviders': arrayToJson(this.viewProviders),
+            'queries': arrayToJson(this.queries),
+            'viewQueries': arrayToJson(this.viewQueries)
         };
     };
     return CompileDirectiveMetadata;
-})();
+}());
 exports.CompileDirectiveMetadata = CompileDirectiveMetadata;
 /**
  * Construct {@link CompileDirectiveMetadata} from {@link ComponentTypeMetadata} and a selector.
@@ -7814,13 +8103,15 @@ var CompilePipeMetadata = (function () {
         };
     };
     return CompilePipeMetadata;
-})();
+}());
 exports.CompilePipeMetadata = CompilePipeMetadata;
 var _COMPILE_METADATA_FROM_JSON = {
     'Directive': CompileDirectiveMetadata.fromJson,
     'Pipe': CompilePipeMetadata.fromJson,
     'Type': CompileTypeMetadata.fromJson,
-    'Identifier': CompileIdentifierMetadata.fromJson
+    'Provider': CompileProviderMetadata.fromJson,
+    'Identifier': CompileIdentifierMetadata.fromJson,
+    'Factory': CompileFactoryMetadata.fromJson
 };
 function arrayFromJson(obj, fn) {
     return lang_1.isBlank(obj) ? null : obj.map(function (o) { return objFromJson(o, fn); });
@@ -7829,13 +8120,22 @@ function arrayToJson(obj) {
     return lang_1.isBlank(obj) ? null : obj.map(objToJson);
 }
 function objFromJson(obj, fn) {
-    return (lang_1.isString(obj) || lang_1.isBlank(obj)) ? obj : fn(obj);
+    if (lang_1.isArray(obj))
+        return arrayFromJson(obj, fn);
+    if (lang_1.isString(obj) || lang_1.isBlank(obj) || lang_1.isBoolean(obj) || lang_1.isNumber(obj))
+        return obj;
+    return fn(obj);
 }
 function objToJson(obj) {
-    return (lang_1.isString(obj) || lang_1.isBlank(obj)) ? obj : obj.toJson();
+    if (lang_1.isArray(obj))
+        return arrayToJson(obj);
+    if (lang_1.isString(obj) || lang_1.isBlank(obj) || lang_1.isBoolean(obj) || lang_1.isNumber(obj))
+        return obj;
+    return obj.toJson();
 }
 },{"./util":104,"angular2/src/compiler/selector":93,"angular2/src/core/change_detection/change_detection":114,"angular2/src/core/linker/interfaces":160,"angular2/src/core/metadata/view":174,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],83:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var HtmlTextAst = (function () {
     function HtmlTextAst(value, sourceSpan) {
         this.value = value;
@@ -7843,7 +8143,7 @@ var HtmlTextAst = (function () {
     }
     HtmlTextAst.prototype.visit = function (visitor, context) { return visitor.visitText(this, context); };
     return HtmlTextAst;
-})();
+}());
 exports.HtmlTextAst = HtmlTextAst;
 var HtmlAttrAst = (function () {
     function HtmlAttrAst(name, value, sourceSpan) {
@@ -7853,7 +8153,7 @@ var HtmlAttrAst = (function () {
     }
     HtmlAttrAst.prototype.visit = function (visitor, context) { return visitor.visitAttr(this, context); };
     return HtmlAttrAst;
-})();
+}());
 exports.HtmlAttrAst = HtmlAttrAst;
 var HtmlElementAst = (function () {
     function HtmlElementAst(name, attrs, children, sourceSpan, startSourceSpan, endSourceSpan) {
@@ -7866,7 +8166,7 @@ var HtmlElementAst = (function () {
     }
     HtmlElementAst.prototype.visit = function (visitor, context) { return visitor.visitElement(this, context); };
     return HtmlElementAst;
-})();
+}());
 exports.HtmlElementAst = HtmlElementAst;
 var HtmlCommentAst = (function () {
     function HtmlCommentAst(value, sourceSpan) {
@@ -7875,7 +8175,7 @@ var HtmlCommentAst = (function () {
     }
     HtmlCommentAst.prototype.visit = function (visitor, context) { return visitor.visitComment(this, context); };
     return HtmlCommentAst;
-})();
+}());
 exports.HtmlCommentAst = HtmlCommentAst;
 function htmlVisitAll(visitor, asts, context) {
     if (context === void 0) { context = null; }
@@ -7890,7 +8190,8 @@ function htmlVisitAll(visitor, asts, context) {
 }
 exports.htmlVisitAll = htmlVisitAll;
 },{"angular2/src/facade/lang":204}],84:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -7924,7 +8225,7 @@ var HtmlToken = (function () {
         this.sourceSpan = sourceSpan;
     }
     return HtmlToken;
-})();
+}());
 exports.HtmlToken = HtmlToken;
 var HtmlTokenError = (function (_super) {
     __extends(HtmlTokenError, _super);
@@ -7933,7 +8234,7 @@ var HtmlTokenError = (function (_super) {
         this.tokenType = tokenType;
     }
     return HtmlTokenError;
-})(parse_util_1.ParseError);
+}(parse_util_1.ParseError));
 exports.HtmlTokenError = HtmlTokenError;
 var HtmlTokenizeResult = (function () {
     function HtmlTokenizeResult(tokens, errors) {
@@ -7941,7 +8242,7 @@ var HtmlTokenizeResult = (function () {
         this.errors = errors;
     }
     return HtmlTokenizeResult;
-})();
+}());
 exports.HtmlTokenizeResult = HtmlTokenizeResult;
 function tokenizeHtml(sourceContent, sourceUrl) {
     return new _HtmlTokenizer(new parse_util_1.ParseSourceFile(sourceContent, sourceUrl)).tokenize();
@@ -7993,7 +8294,7 @@ var ControlFlowError = (function () {
         this.error = error;
     }
     return ControlFlowError;
-})();
+}());
 // See http://www.w3.org/TR/html51/syntax.html#writing
 var _HtmlTokenizer = (function () {
     function _HtmlTokenizer(file) {
@@ -8402,7 +8703,7 @@ var _HtmlTokenizer = (function () {
         }
     };
     return _HtmlTokenizer;
-})();
+}());
 function isNotWhitespace(code) {
     return !isWhitespace(code) || code === $EOF;
 }
@@ -8455,7 +8756,8 @@ function mergeTextTokens(srcTokens) {
     return dstTokens;
 }
 },{"./html_tags":86,"./parse_util":87,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204}],85:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -8486,7 +8788,7 @@ var HtmlTreeError = (function (_super) {
         return new HtmlTreeError(elementName, span, msg);
     };
     return HtmlTreeError;
-})(parse_util_1.ParseError);
+}(parse_util_1.ParseError));
 exports.HtmlTreeError = HtmlTreeError;
 var HtmlParseTreeResult = (function () {
     function HtmlParseTreeResult(rootNodes, errors) {
@@ -8494,7 +8796,7 @@ var HtmlParseTreeResult = (function () {
         this.errors = errors;
     }
     return HtmlParseTreeResult;
-})();
+}());
 exports.HtmlParseTreeResult = HtmlParseTreeResult;
 var HtmlParser = (function () {
     function HtmlParser() {
@@ -8510,7 +8812,7 @@ var HtmlParser = (function () {
         __metadata('design:paramtypes', [])
     ], HtmlParser);
     return HtmlParser;
-})();
+}());
 exports.HtmlParser = HtmlParser;
 var TreeBuilder = (function () {
     function TreeBuilder(tokens) {
@@ -8694,7 +8996,7 @@ var TreeBuilder = (function () {
         }
     };
     return TreeBuilder;
-})();
+}());
 function getElementFullName(prefix, localName, parentElement) {
     if (lang_1.isBlank(prefix)) {
         prefix = html_tags_1.getHtmlTagDefinition(localName).implicitNamespacePrefix;
@@ -8705,7 +9007,8 @@ function getElementFullName(prefix, localName, parentElement) {
     return html_tags_1.mergeNsAndName(prefix, localName);
 }
 },{"./html_ast":83,"./html_lexer":84,"./html_tags":86,"./parse_util":87,"angular2/src/core/di":144,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204}],86:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 // see http://www.w3.org/TR/html51/syntax.html#named-character-references
 // see https://html.spec.whatwg.org/multipage/entities.json
 // This list is not exhaustive to keep the compiler footprint low.
@@ -9004,7 +9307,7 @@ var HtmlTagDefinition = (function () {
         return this.isVoid || lang_1.normalizeBool(this.closedByChildren[name.toLowerCase()]);
     };
     return HtmlTagDefinition;
-})();
+}());
 exports.HtmlTagDefinition = HtmlTagDefinition;
 // see http://www.w3.org/TR/html51/syntax.html#optional-tags
 // This implementation does not fully conform to the HTML5 spec.
@@ -9106,7 +9409,8 @@ function mergeNsAndName(prefix, localName) {
 }
 exports.mergeNsAndName = mergeNsAndName;
 },{"angular2/src/facade/lang":204}],87:[function(require,module,exports){
-'use strict';var ParseLocation = (function () {
+'use strict';"use strict";
+var ParseLocation = (function () {
     function ParseLocation(file, offset, line, col) {
         this.file = file;
         this.offset = offset;
@@ -9115,7 +9419,7 @@ exports.mergeNsAndName = mergeNsAndName;
     }
     ParseLocation.prototype.toString = function () { return this.file.url + "@" + this.line + ":" + this.col; };
     return ParseLocation;
-})();
+}());
 exports.ParseLocation = ParseLocation;
 var ParseSourceFile = (function () {
     function ParseSourceFile(content, url) {
@@ -9123,7 +9427,7 @@ var ParseSourceFile = (function () {
         this.url = url;
     }
     return ParseSourceFile;
-})();
+}());
 exports.ParseSourceFile = ParseSourceFile;
 var ParseSourceSpan = (function () {
     function ParseSourceSpan(start, end) {
@@ -9134,7 +9438,7 @@ var ParseSourceSpan = (function () {
         return this.start.file.content.substring(this.start.offset, this.end.offset);
     };
     return ParseSourceSpan;
-})();
+}());
 exports.ParseSourceSpan = ParseSourceSpan;
 var ParseError = (function () {
     function ParseError(span, msg) {
@@ -9175,10 +9479,11 @@ var ParseError = (function () {
         return this.msg + " (\"" + context + "\"): " + this.span.start;
     };
     return ParseError;
-})();
+}());
 exports.ParseError = ParseError;
 },{}],88:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -9234,7 +9539,7 @@ var ProtoViewCompiler = (function () {
         __metadata('design:paramtypes', [])
     ], ProtoViewCompiler);
     return ProtoViewCompiler;
-})();
+}());
 exports.ProtoViewCompiler = ProtoViewCompiler;
 var CompileProtoViews = (function () {
     function CompileProtoViews(declarations, protoViews) {
@@ -9242,7 +9547,7 @@ var CompileProtoViews = (function () {
         this.protoViews = protoViews;
     }
     return CompileProtoViews;
-})();
+}());
 exports.CompileProtoViews = CompileProtoViews;
 var CompileProtoView = (function () {
     function CompileProtoView(embeddedTemplateIndex, protoElements, protoView) {
@@ -9251,7 +9556,7 @@ var CompileProtoView = (function () {
         this.protoView = protoView;
     }
     return CompileProtoView;
-})();
+}());
 exports.CompileProtoView = CompileProtoView;
 var CompileProtoElement = (function () {
     function CompileProtoElement(boundElementIndex, attrNameAndValues, variableNameAndValues, renderEvents, directives, embeddedTemplateIndex, appProtoEl) {
@@ -9264,7 +9569,7 @@ var CompileProtoElement = (function () {
         this.appProtoEl = appProtoEl;
     }
     return CompileProtoElement;
-})();
+}());
 exports.CompileProtoElement = CompileProtoElement;
 function visitAndReturnContext(visitor, asts, context) {
     template_ast_1.templateVisitAll(visitor, asts, context);
@@ -9288,7 +9593,7 @@ var ProtoViewFactory = (function () {
         return cpv;
     };
     return ProtoViewFactory;
-})();
+}());
 var CodeGenProtoViewFactory = (function (_super) {
     __extends(CodeGenProtoViewFactory, _super);
     function CodeGenProtoViewFactory(resolvedMetadataCacheExpr, component, pipes) {
@@ -9318,7 +9623,7 @@ var CodeGenProtoViewFactory = (function (_super) {
         return new util_1.Expression(varName);
     };
     return CodeGenProtoViewFactory;
-})(ProtoViewFactory);
+}(ProtoViewFactory));
 var RuntimeProtoViewFactory = (function (_super) {
     __extends(RuntimeProtoViewFactory, _super);
     function RuntimeProtoViewFactory(metadataCache, component, pipes) {
@@ -9336,7 +9641,7 @@ var RuntimeProtoViewFactory = (function (_super) {
         return element_1.AppProtoElement.create(this.metadataCache, boundElementIndex, attrs, directives.map(function (dirMeta) { return dirMeta.type.runtime; }), keyValueArrayToStringMap(variableNameAndValues));
     };
     return RuntimeProtoViewFactory;
-})(ProtoViewFactory);
+}(ProtoViewFactory));
 var ProtoViewBuilderVisitor = (function () {
     function ProtoViewBuilderVisitor(factory, allStatements, allProtoViews) {
         this.factory = factory;
@@ -9421,7 +9726,7 @@ var ProtoViewBuilderVisitor = (function () {
     ProtoViewBuilderVisitor.prototype.visitDirectiveProperty = function (ast, context) { return null; };
     ProtoViewBuilderVisitor.prototype.visitElementProperty = function (ast, context) { return null; };
     return ProtoViewBuilderVisitor;
-})();
+}());
 function mapToKeyValueArray(data) {
     var entryArray = [];
     collection_1.StringMapWrapper.forEach(data, function (value, name) { entryArray.push([name, value]); });
@@ -9451,7 +9756,7 @@ var DirectiveContext = (function () {
         this.targetDirectives = targetDirectives;
     }
     return DirectiveContext;
-})();
+}());
 function keyValueArrayToStringMap(keyValueArray) {
     var stringMap = {};
     for (var i = 0; i < keyValueArray.length; i++) {
@@ -9491,7 +9796,8 @@ function getViewType(component, embeddedTemplateIndex) {
     }
 }
 },{"./source_module":95,"./template_ast":98,"./util":104,"angular2/src/core/di":144,"angular2/src/core/linker/element":158,"angular2/src/core/linker/view":165,"angular2/src/core/linker/view_type":170,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204}],89:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -9515,7 +9821,7 @@ var RuntimeCompiler = (function (_super) {
         _super.apply(this, arguments);
     }
     return RuntimeCompiler;
-})(compiler_1.Compiler);
+}(compiler_1.Compiler));
 exports.RuntimeCompiler = RuntimeCompiler;
 var RuntimeCompiler_ = (function (_super) {
     __extends(RuntimeCompiler_, _super);
@@ -9536,10 +9842,11 @@ var RuntimeCompiler_ = (function (_super) {
         __metadata('design:paramtypes', [template_compiler_1.TemplateCompiler])
     ], RuntimeCompiler_);
     return RuntimeCompiler_;
-})(compiler_1.Compiler_);
+}(compiler_1.Compiler_));
 exports.RuntimeCompiler_ = RuntimeCompiler_;
 },{"./template_compiler":99,"angular2/src/core/di":144,"angular2/src/core/linker/compiler":154,"angular2/src/core/linker/view_ref":168}],90:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -9678,7 +9985,7 @@ var RuntimeMetadataResolver = (function () {
         __metadata('design:paramtypes', [directive_resolver_1.DirectiveResolver, pipe_resolver_1.PipeResolver, view_resolver_1.ViewResolver, Array, Array])
     ], RuntimeMetadataResolver);
     return RuntimeMetadataResolver;
-})();
+}());
 exports.RuntimeMetadataResolver = RuntimeMetadataResolver;
 function flattenDirectives(view, platformDirectives) {
     var directives = [];
@@ -9726,7 +10033,8 @@ function calcModuleUrl(type, cmpMetadata) {
     }
 }
 },{"./assertions":78,"./directive_metadata":82,"./util":104,"angular2/src/compiler/url_resolver":103,"angular2/src/core/di":144,"angular2/src/core/linker/directive_lifecycle_reflector":155,"angular2/src/core/linker/directive_resolver":156,"angular2/src/core/linker/interfaces":160,"angular2/src/core/linker/pipe_resolver":161,"angular2/src/core/linker/view_resolver":169,"angular2/src/core/metadata/directives":173,"angular2/src/core/platform_directives_and_pipes":178,"angular2/src/core/reflection/reflection":183,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],91:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -9784,19 +10092,21 @@ var DomElementSchemaRegistry = (function (_super) {
         __metadata('design:paramtypes', [])
     ], DomElementSchemaRegistry);
     return DomElementSchemaRegistry;
-})(element_schema_registry_1.ElementSchemaRegistry);
+}(element_schema_registry_1.ElementSchemaRegistry));
 exports.DomElementSchemaRegistry = DomElementSchemaRegistry;
-},{"./element_schema_registry":92,"angular2/src/compiler/html_tags":86,"angular2/src/core/di":144,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204,"angular2/src/platform/dom/dom_adapter":231}],92:[function(require,module,exports){
-'use strict';var ElementSchemaRegistry = (function () {
+},{"./element_schema_registry":92,"angular2/src/compiler/html_tags":86,"angular2/src/core/di":144,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204,"angular2/src/platform/dom/dom_adapter":232}],92:[function(require,module,exports){
+'use strict';"use strict";
+var ElementSchemaRegistry = (function () {
     function ElementSchemaRegistry() {
     }
     ElementSchemaRegistry.prototype.hasProperty = function (tagName, propName) { return true; };
     ElementSchemaRegistry.prototype.getMappedPropName = function (propName) { return propName; };
     return ElementSchemaRegistry;
-})();
+}());
 exports.ElementSchemaRegistry = ElementSchemaRegistry;
 },{}],93:[function(require,module,exports){
-'use strict';var collection_1 = require('angular2/src/facade/collection');
+'use strict';"use strict";
+var collection_1 = require('angular2/src/facade/collection');
 var lang_1 = require('angular2/src/facade/lang');
 var exceptions_1 = require('angular2/src/facade/exceptions');
 var _EMPTY_ATTR_VALUE = '';
@@ -9924,7 +10234,7 @@ var CssSelector = (function () {
         return res;
     };
     return CssSelector;
-})();
+}());
 exports.CssSelector = CssSelector;
 /**
  * Reads a list of CssSelectors and allows to calculate which ones
@@ -10115,7 +10425,7 @@ var SelectorMatcher = (function () {
         return nestedSelector.match(cssSelector, matchedCallback);
     };
     return SelectorMatcher;
-})();
+}());
 exports.SelectorMatcher = SelectorMatcher;
 var SelectorListContext = (function () {
     function SelectorListContext(selectors) {
@@ -10123,7 +10433,7 @@ var SelectorListContext = (function () {
         this.alreadyMatched = false;
     }
     return SelectorListContext;
-})();
+}());
 exports.SelectorListContext = SelectorListContext;
 // Store context to pass back selector and context when a selector is matched
 var SelectorContext = (function () {
@@ -10150,10 +10460,11 @@ var SelectorContext = (function () {
         return result;
     };
     return SelectorContext;
-})();
+}());
 exports.SelectorContext = SelectorContext;
 },{"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],94:[function(require,module,exports){
-'use strict';var collection_1 = require('angular2/src/facade/collection');
+'use strict';"use strict";
+var collection_1 = require('angular2/src/facade/collection');
 var lang_1 = require('angular2/src/facade/lang');
 /**
  * This file is a port of shadowCSS from webcomponents.js to TypeScript.
@@ -10548,7 +10859,7 @@ var ShadowCss = (function () {
         return selector;
     };
     return ShadowCss;
-})();
+}());
 exports.ShadowCss = ShadowCss;
 var _cssContentNextSelectorRe = /polyfill-next-selector[^}]*content:[\s]*?['"](.*?)['"][;\s]*}([^{]*?){/gim;
 var _cssContentRuleRe = /(polyfill-rule)[^}]*(content:[\s]*['"](.*?)['"])[;\s]*[^}]*}/gim;
@@ -10591,7 +10902,7 @@ var CssRule = (function () {
         this.content = content;
     }
     return CssRule;
-})();
+}());
 exports.CssRule = CssRule;
 function processRules(input, ruleCallback) {
     var inputWithEscapedBlocks = escapeBlocks(input);
@@ -10617,7 +10928,7 @@ var StringWithEscapedBlocks = (function () {
         this.blocks = blocks;
     }
     return StringWithEscapedBlocks;
-})();
+}());
 function escapeBlocks(input) {
     var inputParts = lang_1.StringWrapper.split(input, _curlyRe);
     var resultParts = [];
@@ -10651,7 +10962,8 @@ function escapeBlocks(input) {
     return new StringWithEscapedBlocks(resultParts.join(''), escapedBlocks);
 }
 },{"angular2/src/facade/collection":199,"angular2/src/facade/lang":204}],95:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var MODULE_REGEXP = /#MODULE\[([^\]]*)\]/g;
 function moduleRef(moduleUrl) {
     return "#MODULE[" + moduleUrl + "]";
@@ -10690,7 +11002,7 @@ var SourceModule = (function () {
         return new SourceWithImports(newSource, imports);
     };
     return SourceModule;
-})();
+}());
 exports.SourceModule = SourceModule;
 var SourceExpression = (function () {
     function SourceExpression(declarations, expression) {
@@ -10698,7 +11010,7 @@ var SourceExpression = (function () {
         this.expression = expression;
     }
     return SourceExpression;
-})();
+}());
 exports.SourceExpression = SourceExpression;
 var SourceExpressions = (function () {
     function SourceExpressions(declarations, expressions) {
@@ -10706,7 +11018,7 @@ var SourceExpressions = (function () {
         this.expressions = expressions;
     }
     return SourceExpressions;
-})();
+}());
 exports.SourceExpressions = SourceExpressions;
 /**
  * Represents generated source code with imports. Internal to the Angular compiler.
@@ -10717,10 +11029,11 @@ var SourceWithImports = (function () {
         this.imports = imports;
     }
     return SourceWithImports;
-})();
+}());
 exports.SourceWithImports = SourceWithImports;
 },{"angular2/src/facade/lang":204}],96:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -10812,11 +11125,12 @@ var StyleCompiler = (function () {
         __metadata('design:paramtypes', [xhr_1.XHR, url_resolver_1.UrlResolver])
     ], StyleCompiler);
     return StyleCompiler;
-})();
+}());
 exports.StyleCompiler = StyleCompiler;
 },{"./source_module":95,"./style_url_resolver":97,"./util":104,"angular2/src/compiler/shadow_css":94,"angular2/src/compiler/url_resolver":103,"angular2/src/compiler/xhr":106,"angular2/src/core/di":144,"angular2/src/core/metadata/view":174,"angular2/src/facade/async":196,"angular2/src/facade/lang":204}],97:[function(require,module,exports){
 'use strict';// Some of the code comes from WebComponents.JS
 // https://github.com/webcomponents/webcomponentsjs/blob/master/src/HTMLImports/path.js
+"use strict";
 var lang_1 = require('angular2/src/facade/lang');
 var StyleWithImports = (function () {
     function StyleWithImports(style, styleUrls) {
@@ -10824,7 +11138,7 @@ var StyleWithImports = (function () {
         this.styleUrls = styleUrls;
     }
     return StyleWithImports;
-})();
+}());
 exports.StyleWithImports = StyleWithImports;
 function isStyleUrlResolvable(url) {
     if (lang_1.isBlank(url) || url.length === 0 || url[0] == '/')
@@ -10856,7 +11170,8 @@ var _cssImportRe = /@import\s+(?:url\()?\s*(?:(?:['"]([^'"]*))|([^;\)\s]*))[^;]*
 //       https://github.com/angular/angular/issues/4596
 var _urlWithSchemaRe = /^([a-zA-Z\-\+\.]+):/g;
 },{"angular2/src/facade/lang":204}],98:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 /**
  * A segment of text within the template.
  */
@@ -10868,7 +11183,7 @@ var TextAst = (function () {
     }
     TextAst.prototype.visit = function (visitor, context) { return visitor.visitText(this, context); };
     return TextAst;
-})();
+}());
 exports.TextAst = TextAst;
 /**
  * A bound expression within the text of a template.
@@ -10883,7 +11198,7 @@ var BoundTextAst = (function () {
         return visitor.visitBoundText(this, context);
     };
     return BoundTextAst;
-})();
+}());
 exports.BoundTextAst = BoundTextAst;
 /**
  * A plain attribute on an element.
@@ -10896,7 +11211,7 @@ var AttrAst = (function () {
     }
     AttrAst.prototype.visit = function (visitor, context) { return visitor.visitAttr(this, context); };
     return AttrAst;
-})();
+}());
 exports.AttrAst = AttrAst;
 /**
  * A binding for an element property (e.g. `[property]="expression"`).
@@ -10913,7 +11228,7 @@ var BoundElementPropertyAst = (function () {
         return visitor.visitElementProperty(this, context);
     };
     return BoundElementPropertyAst;
-})();
+}());
 exports.BoundElementPropertyAst = BoundElementPropertyAst;
 /**
  * A binding for an element event (e.g. `(event)="handler()"`).
@@ -10941,7 +11256,7 @@ var BoundEventAst = (function () {
         configurable: true
     });
     return BoundEventAst;
-})();
+}());
 exports.BoundEventAst = BoundEventAst;
 /**
  * A variable declaration on an element (e.g. `#var="expression"`).
@@ -10956,7 +11271,7 @@ var VariableAst = (function () {
         return visitor.visitVariable(this, context);
     };
     return VariableAst;
-})();
+}());
 exports.VariableAst = VariableAst;
 /**
  * An element declaration in a template.
@@ -10992,7 +11307,7 @@ var ElementAst = (function () {
             null;
     };
     return ElementAst;
-})();
+}());
 exports.ElementAst = ElementAst;
 /**
  * A `<template>` element included in an Angular template.
@@ -11011,7 +11326,7 @@ var EmbeddedTemplateAst = (function () {
         return visitor.visitEmbeddedTemplate(this, context);
     };
     return EmbeddedTemplateAst;
-})();
+}());
 exports.EmbeddedTemplateAst = EmbeddedTemplateAst;
 /**
  * A directive property with a bound value (e.g. `*ngIf="condition").
@@ -11027,7 +11342,7 @@ var BoundDirectivePropertyAst = (function () {
         return visitor.visitDirectiveProperty(this, context);
     };
     return BoundDirectivePropertyAst;
-})();
+}());
 exports.BoundDirectivePropertyAst = BoundDirectivePropertyAst;
 /**
  * A directive declared on an element.
@@ -11045,7 +11360,7 @@ var DirectiveAst = (function () {
         return visitor.visitDirective(this, context);
     };
     return DirectiveAst;
-})();
+}());
 exports.DirectiveAst = DirectiveAst;
 /**
  * Position where content is to be projected (instance of `<ng-content>` in a template).
@@ -11060,7 +11375,7 @@ var NgContentAst = (function () {
         return visitor.visitNgContent(this, context);
     };
     return NgContentAst;
-})();
+}());
 exports.NgContentAst = NgContentAst;
 /**
  * Enumeration of types of property bindings.
@@ -11100,7 +11415,8 @@ function templateVisitAll(visitor, asts, context) {
 }
 exports.templateVisitAll = templateVisitAll;
 },{"angular2/src/facade/lang":204}],99:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -11169,6 +11485,9 @@ var TemplateCompiler = (function () {
             hostAttributes: directive.hostAttributes,
             lifecycleHooks: directive.lifecycleHooks,
             providers: directive.providers,
+            viewProviders: directive.viewProviders,
+            queries: directive.queries,
+            viewQueries: directive.viewQueries,
             template: normalizedTemplate
         }); });
     };
@@ -11307,7 +11626,7 @@ var TemplateCompiler = (function () {
         __metadata('design:paramtypes', [runtime_metadata_1.RuntimeMetadataResolver, template_normalizer_1.TemplateNormalizer, template_parser_1.TemplateParser, style_compiler_1.StyleCompiler, change_detector_compiler_1.ChangeDetectionCompiler, proto_view_compiler_1.ProtoViewCompiler, view_compiler_1.ViewCompiler, resolved_metadata_cache_1.ResolvedMetadataCache, change_detection_1.ChangeDetectorGenConfig])
     ], TemplateCompiler);
     return TemplateCompiler;
-})();
+}());
 exports.TemplateCompiler = TemplateCompiler;
 var NormalizedComponentWithViewDirectives = (function () {
     function NormalizedComponentWithViewDirectives(component, directives, pipes) {
@@ -11316,7 +11635,7 @@ var NormalizedComponentWithViewDirectives = (function () {
         this.pipes = pipes;
     }
     return NormalizedComponentWithViewDirectives;
-})();
+}());
 exports.NormalizedComponentWithViewDirectives = NormalizedComponentWithViewDirectives;
 var CompiledTemplate = (function () {
     function CompiledTemplate() {
@@ -11324,7 +11643,7 @@ var CompiledTemplate = (function () {
     }
     CompiledTemplate.prototype.init = function (viewFactory) { this.viewFactory = viewFactory; };
     return CompiledTemplate;
-})();
+}());
 function assertComponent(meta) {
     if (!meta.isComponent) {
         throw new exceptions_1.BaseException("Could not compile '" + meta.type.name + "' because it is not a component.");
@@ -11395,7 +11714,7 @@ var DirectiveCollector = (function () {
     DirectiveCollector.prototype.visitDirectiveProperty = function (ast, context) { return null; };
     DirectiveCollector.prototype.visitElementProperty = function (ast, context) { return null; };
     return DirectiveCollector;
-})();
+}());
 function filterPipes(template, allPipes) {
     var visitor = new PipeVisitor();
     template_ast_1.templateVisitAll(visitor, template);
@@ -11445,9 +11764,10 @@ var PipeVisitor = (function () {
         return null;
     };
     return PipeVisitor;
-})();
+}());
 },{"./change_detector_compiler":80,"./directive_metadata":82,"./proto_view_compiler":88,"./runtime_metadata":90,"./source_module":95,"./style_compiler":96,"./template_ast":98,"./template_normalizer":100,"./template_parser":101,"./util":104,"./view_compiler":105,"angular2/src/core/change_detection/change_detection":114,"angular2/src/core/di":144,"angular2/src/core/linker/resolved_metadata_cache":163,"angular2/src/core/linker/view":165,"angular2/src/facade/async":196,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],100:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -11526,7 +11846,7 @@ var TemplateNormalizer = (function () {
         __metadata('design:paramtypes', [xhr_1.XHR, url_resolver_1.UrlResolver, html_parser_1.HtmlParser])
     ], TemplateNormalizer);
     return TemplateNormalizer;
-})();
+}());
 exports.TemplateNormalizer = TemplateNormalizer;
 var TemplatePreparseVisitor = (function () {
     function TemplatePreparseVisitor() {
@@ -11573,9 +11893,10 @@ var TemplatePreparseVisitor = (function () {
     TemplatePreparseVisitor.prototype.visitAttr = function (ast, context) { return null; };
     TemplatePreparseVisitor.prototype.visitText = function (ast, context) { return null; };
     return TemplatePreparseVisitor;
-})();
+}());
 },{"./directive_metadata":82,"./html_ast":83,"./html_parser":85,"./style_url_resolver":97,"./template_preparser":102,"angular2/src/compiler/url_resolver":103,"angular2/src/compiler/xhr":106,"angular2/src/core/di":144,"angular2/src/core/metadata/view":174,"angular2/src/facade/async":196,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],101:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -11641,8 +11962,16 @@ var TemplateParseError = (function (_super) {
         _super.call(this, span, message);
     }
     return TemplateParseError;
-})(parse_util_1.ParseError);
+}(parse_util_1.ParseError));
 exports.TemplateParseError = TemplateParseError;
+var TemplateParseResult = (function () {
+    function TemplateParseResult(templateAst, errors) {
+        this.templateAst = templateAst;
+        this.errors = errors;
+    }
+    return TemplateParseResult;
+}());
+exports.TemplateParseResult = TemplateParseResult;
 var TemplateParser = (function () {
     function TemplateParser(_exprParser, _schemaRegistry, _htmlParser, transforms) {
         this._exprParser = _exprParser;
@@ -11651,18 +11980,25 @@ var TemplateParser = (function () {
         this.transforms = transforms;
     }
     TemplateParser.prototype.parse = function (template, directives, pipes, templateUrl) {
+        var result = this.tryParse(template, directives, pipes, templateUrl);
+        if (lang_1.isPresent(result.errors)) {
+            var errorString = result.errors.join('\n');
+            throw new exceptions_1.BaseException("Template parse errors:\n" + errorString);
+        }
+        return result.templateAst;
+    };
+    TemplateParser.prototype.tryParse = function (template, directives, pipes, templateUrl) {
         var parseVisitor = new TemplateParseVisitor(directives, pipes, this._exprParser, this._schemaRegistry);
         var htmlAstWithErrors = this._htmlParser.parse(template, templateUrl);
         var result = html_ast_1.htmlVisitAll(parseVisitor, htmlAstWithErrors.rootNodes, EMPTY_COMPONENT);
         var errors = htmlAstWithErrors.errors.concat(parseVisitor.errors);
         if (errors.length > 0) {
-            var errorString = errors.join('\n');
-            throw new exceptions_1.BaseException("Template parse errors:\n" + errorString);
+            return new TemplateParseResult(result, errors);
         }
         if (lang_1.isPresent(this.transforms)) {
             this.transforms.forEach(function (transform) { result = template_ast_1.templateVisitAll(transform, result); });
         }
-        return result;
+        return new TemplateParseResult(result);
     };
     TemplateParser = __decorate([
         core_1.Injectable(),
@@ -11671,7 +12007,7 @@ var TemplateParser = (function () {
         __metadata('design:paramtypes', [change_detection_1.Parser, element_schema_registry_1.ElementSchemaRegistry, html_parser_1.HtmlParser, Array])
     ], TemplateParser);
     return TemplateParser;
-})();
+}());
 exports.TemplateParser = TemplateParser;
 var TemplateParseVisitor = (function () {
     function TemplateParseVisitor(directives, pipes, _exprParser, _schemaRegistry) {
@@ -12139,7 +12475,7 @@ var TemplateParseVisitor = (function () {
         });
     };
     return TemplateParseVisitor;
-})();
+}());
 var NonBindableVisitor = (function () {
     function NonBindableVisitor() {
     }
@@ -12168,7 +12504,7 @@ var NonBindableVisitor = (function () {
         return new template_ast_1.TextAst(ast.value, ngContentIndex, ast.sourceSpan);
     };
     return NonBindableVisitor;
-})();
+}());
 var BoundElementOrDirectiveProperty = (function () {
     function BoundElementOrDirectiveProperty(name, expression, isLiteral, sourceSpan) {
         this.name = name;
@@ -12177,7 +12513,7 @@ var BoundElementOrDirectiveProperty = (function () {
         this.sourceSpan = sourceSpan;
     }
     return BoundElementOrDirectiveProperty;
-})();
+}());
 function splitClasses(classAttrValue) {
     return lang_1.StringWrapper.split(classAttrValue.trim(), /\s+/g);
 }
@@ -12215,7 +12551,7 @@ var Component = (function () {
         return ngContentIndices.length > 0 ? ngContentIndices[0] : null;
     };
     return Component;
-})();
+}());
 function createElementCssSelector(elementName, matchableAttrs) {
     var cssSelector = new selector_1.CssSelector();
     var elNameNoNs = html_tags_1.splitNsName(elementName)[1];
@@ -12247,10 +12583,11 @@ var PipeCollector = (function (_super) {
         return null;
     };
     return PipeCollector;
-})(ast_1.RecursiveAstVisitor);
+}(ast_1.RecursiveAstVisitor));
 exports.PipeCollector = PipeCollector;
 },{"./html_ast":83,"./html_parser":85,"./html_tags":86,"./parse_util":87,"./style_url_resolver":97,"./template_ast":98,"./template_preparser":102,"./util":104,"angular2/core":20,"angular2/src/compiler/schema/element_schema_registry":92,"angular2/src/compiler/selector":93,"angular2/src/core/change_detection/change_detection":114,"angular2/src/core/change_detection/parser/ast":133,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],102:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var html_tags_1 = require('./html_tags');
 var NG_CONTENT_SELECT_ATTR = 'select';
 var NG_CONTENT_ELEMENT = 'ng-content';
@@ -12323,7 +12660,7 @@ var PreparsedElement = (function () {
         this.projectAs = projectAs;
     }
     return PreparsedElement;
-})();
+}());
 exports.PreparsedElement = PreparsedElement;
 function normalizeNgContentSelect(selectAttr) {
     if (lang_1.isBlank(selectAttr) || selectAttr.length === 0) {
@@ -12332,7 +12669,8 @@ function normalizeNgContentSelect(selectAttr) {
     return selectAttr;
 }
 },{"./html_tags":86,"angular2/src/facade/lang":204}],103:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -12405,7 +12743,7 @@ var UrlResolver = (function () {
         __metadata('design:paramtypes', [String])
     ], UrlResolver);
     return UrlResolver;
-})();
+}());
 exports.UrlResolver = UrlResolver;
 /**
  * Extract the scheme of a URL.
@@ -12657,7 +12995,8 @@ function _resolveUrl(base, url) {
     return _joinAndCanonicalizePath(parts);
 }
 },{"angular2/src/core/application_tokens":110,"angular2/src/core/di":144,"angular2/src/facade/lang":204}],104:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var CAMEL_CASE_REGEXP = /([A-Z])/g;
 var DASH_CASE_REGEXP = /-([a-z])/g;
 var SINGLE_QUOTE_ESCAPE_STRING_RE = /'|\\|\n|\r|\$/g;
@@ -12765,7 +13104,7 @@ var Statement = (function () {
         this.statement = statement;
     }
     return Statement;
-})();
+}());
 exports.Statement = Statement;
 var Expression = (function () {
     function Expression(expression, isArray) {
@@ -12774,7 +13113,7 @@ var Expression = (function () {
         this.isArray = isArray;
     }
     return Expression;
-})();
+}());
 exports.Expression = Expression;
 function escapeValue(value) {
     if (value instanceof Expression) {
@@ -12846,7 +13185,8 @@ function flattenArray(source, target) {
 }
 exports.flattenArray = flattenArray;
 },{"angular2/src/facade/lang":204}],105:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -12890,7 +13230,7 @@ var ViewCompiler = (function () {
         __metadata('design:paramtypes', [])
     ], ViewCompiler);
     return ViewCompiler;
-})();
+}());
 exports.ViewCompiler = ViewCompiler;
 var CodeGenViewFactory = (function () {
     function CodeGenViewFactory(component, styles, protoViews, changeDetectorExpressions, componentViewFactory) {
@@ -13007,7 +13347,7 @@ var CodeGenViewFactory = (function () {
         return new util_1.Expression(viewFactoryName);
     };
     return CodeGenViewFactory;
-})();
+}());
 var RuntimeViewFactory = (function () {
     function RuntimeViewFactory(component, styles, protoViews, changeDetectorFactories, componentViewFactory) {
         this.component = component;
@@ -13093,7 +13433,7 @@ var RuntimeViewFactory = (function () {
         };
     };
     return RuntimeViewFactory;
-})();
+}());
 var ParentElement = (function () {
     function ParentElement(renderNode, appEl, component) {
         this.renderNode = renderNode;
@@ -13114,7 +13454,7 @@ var ParentElement = (function () {
         this.contentNodesByNgContentIndex[ngContentIndex].push(nodeExpr);
     };
     return ParentElement;
-})();
+}());
 var ViewBuilderVisitor = (function () {
     function ViewBuilderVisitor(renderer, viewManager, projectableNodes, rootSelector, view, protoView, targetStatements, factory) {
         this.renderer = renderer;
@@ -13229,7 +13569,7 @@ var ViewBuilderVisitor = (function () {
     ViewBuilderVisitor.prototype.visitDirectiveProperty = function (ast, context) { return null; };
     ViewBuilderVisitor.prototype.visitElementProperty = function (ast, context) { return null; };
     return ViewBuilderVisitor;
-})();
+}());
 function codeGenEventHandler(view, boundElementIndex, eventName) {
     return util_1.codeGenValueFn(['event'], view.expression + ".triggerEventHandlers(" + util_1.escapeValue(eventName) + ", event, " + boundElementIndex + ")");
 }
@@ -13245,7 +13585,8 @@ function codeGenViewEncapsulation(value) {
     }
 }
 },{"./proto_view_compiler":88,"./source_module":95,"./template_ast":98,"./util":104,"angular2/src/core/di":144,"angular2/src/core/linker/element":158,"angular2/src/core/linker/view":165,"angular2/src/core/linker/view_type":170,"angular2/src/core/metadata/view":174,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204}],106:[function(require,module,exports){
-'use strict';// TODO: vsavkin rename it into TemplateLoader
+'use strict';"use strict";
+// TODO: vsavkin rename it into TemplateLoader
 /**
  * An interface for retrieving documents by URL that the compiler uses
  * to load templates.
@@ -13255,10 +13596,11 @@ var XHR = (function () {
     }
     XHR.prototype.get = function (url) { return null; };
     return XHR;
-})();
+}());
 exports.XHR = XHR;
 },{}],107:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -13294,10 +13636,11 @@ var AngularEntrypoint = (function () {
         __metadata('design:paramtypes', [String])
     ], AngularEntrypoint);
     return AngularEntrypoint;
-})();
+}());
 exports.AngularEntrypoint = AngularEntrypoint;
 },{"angular2/src/facade/lang":204}],108:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var di_1 = require('angular2/src/core/di');
 var application_tokens_1 = require('./application_tokens');
 var change_detection_1 = require('./change_detection/change_detection');
@@ -13328,7 +13671,8 @@ exports.APPLICATION_COMMON_PROVIDERS = lang_1.CONST_EXPR([
     new di_1.Provider(dynamic_component_loader_1.DynamicComponentLoader, { useClass: dynamic_component_loader_2.DynamicComponentLoader_ })
 ]);
 },{"./application_tokens":110,"./change_detection/change_detection":114,"./linker/compiler":154,"./linker/directive_resolver":156,"./linker/dynamic_component_loader":157,"./linker/pipe_resolver":161,"./linker/view_manager":167,"./linker/view_resolver":169,"angular2/src/core/di":144,"angular2/src/core/linker/resolved_metadata_cache":163,"angular2/src/facade/lang":204}],109:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -13460,7 +13804,7 @@ var PlatformRef = (function () {
     });
     ;
     return PlatformRef;
-})();
+}());
 exports.PlatformRef = PlatformRef;
 var PlatformRef_ = (function (_super) {
     __extends(PlatformRef_, _super);
@@ -13550,7 +13894,7 @@ var PlatformRef_ = (function (_super) {
     /** @internal */
     PlatformRef_.prototype._applicationDisposed = function (app) { collection_1.ListWrapper.remove(this._applications, app); };
     return PlatformRef_;
-})(PlatformRef);
+}(PlatformRef));
 exports.PlatformRef_ = PlatformRef_;
 function _runAppInitializers(injector) {
     var inits = injector.getOptional(application_tokens_1.APP_INITIALIZER);
@@ -13606,7 +13950,7 @@ var ApplicationRef = (function () {
     });
     ;
     return ApplicationRef;
-})();
+}());
 exports.ApplicationRef = ApplicationRef;
 var ApplicationRef_ = (function (_super) {
     __extends(ApplicationRef_, _super);
@@ -13738,10 +14082,11 @@ var ApplicationRef_ = (function (_super) {
     /** @internal */
     ApplicationRef_._tickScope = profile_1.wtfCreateScope('ApplicationRef#tick()');
     return ApplicationRef_;
-})(ApplicationRef);
+}(ApplicationRef));
 exports.ApplicationRef_ = ApplicationRef_;
 },{"./application_tokens":110,"./profile/profile":180,"angular2/src/core/console":141,"angular2/src/core/di":144,"angular2/src/core/linker/dynamic_component_loader":157,"angular2/src/core/testability/testability":190,"angular2/src/core/zone/ng_zone":194,"angular2/src/facade/async":196,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],110:[function(require,module,exports){
-'use strict';var di_1 = require('angular2/src/core/di');
+'use strict';"use strict";
+var di_1 = require('angular2/src/core/di');
 var lang_1 = require('angular2/src/facade/lang');
 /**
  *  @internal
@@ -13802,6 +14147,7 @@ exports.PACKAGE_ROOT_URL = lang_1.CONST_EXPR(new di_1.OpaqueToken("Application P
  * @description
  * Change detection enables data binding in Angular.
  */
+"use strict";
 var change_detection_1 = require('./change_detection/change_detection');
 exports.ChangeDetectionStrategy = change_detection_1.ChangeDetectionStrategy;
 exports.ExpressionChangedAfterItHasBeenCheckedException = change_detection_1.ExpressionChangedAfterItHasBeenCheckedException;
@@ -13814,7 +14160,8 @@ exports.KeyValueDiffers = change_detection_1.KeyValueDiffers;
 exports.CollectionChangeRecord = change_detection_1.CollectionChangeRecord;
 exports.KeyValueChangeRecord = change_detection_1.KeyValueChangeRecord;
 },{"./change_detection/change_detection":114}],112:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var collection_1 = require('angular2/src/facade/collection');
 var change_detection_util_1 = require('./change_detection_util');
 var change_detector_ref_1 = require('./change_detector_ref');
@@ -13834,7 +14181,7 @@ var _Context = (function () {
         this.expression = expression;
     }
     return _Context;
-})();
+}());
 var AbstractChangeDetector = (function () {
     function AbstractChangeDetector(id, numberOfPropertyProtoRecords, bindingTargets, directiveIndices, strategy) {
         this.id = id;
@@ -14056,10 +14403,11 @@ var AbstractChangeDetector = (function () {
         return this.bindingTargets[this.propertyBindingIndex];
     };
     return AbstractChangeDetector;
-})();
+}());
 exports.AbstractChangeDetector = AbstractChangeDetector;
 },{"../profile/profile":180,"./change_detection_util":116,"./change_detector_ref":117,"./constants":122,"./exceptions":130,"./parser/locals":135,"angular2/src/facade/async":196,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204}],113:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var DIRECTIVE_LIFECYCLE = "directiveLifecycle";
 var BINDING = "native";
 var DIRECTIVE = "directive";
@@ -14085,7 +14433,7 @@ var BindingTarget = (function () {
     BindingTarget.prototype.isElementStyle = function () { return this.mode === ELEMENT_STYLE; };
     BindingTarget.prototype.isTextNode = function () { return this.mode === TEXT_NODE; };
     return BindingTarget;
-})();
+}());
 exports.BindingTarget = BindingTarget;
 var BindingRecord = (function () {
     function BindingRecord(mode, target, implicitReceiver, ast, setter, lifecycleEvent, directiveRecord) {
@@ -14164,10 +14512,11 @@ var BindingRecord = (function () {
         return new BindingRecord(HOST_EVENT, t, directiveIndex, ast, null, null, directiveRecord);
     };
     return BindingRecord;
-})();
+}());
 exports.BindingRecord = BindingRecord;
 },{"angular2/src/facade/lang":204}],114:[function(require,module,exports){
-'use strict';var iterable_differs_1 = require('./differs/iterable_differs');
+'use strict';"use strict";
+var iterable_differs_1 = require('./differs/iterable_differs');
 var default_iterable_differ_1 = require('./differs/default_iterable_differ');
 var keyvalue_differs_1 = require('./differs/keyvalue_differs');
 var default_keyvalue_differ_1 = require('./differs/default_keyvalue_differ');
@@ -14234,7 +14583,8 @@ exports.iterableDiff = lang_1.CONST_EXPR([lang_1.CONST_EXPR(new default_iterable
 exports.defaultIterableDiffers = lang_1.CONST_EXPR(new iterable_differs_1.IterableDiffers(exports.iterableDiff));
 exports.defaultKeyValueDiffers = lang_1.CONST_EXPR(new keyvalue_differs_1.KeyValueDiffers(exports.keyValDiff));
 },{"./binding_record":113,"./change_detection_util":116,"./change_detector_ref":117,"./constants":122,"./differs/default_iterable_differ":123,"./differs/default_keyvalue_differ":124,"./differs/iterable_differs":125,"./differs/keyvalue_differs":126,"./directive_record":127,"./dynamic_change_detector":128,"./exceptions":130,"./interfaces":131,"./jit_proto_change_detector":132,"./parser/ast":133,"./parser/lexer":134,"./parser/locals":135,"./parser/parser":136,"./proto_change_detector":139,"angular2/src/facade/lang":204}],115:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var exceptions_1 = require('angular2/src/facade/exceptions');
 var collection_1 = require('angular2/src/facade/collection');
 var abstract_change_detector_1 = require('./abstract_change_detector');
@@ -14573,10 +14923,11 @@ var ChangeDetectorJITGenerator = (function () {
         return retVal;
     };
     return ChangeDetectorJITGenerator;
-})();
+}());
 exports.ChangeDetectorJITGenerator = ChangeDetectorJITGenerator;
 },{"./abstract_change_detector":112,"./change_detection_util":116,"./codegen_facade":119,"./codegen_logic_util":120,"./codegen_name_util":121,"./constants":122,"./proto_change_detector":139,"./proto_record":140,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],116:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var exceptions_1 = require('angular2/src/facade/exceptions');
 var collection_1 = require('angular2/src/facade/collection');
 var constants_1 = require('./constants');
@@ -14611,7 +14962,7 @@ var WrappedValue = (function () {
         return w;
     };
     return WrappedValue;
-})();
+}());
 exports.WrappedValue = WrappedValue;
 var _wrappedValues = [
     new WrappedValue(null),
@@ -14634,7 +14985,7 @@ var SimpleChange = (function () {
      */
     SimpleChange.prototype.isFirstChange = function () { return this.previousValue === ChangeDetectionUtil.uninitialized; };
     return SimpleChange;
-})();
+}());
 exports.SimpleChange = SimpleChange;
 function _simpleChange(previousValue, currentValue) {
     return new SimpleChange(previousValue, currentValue);
@@ -14756,10 +15107,11 @@ var ChangeDetectionUtil = (function () {
     };
     ChangeDetectionUtil.uninitialized = lang_1.CONST_EXPR(new Object());
     return ChangeDetectionUtil;
-})();
+}());
 exports.ChangeDetectionUtil = ChangeDetectionUtil;
 },{"./binding_record":113,"./constants":122,"./directive_record":127,"./pipe_lifecycle_reflector":137,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],117:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -14769,7 +15121,7 @@ var ChangeDetectorRef = (function () {
     function ChangeDetectorRef() {
     }
     return ChangeDetectorRef;
-})();
+}());
 exports.ChangeDetectorRef = ChangeDetectorRef;
 var ChangeDetectorRef_ = (function (_super) {
     __extends(ChangeDetectorRef_, _super);
@@ -14786,10 +15138,11 @@ var ChangeDetectorRef_ = (function (_super) {
         this.markForCheck();
     };
     return ChangeDetectorRef_;
-})(ChangeDetectorRef);
+}(ChangeDetectorRef));
 exports.ChangeDetectorRef_ = ChangeDetectorRef_;
 },{"./constants":122}],118:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var collection_1 = require('angular2/src/facade/collection');
 var proto_record_1 = require('./proto_record');
 /**
@@ -14934,7 +15287,8 @@ function _haveSameDirIndex(a, b) {
     return di1 === di2 && ei1 === ei2;
 }
 },{"./proto_record":140,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204}],119:[function(require,module,exports){
-'use strict';/**
+'use strict';"use strict";
+/**
  * Converts `funcOrValue` to a string which can be used in generated code.
  */
 function codify(obj) {
@@ -14955,7 +15309,8 @@ function combineGeneratedStrings(vals) {
 }
 exports.combineGeneratedStrings = combineGeneratedStrings;
 },{}],120:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var codegen_facade_1 = require('./codegen_facade');
 var proto_record_1 = require('./proto_record');
 var exceptions_1 = require('angular2/src/facade/exceptions');
@@ -15163,10 +15518,11 @@ var CodegenLogicUtil = (function () {
         return res;
     };
     return CodegenLogicUtil;
-})();
+}());
 exports.CodegenLogicUtil = CodegenLogicUtil;
 },{"./codegen_facade":119,"./proto_record":140,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],121:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var collection_1 = require('angular2/src/facade/collection');
 // The names of these fields must be kept in sync with abstract_change_detector.ts or change
 // detection will fail.
@@ -15327,10 +15683,11 @@ var CodegenNameUtil = (function () {
     };
     CodegenNameUtil.prototype.getDetectorName = function (d) { return this._addFieldPrefix("detector_" + d.name); };
     return CodegenNameUtil;
-})();
+}());
 exports.CodegenNameUtil = CodegenNameUtil;
 },{"angular2/src/facade/collection":199,"angular2/src/facade/lang":204}],122:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 /**
  * Describes the current state of the change detector.
  */
@@ -15413,7 +15770,8 @@ function isDefaultChangeDetectionStrategy(changeDetectionStrategy) {
 }
 exports.isDefaultChangeDetectionStrategy = isDefaultChangeDetectionStrategy;
 },{"angular2/src/facade/lang":204}],123:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -15438,7 +15796,7 @@ var DefaultIterableDifferFactory = (function () {
         __metadata('design:paramtypes', [])
     ], DefaultIterableDifferFactory);
     return DefaultIterableDifferFactory;
-})();
+}());
 exports.DefaultIterableDifferFactory = DefaultIterableDifferFactory;
 var trackByIdentity = function (index, item) { return item; };
 var DefaultIterableDiffer = (function () {
@@ -15524,6 +15882,7 @@ var DefaultIterableDiffer = (function () {
         }
     };
     DefaultIterableDiffer.prototype.onDestroy = function () { };
+    // todo(vicb): optim for UnmodifiableListView (frozen arrays)
     DefaultIterableDiffer.prototype.check = function (collection) {
         var _this = this;
         this._reset();
@@ -15533,27 +15892,24 @@ var DefaultIterableDiffer = (function () {
         var item;
         var itemTrackBy;
         if (lang_2.isArray(collection)) {
-            if (collection !== this._collection || !collection_1.ListWrapper.isImmutable(collection)) {
-                var list = collection;
-                this._length = collection.length;
-                for (index = 0; index < this._length; index++) {
-                    item = list[index];
-                    itemTrackBy = this._trackByFn(index, item);
-                    if (record === null || !lang_2.looseIdentical(record.trackById, itemTrackBy)) {
-                        record = this._mismatch(record, item, itemTrackBy, index);
-                        mayBeDirty = true;
-                    }
-                    else {
-                        if (mayBeDirty) {
-                            // TODO(misko): can we limit this to duplicates only?
-                            record = this._verifyReinsertion(record, item, itemTrackBy, index);
-                        }
-                        if (!lang_2.looseIdentical(record.item, item))
-                            this._addIdentityChange(record, item);
-                    }
-                    record = record._next;
+            var list = collection;
+            this._length = collection.length;
+            for (index = 0; index < this._length; index++) {
+                item = list[index];
+                itemTrackBy = this._trackByFn(index, item);
+                if (record === null || !lang_2.looseIdentical(record.trackById, itemTrackBy)) {
+                    record = this._mismatch(record, item, itemTrackBy, index);
+                    mayBeDirty = true;
                 }
-                this._truncate(record);
+                else {
+                    if (mayBeDirty) {
+                        // TODO(misko): can we limit this to duplicates only?
+                        record = this._verifyReinsertion(record, item, itemTrackBy, index);
+                    }
+                    if (!lang_2.looseIdentical(record.item, item))
+                        this._addIdentityChange(record, item);
+                }
+                record = record._next;
             }
         }
         else {
@@ -15576,8 +15932,8 @@ var DefaultIterableDiffer = (function () {
                 index++;
             });
             this._length = index;
-            this._truncate(record);
         }
+        this._truncate(record);
         this._collection = collection;
         return this.isDirty;
     };
@@ -15916,7 +16272,7 @@ var DefaultIterableDiffer = (function () {
             identityChanges.join(', ') + "\n";
     };
     return DefaultIterableDiffer;
-})();
+}());
 exports.DefaultIterableDiffer = DefaultIterableDiffer;
 var CollectionChangeRecord = (function () {
     function CollectionChangeRecord(item, trackById) {
@@ -15952,7 +16308,7 @@ var CollectionChangeRecord = (function () {
                 lang_2.stringify(this.currentIndex) + ']';
     };
     return CollectionChangeRecord;
-})();
+}());
 exports.CollectionChangeRecord = CollectionChangeRecord;
 // A linked list of CollectionChangeRecords with the same CollectionChangeRecord.item
 var _DuplicateItemRecordList = (function () {
@@ -16026,7 +16382,7 @@ var _DuplicateItemRecordList = (function () {
         return this._head === null;
     };
     return _DuplicateItemRecordList;
-})();
+}());
 var _DuplicateMap = (function () {
     function _DuplicateMap() {
         this.map = new Map();
@@ -16078,9 +16434,10 @@ var _DuplicateMap = (function () {
     _DuplicateMap.prototype.clear = function () { this.map.clear(); };
     _DuplicateMap.prototype.toString = function () { return '_DuplicateMap(' + lang_2.stringify(this.map) + ')'; };
     return _DuplicateMap;
-})();
+}());
 },{"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],124:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -16102,7 +16459,7 @@ var DefaultKeyValueDifferFactory = (function () {
         __metadata('design:paramtypes', [])
     ], DefaultKeyValueDifferFactory);
     return DefaultKeyValueDifferFactory;
-})();
+}());
 exports.DefaultKeyValueDifferFactory = DefaultKeyValueDifferFactory;
 var DefaultKeyValueDiffer = (function () {
     function DefaultKeyValueDiffer() {
@@ -16416,7 +16773,7 @@ var DefaultKeyValueDiffer = (function () {
         }
     };
     return DefaultKeyValueDiffer;
-})();
+}());
 exports.DefaultKeyValueDiffer = DefaultKeyValueDiffer;
 var KeyValueChangeRecord = (function () {
     function KeyValueChangeRecord(key) {
@@ -16443,10 +16800,11 @@ var KeyValueChangeRecord = (function () {
                 lang_1.stringify(this.currentValue) + ']');
     };
     return KeyValueChangeRecord;
-})();
+}());
 exports.KeyValueChangeRecord = KeyValueChangeRecord;
 },{"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],125:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -16520,15 +16878,15 @@ var IterableDiffers = (function () {
         }
     };
     IterableDiffers = __decorate([
-        di_1.Injectable(),
         lang_1.CONST(), 
         __metadata('design:paramtypes', [Array])
     ], IterableDiffers);
     return IterableDiffers;
-})();
+}());
 exports.IterableDiffers = IterableDiffers;
 },{"angular2/src/core/di":144,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],126:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -16602,15 +16960,15 @@ var KeyValueDiffers = (function () {
         }
     };
     KeyValueDiffers = __decorate([
-        di_1.Injectable(),
         lang_1.CONST(), 
         __metadata('design:paramtypes', [Array])
     ], KeyValueDiffers);
     return KeyValueDiffers;
-})();
+}());
 exports.KeyValueDiffers = KeyValueDiffers;
 },{"angular2/src/core/di":144,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],127:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var constants_1 = require('./constants');
 var DirectiveIndex = (function () {
     function DirectiveIndex(elementIndex, directiveIndex) {
@@ -16623,7 +16981,7 @@ var DirectiveIndex = (function () {
         configurable: true
     });
     return DirectiveIndex;
-})();
+}());
 exports.DirectiveIndex = DirectiveIndex;
 var DirectiveRecord = (function () {
     function DirectiveRecord(_a) {
@@ -16644,10 +17002,11 @@ var DirectiveRecord = (function () {
         return constants_1.isDefaultChangeDetectionStrategy(this.changeDetection);
     };
     return DirectiveRecord;
-})();
+}());
 exports.DirectiveRecord = DirectiveRecord;
 },{"./constants":122,"angular2/src/facade/lang":204}],128:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -17073,10 +17432,11 @@ var DynamicChangeDetector = (function (_super) {
         return res;
     };
     return DynamicChangeDetector;
-})(abstract_change_detector_1.AbstractChangeDetector);
+}(abstract_change_detector_1.AbstractChangeDetector));
 exports.DynamicChangeDetector = DynamicChangeDetector;
 },{"./abstract_change_detector":112,"./change_detection_util":116,"./constants":122,"./proto_record":140,"angular2/src/core/reflection/reflection":183,"angular2/src/facade/async":196,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],129:[function(require,module,exports){
-'use strict';var EventBinding = (function () {
+'use strict';"use strict";
+var EventBinding = (function () {
     function EventBinding(eventName, elIndex, dirIndex, records) {
         this.eventName = eventName;
         this.elIndex = elIndex;
@@ -17084,10 +17444,11 @@ exports.DynamicChangeDetector = DynamicChangeDetector;
         this.records = records;
     }
     return EventBinding;
-})();
+}());
 exports.EventBinding = EventBinding;
 },{}],130:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -17133,7 +17494,7 @@ var ExpressionChangedAfterItHasBeenCheckedException = (function (_super) {
             ("Previous value: '" + oldValue + "'. Current value: '" + currValue + "'"));
     }
     return ExpressionChangedAfterItHasBeenCheckedException;
-})(exceptions_1.BaseException);
+}(exceptions_1.BaseException));
 exports.ExpressionChangedAfterItHasBeenCheckedException = ExpressionChangedAfterItHasBeenCheckedException;
 /**
  * Thrown when an expression evaluation raises an exception.
@@ -17173,7 +17534,7 @@ var ChangeDetectionError = (function (_super) {
         this.location = exp;
     }
     return ChangeDetectionError;
-})(exceptions_1.WrappedException);
+}(exceptions_1.WrappedException));
 exports.ChangeDetectionError = ChangeDetectionError;
 /**
  * Thrown when change detector executes on dehydrated view.
@@ -17188,7 +17549,7 @@ var DehydratedException = (function (_super) {
         _super.call(this, "Attempt to use a dehydrated detector: " + details);
     }
     return DehydratedException;
-})(exceptions_1.BaseException);
+}(exceptions_1.BaseException));
 exports.DehydratedException = DehydratedException;
 /**
  * Wraps an exception thrown by an event handler.
@@ -17199,7 +17560,7 @@ var EventEvaluationError = (function (_super) {
         _super.call(this, "Error during evaluation of \"" + eventName + "\"", originalException, originalStack, context);
     }
     return EventEvaluationError;
-})(exceptions_1.WrappedException);
+}(exceptions_1.WrappedException));
 exports.EventEvaluationError = EventEvaluationError;
 /**
  * Error context included when an event handler throws an exception.
@@ -17213,10 +17574,11 @@ var EventEvaluationErrorContext = (function () {
         this.injector = injector;
     }
     return EventEvaluationErrorContext;
-})();
+}());
 exports.EventEvaluationErrorContext = EventEvaluationErrorContext;
 },{"angular2/src/facade/exceptions":201}],131:[function(require,module,exports){
-'use strict';var DebugContext = (function () {
+'use strict';"use strict";
+var DebugContext = (function () {
     function DebugContext(element, componentElement, directive, context, locals, injector) {
         this.element = element;
         this.componentElement = componentElement;
@@ -17226,7 +17588,7 @@ exports.EventEvaluationErrorContext = EventEvaluationErrorContext;
         this.injector = injector;
     }
     return DebugContext;
-})();
+}());
 exports.DebugContext = DebugContext;
 var ChangeDetectorGenConfig = (function () {
     function ChangeDetectorGenConfig(genDebugInfo, logBindingUpdate, useJit) {
@@ -17235,7 +17597,7 @@ var ChangeDetectorGenConfig = (function () {
         this.useJit = useJit;
     }
     return ChangeDetectorGenConfig;
-})();
+}());
 exports.ChangeDetectorGenConfig = ChangeDetectorGenConfig;
 var ChangeDetectorDefinition = (function () {
     function ChangeDetectorDefinition(id, strategy, variableNames, bindingRecords, eventRecords, directiveRecords, genConfig) {
@@ -17248,10 +17610,11 @@ var ChangeDetectorDefinition = (function () {
         this.genConfig = genConfig;
     }
     return ChangeDetectorDefinition;
-})();
+}());
 exports.ChangeDetectorDefinition = ChangeDetectorDefinition;
 },{}],132:[function(require,module,exports){
-'use strict';var change_detection_jit_generator_1 = require('./change_detection_jit_generator');
+'use strict';"use strict";
+var change_detection_jit_generator_1 = require('./change_detection_jit_generator');
 var JitProtoChangeDetector = (function () {
     function JitProtoChangeDetector(definition) {
         this.definition = definition;
@@ -17265,10 +17628,11 @@ var JitProtoChangeDetector = (function () {
             .generate();
     };
     return JitProtoChangeDetector;
-})();
+}());
 exports.JitProtoChangeDetector = JitProtoChangeDetector;
 },{"./change_detection_jit_generator":115}],133:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -17280,7 +17644,7 @@ var AST = (function () {
     AST.prototype.visit = function (visitor) { return null; };
     AST.prototype.toString = function () { return "AST"; };
     return AST;
-})();
+}());
 exports.AST = AST;
 /**
  * Represents a quoted expression of the form:
@@ -17306,7 +17670,7 @@ var Quote = (function (_super) {
     Quote.prototype.visit = function (visitor) { return visitor.visitQuote(this); };
     Quote.prototype.toString = function () { return "Quote"; };
     return Quote;
-})(AST);
+}(AST));
 exports.Quote = Quote;
 var EmptyExpr = (function (_super) {
     __extends(EmptyExpr, _super);
@@ -17317,7 +17681,7 @@ var EmptyExpr = (function (_super) {
         // do nothing
     };
     return EmptyExpr;
-})(AST);
+}(AST));
 exports.EmptyExpr = EmptyExpr;
 var ImplicitReceiver = (function (_super) {
     __extends(ImplicitReceiver, _super);
@@ -17326,7 +17690,7 @@ var ImplicitReceiver = (function (_super) {
     }
     ImplicitReceiver.prototype.visit = function (visitor) { return visitor.visitImplicitReceiver(this); };
     return ImplicitReceiver;
-})(AST);
+}(AST));
 exports.ImplicitReceiver = ImplicitReceiver;
 /**
  * Multiple expressions separated by a semicolon.
@@ -17339,7 +17703,7 @@ var Chain = (function (_super) {
     }
     Chain.prototype.visit = function (visitor) { return visitor.visitChain(this); };
     return Chain;
-})(AST);
+}(AST));
 exports.Chain = Chain;
 var Conditional = (function (_super) {
     __extends(Conditional, _super);
@@ -17351,7 +17715,7 @@ var Conditional = (function (_super) {
     }
     Conditional.prototype.visit = function (visitor) { return visitor.visitConditional(this); };
     return Conditional;
-})(AST);
+}(AST));
 exports.Conditional = Conditional;
 var PropertyRead = (function (_super) {
     __extends(PropertyRead, _super);
@@ -17363,7 +17727,7 @@ var PropertyRead = (function (_super) {
     }
     PropertyRead.prototype.visit = function (visitor) { return visitor.visitPropertyRead(this); };
     return PropertyRead;
-})(AST);
+}(AST));
 exports.PropertyRead = PropertyRead;
 var PropertyWrite = (function (_super) {
     __extends(PropertyWrite, _super);
@@ -17376,7 +17740,7 @@ var PropertyWrite = (function (_super) {
     }
     PropertyWrite.prototype.visit = function (visitor) { return visitor.visitPropertyWrite(this); };
     return PropertyWrite;
-})(AST);
+}(AST));
 exports.PropertyWrite = PropertyWrite;
 var SafePropertyRead = (function (_super) {
     __extends(SafePropertyRead, _super);
@@ -17388,7 +17752,7 @@ var SafePropertyRead = (function (_super) {
     }
     SafePropertyRead.prototype.visit = function (visitor) { return visitor.visitSafePropertyRead(this); };
     return SafePropertyRead;
-})(AST);
+}(AST));
 exports.SafePropertyRead = SafePropertyRead;
 var KeyedRead = (function (_super) {
     __extends(KeyedRead, _super);
@@ -17399,7 +17763,7 @@ var KeyedRead = (function (_super) {
     }
     KeyedRead.prototype.visit = function (visitor) { return visitor.visitKeyedRead(this); };
     return KeyedRead;
-})(AST);
+}(AST));
 exports.KeyedRead = KeyedRead;
 var KeyedWrite = (function (_super) {
     __extends(KeyedWrite, _super);
@@ -17411,7 +17775,7 @@ var KeyedWrite = (function (_super) {
     }
     KeyedWrite.prototype.visit = function (visitor) { return visitor.visitKeyedWrite(this); };
     return KeyedWrite;
-})(AST);
+}(AST));
 exports.KeyedWrite = KeyedWrite;
 var BindingPipe = (function (_super) {
     __extends(BindingPipe, _super);
@@ -17423,7 +17787,7 @@ var BindingPipe = (function (_super) {
     }
     BindingPipe.prototype.visit = function (visitor) { return visitor.visitPipe(this); };
     return BindingPipe;
-})(AST);
+}(AST));
 exports.BindingPipe = BindingPipe;
 var LiteralPrimitive = (function (_super) {
     __extends(LiteralPrimitive, _super);
@@ -17433,7 +17797,7 @@ var LiteralPrimitive = (function (_super) {
     }
     LiteralPrimitive.prototype.visit = function (visitor) { return visitor.visitLiteralPrimitive(this); };
     return LiteralPrimitive;
-})(AST);
+}(AST));
 exports.LiteralPrimitive = LiteralPrimitive;
 var LiteralArray = (function (_super) {
     __extends(LiteralArray, _super);
@@ -17443,7 +17807,7 @@ var LiteralArray = (function (_super) {
     }
     LiteralArray.prototype.visit = function (visitor) { return visitor.visitLiteralArray(this); };
     return LiteralArray;
-})(AST);
+}(AST));
 exports.LiteralArray = LiteralArray;
 var LiteralMap = (function (_super) {
     __extends(LiteralMap, _super);
@@ -17454,7 +17818,7 @@ var LiteralMap = (function (_super) {
     }
     LiteralMap.prototype.visit = function (visitor) { return visitor.visitLiteralMap(this); };
     return LiteralMap;
-})(AST);
+}(AST));
 exports.LiteralMap = LiteralMap;
 var Interpolation = (function (_super) {
     __extends(Interpolation, _super);
@@ -17465,7 +17829,7 @@ var Interpolation = (function (_super) {
     }
     Interpolation.prototype.visit = function (visitor) { return visitor.visitInterpolation(this); };
     return Interpolation;
-})(AST);
+}(AST));
 exports.Interpolation = Interpolation;
 var Binary = (function (_super) {
     __extends(Binary, _super);
@@ -17477,7 +17841,7 @@ var Binary = (function (_super) {
     }
     Binary.prototype.visit = function (visitor) { return visitor.visitBinary(this); };
     return Binary;
-})(AST);
+}(AST));
 exports.Binary = Binary;
 var PrefixNot = (function (_super) {
     __extends(PrefixNot, _super);
@@ -17487,7 +17851,7 @@ var PrefixNot = (function (_super) {
     }
     PrefixNot.prototype.visit = function (visitor) { return visitor.visitPrefixNot(this); };
     return PrefixNot;
-})(AST);
+}(AST));
 exports.PrefixNot = PrefixNot;
 var MethodCall = (function (_super) {
     __extends(MethodCall, _super);
@@ -17500,7 +17864,7 @@ var MethodCall = (function (_super) {
     }
     MethodCall.prototype.visit = function (visitor) { return visitor.visitMethodCall(this); };
     return MethodCall;
-})(AST);
+}(AST));
 exports.MethodCall = MethodCall;
 var SafeMethodCall = (function (_super) {
     __extends(SafeMethodCall, _super);
@@ -17513,7 +17877,7 @@ var SafeMethodCall = (function (_super) {
     }
     SafeMethodCall.prototype.visit = function (visitor) { return visitor.visitSafeMethodCall(this); };
     return SafeMethodCall;
-})(AST);
+}(AST));
 exports.SafeMethodCall = SafeMethodCall;
 var FunctionCall = (function (_super) {
     __extends(FunctionCall, _super);
@@ -17524,7 +17888,7 @@ var FunctionCall = (function (_super) {
     }
     FunctionCall.prototype.visit = function (visitor) { return visitor.visitFunctionCall(this); };
     return FunctionCall;
-})(AST);
+}(AST));
 exports.FunctionCall = FunctionCall;
 var ASTWithSource = (function (_super) {
     __extends(ASTWithSource, _super);
@@ -17537,7 +17901,7 @@ var ASTWithSource = (function (_super) {
     ASTWithSource.prototype.visit = function (visitor) { return this.ast.visit(visitor); };
     ASTWithSource.prototype.toString = function () { return this.source + " in " + this.location; };
     return ASTWithSource;
-})(AST);
+}(AST));
 exports.ASTWithSource = ASTWithSource;
 var TemplateBinding = (function () {
     function TemplateBinding(key, keyIsVar, name, expression) {
@@ -17547,7 +17911,7 @@ var TemplateBinding = (function () {
         this.expression = expression;
     }
     return TemplateBinding;
-})();
+}());
 exports.TemplateBinding = TemplateBinding;
 var RecursiveAstVisitor = (function () {
     function RecursiveAstVisitor() {
@@ -17622,7 +17986,7 @@ var RecursiveAstVisitor = (function () {
     };
     RecursiveAstVisitor.prototype.visitQuote = function (ast) { return null; };
     return RecursiveAstVisitor;
-})();
+}());
 exports.RecursiveAstVisitor = RecursiveAstVisitor;
 var AstTransformer = (function () {
     function AstTransformer() {
@@ -17684,10 +18048,11 @@ var AstTransformer = (function () {
         return new Quote(ast.prefix, ast.uninterpretedExpression, ast.location);
     };
     return AstTransformer;
-})();
+}());
 exports.AstTransformer = AstTransformer;
 },{"angular2/src/facade/collection":199}],134:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -17732,7 +18097,7 @@ var Lexer = (function () {
         __metadata('design:paramtypes', [])
     ], Lexer);
     return Lexer;
-})();
+}());
 exports.Lexer = Lexer;
 var Token = (function () {
     function Token(index, type, numValue, strValue) {
@@ -17777,7 +18142,7 @@ var Token = (function () {
         }
     };
     return Token;
-})();
+}());
 exports.Token = Token;
 function newCharacterToken(index, code) {
     return new Token(index, TokenType.Character, code, lang_1.StringWrapper.fromCharCode(code));
@@ -17847,7 +18212,7 @@ var ScannerError = (function (_super) {
     }
     ScannerError.prototype.toString = function () { return this.message; };
     return ScannerError;
-})(exceptions_1.BaseException);
+}(exceptions_1.BaseException));
 exports.ScannerError = ScannerError;
 var _Scanner = (function () {
     function _Scanner(input) {
@@ -18057,7 +18422,7 @@ var _Scanner = (function () {
         throw new ScannerError("Lexer Error: " + message + " at column " + position + " in expression [" + this.input + "]");
     };
     return _Scanner;
-})();
+}());
 function isWhitespace(code) {
     return (code >= exports.$TAB && code <= exports.$SPACE) || (code == $NBSP);
 }
@@ -18135,7 +18500,8 @@ var OPERATORS = collection_1.SetWrapper.createFromList([
 ]);
 var KEYWORDS = collection_1.SetWrapper.createFromList(['var', 'null', 'undefined', 'true', 'false', 'if', 'else']);
 },{"angular2/src/core/di/decorators":145,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],135:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var exceptions_1 = require('angular2/src/facade/exceptions');
 var collection_1 = require('angular2/src/facade/collection');
 var Locals = (function () {
@@ -18174,10 +18540,11 @@ var Locals = (function () {
     };
     Locals.prototype.clearLocalValues = function () { collection_1.MapWrapper.clearValues(this.current); };
     return Locals;
-})();
+}());
 exports.Locals = Locals;
 },{"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],136:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -18207,14 +18574,14 @@ var ParseException = (function (_super) {
         _super.call(this, "Parser Error: " + message + " " + errLocation + " [" + input + "] in " + ctxLocation);
     }
     return ParseException;
-})(exceptions_1.BaseException);
+}(exceptions_1.BaseException));
 var SplitInterpolation = (function () {
     function SplitInterpolation(strings, expressions) {
         this.strings = strings;
         this.expressions = expressions;
     }
     return SplitInterpolation;
-})();
+}());
 exports.SplitInterpolation = SplitInterpolation;
 var Parser = (function () {
     function Parser(/** @internal */ _lexer, providedReflector) {
@@ -18321,7 +18688,7 @@ var Parser = (function () {
         __metadata('design:paramtypes', [lexer_1.Lexer, reflection_1.Reflector])
     ], Parser);
     return Parser;
-})();
+}());
 exports.Parser = Parser;
 var _ParseAST = (function () {
     function _ParseAST(input, location, tokens, reflector, parseAction) {
@@ -18791,7 +19158,7 @@ var _ParseAST = (function () {
         throw new ParseException(message, this.input, location, this.location);
     };
     return _ParseAST;
-})();
+}());
 exports._ParseAST = _ParseAST;
 var SimpleExpressionChecker = (function () {
     function SimpleExpressionChecker() {
@@ -18829,23 +19196,26 @@ var SimpleExpressionChecker = (function () {
     SimpleExpressionChecker.prototype.visitChain = function (ast) { this.simple = false; };
     SimpleExpressionChecker.prototype.visitQuote = function (ast) { this.simple = false; };
     return SimpleExpressionChecker;
-})();
+}());
 },{"./ast":133,"./lexer":134,"angular2/src/core/di/decorators":145,"angular2/src/core/reflection/reflection":183,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],137:[function(require,module,exports){
-'use strict';function implementsOnDestroy(pipe) {
+'use strict';"use strict";
+function implementsOnDestroy(pipe) {
     return pipe.constructor.prototype.ngOnDestroy;
 }
 exports.implementsOnDestroy = implementsOnDestroy;
 },{}],138:[function(require,module,exports){
-'use strict';var SelectedPipe = (function () {
+'use strict';"use strict";
+var SelectedPipe = (function () {
     function SelectedPipe(pipe, pure) {
         this.pipe = pipe;
         this.pure = pure;
     }
     return SelectedPipe;
-})();
+}());
 exports.SelectedPipe = SelectedPipe;
 },{}],139:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var exceptions_1 = require('angular2/src/facade/exceptions');
 var collection_1 = require('angular2/src/facade/collection');
 var ast_1 = require('./parser/ast');
@@ -18867,7 +19237,7 @@ var DynamicProtoChangeDetector = (function () {
         return new dynamic_change_detector_1.DynamicChangeDetector(this._definition.id, this._propertyBindingRecords.length, this._propertyBindingTargets, this._directiveIndices, this._definition.strategy, this._propertyBindingRecords, this._eventBindingRecords, this._definition.directiveRecords, this._definition.genConfig);
     };
     return DynamicProtoChangeDetector;
-})();
+}());
 exports.DynamicProtoChangeDetector = DynamicProtoChangeDetector;
 function createPropertyRecords(definition) {
     var recordBuilder = new ProtoRecordBuilder();
@@ -18929,7 +19299,7 @@ var ProtoRecordBuilder = (function () {
         }
     };
     return ProtoRecordBuilder;
-})();
+}());
 exports.ProtoRecordBuilder = ProtoRecordBuilder;
 var _ConvertAstIntoProtoRecords = (function () {
     function _ConvertAstIntoProtoRecords(_records, _bindingRecord, _variableNames, _bindingIndex) {
@@ -19091,7 +19461,7 @@ var _ConvertAstIntoProtoRecords = (function () {
         return selfIndex;
     };
     return _ConvertAstIntoProtoRecords;
-})();
+}());
 function _arrayFn(length) {
     switch (length) {
         case 0:
@@ -19234,7 +19604,8 @@ function _interpolationFn(strings) {
     }
 }
 },{"./change_detection_util":116,"./coalesce":118,"./directive_record":127,"./dynamic_change_detector":128,"./event_binding":129,"./parser/ast":133,"./proto_record":140,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],140:[function(require,module,exports){
-'use strict';(function (RecordType) {
+'use strict';"use strict";
+(function (RecordType) {
     RecordType[RecordType["Self"] = 0] = "Self";
     RecordType[RecordType["Const"] = 1] = "Const";
     RecordType[RecordType["PrimitiveOp"] = 2] = "PrimitiveOp";
@@ -19292,10 +19663,11 @@ var ProtoRecord = (function () {
     };
     ProtoRecord.prototype.isLifeCycleRecord = function () { return this.mode === RecordType.DirectiveLifecycle; };
     return ProtoRecord;
-})();
+}());
 exports.ProtoRecord = ProtoRecord;
 },{}],141:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -19315,10 +19687,11 @@ var Console = (function () {
         __metadata('design:paramtypes', [])
     ], Console);
     return Console;
-})();
+}());
 exports.Console = Console;
 },{"angular2/src/core/di":144,"angular2/src/facade/lang":204}],142:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -19332,7 +19705,7 @@ var EventListener = (function () {
     }
     ;
     return EventListener;
-})();
+}());
 exports.EventListener = EventListener;
 var DebugNode = (function () {
     function DebugNode(nativeNode, parent) {
@@ -19355,7 +19728,7 @@ var DebugNode = (function () {
     DebugNode.prototype.inject = function (token) { return this.injector.get(token); };
     DebugNode.prototype.getLocal = function (name) { return this.locals.get(name); };
     return DebugNode;
-})();
+}());
 exports.DebugNode = DebugNode;
 var DebugElement = (function (_super) {
     __extends(DebugElement, _super);
@@ -19430,7 +19803,7 @@ var DebugElement = (function (_super) {
         });
     };
     return DebugElement;
-})(DebugNode);
+}(DebugNode));
 exports.DebugElement = DebugElement;
 function asNativeElements(debugEls) {
     return debugEls.map(function (el) { return el.nativeElement; });
@@ -19477,7 +19850,8 @@ function removeDebugNodeFromIndex(node) {
 }
 exports.removeDebugNodeFromIndex = removeDebugNodeFromIndex;
 },{"angular2/src/facade/collection":199,"angular2/src/facade/lang":204}],143:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var debug_node_1 = require('angular2/src/core/debug/debug_node');
 var DebugDomRootRenderer = (function () {
     function DebugDomRootRenderer(_delegate) {
@@ -19487,7 +19861,7 @@ var DebugDomRootRenderer = (function () {
         return new DebugDomRenderer(this, this._delegate.renderComponent(componentProto));
     };
     return DebugDomRootRenderer;
-})();
+}());
 exports.DebugDomRootRenderer = DebugDomRootRenderer;
 var DebugDomRenderer = (function () {
     function DebugDomRenderer(_rootRenderer, _delegate) {
@@ -19526,9 +19900,10 @@ var DebugDomRenderer = (function () {
     DebugDomRenderer.prototype.projectNodes = function (parentElement, nodes) {
         var debugParent = debug_node_1.getDebugNode(parentElement);
         if (lang_1.isPresent(debugParent) && debugParent instanceof debug_node_1.DebugElement) {
-            nodes.forEach(function (node) { debugParent.addChild(debug_node_1.getDebugNode(node)); });
+            var debugElement_1 = debugParent;
+            nodes.forEach(function (node) { debugElement_1.addChild(debug_node_1.getDebugNode(node)); });
         }
-        return this._delegate.projectNodes(parentElement, nodes);
+        this._delegate.projectNodes(parentElement, nodes);
     };
     DebugDomRenderer.prototype.attachViewAfter = function (node, viewRootNodes) {
         var debugNode = debug_node_1.getDebugNode(node);
@@ -19540,7 +19915,7 @@ var DebugDomRenderer = (function () {
                 debugParent.insertChildrenAfter(debugNode, debugViewRootNodes);
             }
         }
-        return this._delegate.attachViewAfter(node, viewRootNodes);
+        this._delegate.attachViewAfter(node, viewRootNodes);
     };
     DebugDomRenderer.prototype.detachView = function (viewRootNodes) {
         viewRootNodes.forEach(function (node) {
@@ -19549,11 +19924,11 @@ var DebugDomRenderer = (function () {
                 debugNode.parent.removeChild(debugNode);
             }
         });
-        return this._delegate.detachView(viewRootNodes);
+        this._delegate.detachView(viewRootNodes);
     };
     DebugDomRenderer.prototype.destroyView = function (hostElement, viewAllNodes) {
         viewAllNodes.forEach(function (node) { debug_node_1.removeDebugNodeFromIndex(debug_node_1.getDebugNode(node)); });
-        return this._delegate.destroyView(hostElement, viewAllNodes);
+        this._delegate.destroyView(hostElement, viewAllNodes);
     };
     DebugDomRenderer.prototype.listen = function (renderElement, name, callback) {
         var debugEl = debug_node_1.getDebugNode(renderElement);
@@ -19570,21 +19945,21 @@ var DebugDomRenderer = (function () {
         if (lang_1.isPresent(debugEl) && debugEl instanceof debug_node_1.DebugElement) {
             debugEl.properties.set(propertyName, propertyValue);
         }
-        return this._delegate.setElementProperty(renderElement, propertyName, propertyValue);
+        this._delegate.setElementProperty(renderElement, propertyName, propertyValue);
     };
     DebugDomRenderer.prototype.setElementAttribute = function (renderElement, attributeName, attributeValue) {
         var debugEl = debug_node_1.getDebugNode(renderElement);
         if (lang_1.isPresent(debugEl) && debugEl instanceof debug_node_1.DebugElement) {
             debugEl.attributes.set(attributeName, attributeValue);
         }
-        return this._delegate.setElementAttribute(renderElement, attributeName, attributeValue);
+        this._delegate.setElementAttribute(renderElement, attributeName, attributeValue);
     };
     /**
      * Used only in debug mode to serialize property changes to comment nodes,
      * such as <template> placeholders.
      */
     DebugDomRenderer.prototype.setBindingDebugInfo = function (renderElement, propertyName, propertyValue) {
-        return this._delegate.setBindingDebugInfo(renderElement, propertyName, propertyValue);
+        this._delegate.setBindingDebugInfo(renderElement, propertyName, propertyValue);
     };
     /**
      * Used only in development mode to set information needed by the DebugNode for this element.
@@ -19592,20 +19967,20 @@ var DebugDomRenderer = (function () {
     DebugDomRenderer.prototype.setElementDebugInfo = function (renderElement, info) {
         var debugEl = debug_node_1.getDebugNode(renderElement);
         debugEl.setDebugInfo(info);
-        return this._delegate.setElementDebugInfo(renderElement, info);
+        this._delegate.setElementDebugInfo(renderElement, info);
     };
     DebugDomRenderer.prototype.setElementClass = function (renderElement, className, isAdd) {
-        return this._delegate.setElementClass(renderElement, className, isAdd);
+        this._delegate.setElementClass(renderElement, className, isAdd);
     };
     DebugDomRenderer.prototype.setElementStyle = function (renderElement, styleName, styleValue) {
-        return this._delegate.setElementStyle(renderElement, styleName, styleValue);
+        this._delegate.setElementStyle(renderElement, styleName, styleValue);
     };
     DebugDomRenderer.prototype.invokeElementMethod = function (renderElement, methodName, args) {
-        return this._delegate.invokeElementMethod(renderElement, methodName, args);
+        this._delegate.invokeElementMethod(renderElement, methodName, args);
     };
-    DebugDomRenderer.prototype.setText = function (renderNode, text) { return this._delegate.setText(renderNode, text); };
+    DebugDomRenderer.prototype.setText = function (renderNode, text) { this._delegate.setText(renderNode, text); };
     return DebugDomRenderer;
-})();
+}());
 exports.DebugDomRenderer = DebugDomRenderer;
 },{"angular2/src/core/debug/debug_node":142,"angular2/src/facade/lang":204}],144:[function(require,module,exports){
 'use strict';/**
@@ -19613,6 +19988,7 @@ exports.DebugDomRenderer = DebugDomRenderer;
  * @description
  * The `di` module provides dependency injection container services.
  */
+"use strict";
 function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 }
@@ -19652,7 +20028,8 @@ exports.OutOfBoundsError = exceptions_1.OutOfBoundsError;
 var opaque_token_1 = require('./di/opaque_token');
 exports.OpaqueToken = opaque_token_1.OpaqueToken;
 },{"./di/decorators":145,"./di/exceptions":146,"./di/forward_ref":147,"./di/injector":148,"./di/key":149,"./di/metadata":150,"./di/opaque_token":151,"./di/provider":152}],145:[function(require,module,exports){
-'use strict';var metadata_1 = require('./metadata');
+'use strict';"use strict";
+var metadata_1 = require('./metadata');
 var decorators_1 = require('../util/decorators');
 /**
  * Factory for creating {@link InjectMetadata}.
@@ -19679,7 +20056,8 @@ exports.Host = decorators_1.makeParamDecorator(metadata_1.HostMetadata);
  */
 exports.SkipSelf = decorators_1.makeParamDecorator(metadata_1.SkipSelfMetadata);
 },{"../util/decorators":192,"./metadata":150}],146:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -19733,7 +20111,7 @@ var AbstractProviderError = (function (_super) {
         configurable: true
     });
     return AbstractProviderError;
-})(exceptions_1.BaseException);
+}(exceptions_1.BaseException));
 exports.AbstractProviderError = AbstractProviderError;
 /**
  * Thrown when trying to retrieve a dependency by `Key` from {@link Injector}, but the
@@ -19758,7 +20136,7 @@ var NoProviderError = (function (_super) {
         });
     }
     return NoProviderError;
-})(AbstractProviderError);
+}(AbstractProviderError));
 exports.NoProviderError = NoProviderError;
 /**
  * Thrown when dependencies form a cycle.
@@ -19784,7 +20162,7 @@ var CyclicDependencyError = (function (_super) {
         });
     }
     return CyclicDependencyError;
-})(AbstractProviderError);
+}(AbstractProviderError));
 exports.CyclicDependencyError = CyclicDependencyError;
 /**
  * Thrown when a constructing type returns with an Error.
@@ -19842,7 +20220,7 @@ var InstantiationError = (function (_super) {
         configurable: true
     });
     return InstantiationError;
-})(exceptions_1.WrappedException);
+}(exceptions_1.WrappedException));
 exports.InstantiationError = InstantiationError;
 /**
  * Thrown when an object other then {@link Provider} (or `Type`) is passed to {@link Injector}
@@ -19861,7 +20239,7 @@ var InvalidProviderError = (function (_super) {
             provider.toString());
     }
     return InvalidProviderError;
-})(exceptions_1.BaseException);
+}(exceptions_1.BaseException));
 exports.InvalidProviderError = InvalidProviderError;
 /**
  * Thrown when the class has no annotation information.
@@ -19913,7 +20291,7 @@ var NoAnnotationError = (function (_super) {
             lang_1.stringify(typeOrFunc) + "' is decorated with Injectable.";
     };
     return NoAnnotationError;
-})(exceptions_1.BaseException);
+}(exceptions_1.BaseException));
 exports.NoAnnotationError = NoAnnotationError;
 /**
  * Thrown when getting an object by index.
@@ -19934,7 +20312,7 @@ var OutOfBoundsError = (function (_super) {
         _super.call(this, "Index " + index + " is out-of-bounds.");
     }
     return OutOfBoundsError;
-})(exceptions_1.BaseException);
+}(exceptions_1.BaseException));
 exports.OutOfBoundsError = OutOfBoundsError;
 // TODO: add a working example after alpha38 is released
 /**
@@ -19956,10 +20334,11 @@ var MixingMultiProvidersWithRegularProvidersError = (function (_super) {
             provider2.toString());
     }
     return MixingMultiProvidersWithRegularProvidersError;
-})(exceptions_1.BaseException);
+}(exceptions_1.BaseException));
 exports.MixingMultiProvidersWithRegularProvidersError = MixingMultiProvidersWithRegularProvidersError;
 },{"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],147:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 /**
  * Allows to refer to references which are not yet defined.
  *
@@ -20003,7 +20382,8 @@ function resolveForwardRef(type) {
 }
 exports.resolveForwardRef = resolveForwardRef;
 },{"angular2/src/facade/lang":204}],148:[function(require,module,exports){
-'use strict';var collection_1 = require('angular2/src/facade/collection');
+'use strict';"use strict";
+var collection_1 = require('angular2/src/facade/collection');
 var provider_1 = require('./provider');
 var exceptions_1 = require('./exceptions');
 var lang_1 = require('angular2/src/facade/lang');
@@ -20146,7 +20526,7 @@ var ProtoInjectorInlineStrategy = (function () {
         return new InjectorInlineStrategy(injector, this);
     };
     return ProtoInjectorInlineStrategy;
-})();
+}());
 exports.ProtoInjectorInlineStrategy = ProtoInjectorInlineStrategy;
 var ProtoInjectorDynamicStrategy = (function () {
     function ProtoInjectorDynamicStrategy(protoInj, bwv) {
@@ -20170,7 +20550,7 @@ var ProtoInjectorDynamicStrategy = (function () {
         return new InjectorDynamicStrategy(this, ei);
     };
     return ProtoInjectorDynamicStrategy;
-})();
+}());
 exports.ProtoInjectorDynamicStrategy = ProtoInjectorDynamicStrategy;
 var ProtoInjector = (function () {
     function ProtoInjector(bwv) {
@@ -20187,7 +20567,7 @@ var ProtoInjector = (function () {
         return this._strategy.getProviderAtIndex(index);
     };
     return ProtoInjector;
-})();
+}());
 exports.ProtoInjector = ProtoInjector;
 var InjectorInlineStrategy = (function () {
     function InjectorInlineStrategy(injector, protoStrategy) {
@@ -20298,7 +20678,7 @@ var InjectorInlineStrategy = (function () {
     };
     InjectorInlineStrategy.prototype.getMaxNumberOfObjects = function () { return _MAX_CONSTRUCTION_COUNTER; };
     return InjectorInlineStrategy;
-})();
+}());
 exports.InjectorInlineStrategy = InjectorInlineStrategy;
 var InjectorDynamicStrategy = (function () {
     function InjectorDynamicStrategy(protoStrategy, injector) {
@@ -20331,7 +20711,7 @@ var InjectorDynamicStrategy = (function () {
     };
     InjectorDynamicStrategy.prototype.getMaxNumberOfObjects = function () { return this.objs.length; };
     return InjectorDynamicStrategy;
-})();
+}());
 exports.InjectorDynamicStrategy = InjectorDynamicStrategy;
 var ProviderWithVisibility = (function () {
     function ProviderWithVisibility(provider, visibility) {
@@ -20341,7 +20721,7 @@ var ProviderWithVisibility = (function () {
     ;
     ProviderWithVisibility.prototype.getKeyId = function () { return this.provider.key.id; };
     return ProviderWithVisibility;
-})();
+}());
 exports.ProviderWithVisibility = ProviderWithVisibility;
 /**
  * A dependency injection container used for instantiating objects and resolving dependencies.
@@ -20940,7 +21320,7 @@ var Injector = (function () {
     });
     Injector.prototype.toString = function () { return this.displayName; };
     return Injector;
-})();
+}());
 exports.Injector = Injector;
 var INJECTOR_KEY = key_1.Key.get(Injector);
 function _mapProviders(injector, fn) {
@@ -20951,7 +21331,8 @@ function _mapProviders(injector, fn) {
     return res;
 }
 },{"./exceptions":146,"./key":149,"./metadata":150,"./provider":152,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],149:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var exceptions_1 = require('angular2/src/facade/exceptions');
 var forward_ref_1 = require('./forward_ref');
 /**
@@ -20999,7 +21380,7 @@ var Key = (function () {
         configurable: true
     });
     return Key;
-})();
+}());
 exports.Key = Key;
 /**
  * @internal
@@ -21024,11 +21405,12 @@ var KeyRegistry = (function () {
         configurable: true
     });
     return KeyRegistry;
-})();
+}());
 exports.KeyRegistry = KeyRegistry;
 var _globalKeyRegistry = new KeyRegistry();
 },{"./forward_ref":147,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],150:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -21088,7 +21470,7 @@ var InjectMetadata = (function () {
         __metadata('design:paramtypes', [Object])
     ], InjectMetadata);
     return InjectMetadata;
-})();
+}());
 exports.InjectMetadata = InjectMetadata;
 /**
  * A parameter metadata that marks a dependency as optional. {@link Injector} provides `null` if
@@ -21120,7 +21502,7 @@ var OptionalMetadata = (function () {
         __metadata('design:paramtypes', [])
     ], OptionalMetadata);
     return OptionalMetadata;
-})();
+}());
 exports.OptionalMetadata = OptionalMetadata;
 /**
  * `DependencyMetadata` is used by the framework to extend DI.
@@ -21139,7 +21521,7 @@ var DependencyMetadata = (function () {
         __metadata('design:paramtypes', [])
     ], DependencyMetadata);
     return DependencyMetadata;
-})();
+}());
 exports.DependencyMetadata = DependencyMetadata;
 /**
  * A marker metadata that marks a class as available to {@link Injector} for creation.
@@ -21180,7 +21562,7 @@ var InjectableMetadata = (function () {
         __metadata('design:paramtypes', [])
     ], InjectableMetadata);
     return InjectableMetadata;
-})();
+}());
 exports.InjectableMetadata = InjectableMetadata;
 /**
  * Specifies that an {@link Injector} should retrieve a dependency only from itself.
@@ -21218,7 +21600,7 @@ var SelfMetadata = (function () {
         __metadata('design:paramtypes', [])
     ], SelfMetadata);
     return SelfMetadata;
-})();
+}());
 exports.SelfMetadata = SelfMetadata;
 /**
  * Specifies that the dependency resolution should start from the parent injector.
@@ -21254,7 +21636,7 @@ var SkipSelfMetadata = (function () {
         __metadata('design:paramtypes', [])
     ], SkipSelfMetadata);
     return SkipSelfMetadata;
-})();
+}());
 exports.SkipSelfMetadata = SkipSelfMetadata;
 /**
  * Specifies that an injector should retrieve a dependency from any injector until reaching the
@@ -21319,10 +21701,11 @@ var HostMetadata = (function () {
         __metadata('design:paramtypes', [])
     ], HostMetadata);
     return HostMetadata;
-})();
+}());
 exports.HostMetadata = HostMetadata;
 },{"angular2/src/facade/lang":204}],151:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -21363,10 +21746,11 @@ var OpaqueToken = (function () {
         __metadata('design:paramtypes', [String])
     ], OpaqueToken);
     return OpaqueToken;
-})();
+}());
 exports.OpaqueToken = OpaqueToken;
 },{"angular2/src/facade/lang":204}],152:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -21402,7 +21786,7 @@ var Dependency = (function () {
     }
     Dependency.fromKey = function (key) { return new Dependency(key, false, null, null, []); };
     return Dependency;
-})();
+}());
 exports.Dependency = Dependency;
 var _EMPTY_LIST = lang_1.CONST_EXPR([]);
 /**
@@ -21471,7 +21855,7 @@ var Provider = (function () {
         __metadata('design:paramtypes', [Object, Object])
     ], Provider);
     return Provider;
-})();
+}());
 exports.Provider = Provider;
 /**
  * See {@link Provider} instead.
@@ -21528,7 +21912,7 @@ var Binding = (function (_super) {
         __metadata('design:paramtypes', [Object, Object])
     ], Binding);
     return Binding;
-})(Provider);
+}(Provider));
 exports.Binding = Binding;
 var ResolvedProvider_ = (function () {
     function ResolvedProvider_(key, resolvedFactories, multiProvider) {
@@ -21542,7 +21926,7 @@ var ResolvedProvider_ = (function () {
         configurable: true
     });
     return ResolvedProvider_;
-})();
+}());
 exports.ResolvedProvider_ = ResolvedProvider_;
 /**
  * An internal resolved representation of a factory function created by resolving {@link Provider}.
@@ -21561,7 +21945,7 @@ var ResolvedFactory = (function () {
         this.dependencies = dependencies;
     }
     return ResolvedFactory;
-})();
+}());
 exports.ResolvedFactory = ResolvedFactory;
 /**
  * Creates a {@link Provider}.
@@ -21714,7 +22098,7 @@ var ProviderBuilder = (function () {
         return new Provider(this.token, { useFactory: factory, deps: dependencies });
     };
     return ProviderBuilder;
-})();
+}());
 exports.ProviderBuilder = ProviderBuilder;
 /**
  * Resolve a single provider.
@@ -21888,7 +22272,8 @@ function _createDependency(token, optional, lowerBoundVisibility, upperBoundVisi
     return new Dependency(key_1.Key.get(token), optional, lowerBoundVisibility, upperBoundVisibility, depProps);
 }
 },{"./exceptions":146,"./forward_ref":147,"./key":149,"./metadata":150,"angular2/src/core/reflection/reflection":183,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],153:[function(require,module,exports){
-'use strict';// Public API for compiler
+'use strict';"use strict";
+// Public API for compiler
 var directive_resolver_1 = require('./linker/directive_resolver');
 exports.DirectiveResolver = directive_resolver_1.DirectiveResolver;
 var view_resolver_1 = require('./linker/view_resolver');
@@ -21915,7 +22300,8 @@ exports.ViewContainerRef = view_container_ref_1.ViewContainerRef;
 var dynamic_component_loader_2 = require('./linker/dynamic_component_loader');
 exports.ComponentRef = dynamic_component_loader_2.ComponentRef;
 },{"./linker/compiler":154,"./linker/directive_resolver":156,"./linker/dynamic_component_loader":157,"./linker/element_ref":159,"./linker/query_list":162,"./linker/template_ref":164,"./linker/view_container_ref":166,"./linker/view_manager":167,"./linker/view_ref":168,"./linker/view_resolver":169}],154:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -21947,7 +22333,7 @@ var Compiler = (function () {
     function Compiler() {
     }
     return Compiler;
-})();
+}());
 exports.Compiler = Compiler;
 function isHostViewFactory(type) {
     return type instanceof view_1.HostViewFactory;
@@ -21971,10 +22357,11 @@ var Compiler_ = (function (_super) {
         __metadata('design:paramtypes', [])
     ], Compiler_);
     return Compiler_;
-})(Compiler);
+}(Compiler));
 exports.Compiler_ = Compiler_;
 },{"angular2/src/core/di":144,"angular2/src/core/linker/view":165,"angular2/src/core/linker/view_ref":168,"angular2/src/core/reflection/reflection":183,"angular2/src/facade/async":196,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],155:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var interfaces_1 = require('./interfaces');
 function hasLifecycleHook(lcInterface, token) {
     if (!(token instanceof lang_1.Type))
@@ -22003,7 +22390,8 @@ function hasLifecycleHook(lcInterface, token) {
 }
 exports.hasLifecycleHook = hasLifecycleHook;
 },{"./interfaces":160,"angular2/src/facade/lang":204}],156:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -22150,11 +22538,12 @@ var DirectiveResolver = (function () {
         __metadata('design:paramtypes', [reflector_reader_1.ReflectorReader])
     ], DirectiveResolver);
     return DirectiveResolver;
-})();
+}());
 exports.DirectiveResolver = DirectiveResolver;
 exports.CODEGEN_DIRECTIVE_RESOLVER = new DirectiveResolver(reflection_1.reflector);
 },{"angular2/src/core/di":144,"angular2/src/core/metadata":171,"angular2/src/core/reflection/reflection":183,"angular2/src/core/reflection/reflector_reader":186,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],157:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -22205,7 +22594,7 @@ var ComponentRef = (function () {
         configurable: true
     });
     return ComponentRef;
-})();
+}());
 exports.ComponentRef = ComponentRef;
 var ComponentRef_ = (function (_super) {
     __extends(ComponentRef_, _super);
@@ -22234,7 +22623,7 @@ var ComponentRef_ = (function (_super) {
     });
     ComponentRef_.prototype.dispose = function () { this._dispose(); };
     return ComponentRef_;
-})(ComponentRef);
+}(ComponentRef));
 exports.ComponentRef_ = ComponentRef_;
 /**
  * Service for instantiating a Component and attaching it to a View at a specified location.
@@ -22243,7 +22632,7 @@ var DynamicComponentLoader = (function () {
     function DynamicComponentLoader() {
     }
     return DynamicComponentLoader;
-})();
+}());
 exports.DynamicComponentLoader = DynamicComponentLoader;
 var DynamicComponentLoader_ = (function (_super) {
     __extends(DynamicComponentLoader_, _super);
@@ -22295,10 +22684,11 @@ var DynamicComponentLoader_ = (function (_super) {
         __metadata('design:paramtypes', [compiler_1.Compiler, view_manager_1.AppViewManager])
     ], DynamicComponentLoader_);
     return DynamicComponentLoader_;
-})(DynamicComponentLoader);
+}(DynamicComponentLoader));
 exports.DynamicComponentLoader_ = DynamicComponentLoader_;
 },{"./compiler":154,"angular2/src/core/di":144,"angular2/src/core/linker/view_manager":167,"angular2/src/facade/lang":204}],158:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -22338,7 +22728,7 @@ var StaticKeys = (function () {
         return _staticKeys;
     };
     return StaticKeys;
-})();
+}());
 exports.StaticKeys = StaticKeys;
 var DirectiveDependency = (function (_super) {
     __extends(DirectiveDependency, _super);
@@ -22371,7 +22761,7 @@ var DirectiveDependency = (function (_super) {
         return properties.find(function (p) { return p instanceof di_2.QueryMetadata; });
     };
     return DirectiveDependency;
-})(di_1.Dependency);
+}(di_1.Dependency));
 exports.DirectiveDependency = DirectiveDependency;
 var DirectiveProvider = (function (_super) {
     __extends(DirectiveProvider, _super);
@@ -22417,7 +22807,7 @@ var DirectiveProvider = (function (_super) {
         return new DirectiveProvider(rb.key, rf.factory, deps, isComponent, resolvedProviders, resolvedViewProviders, queries);
     };
     return DirectiveProvider;
-})(provider_2.ResolvedProvider_);
+}(provider_2.ResolvedProvider_));
 exports.DirectiveProvider = DirectiveProvider;
 var QueryMetadataWithSetter = (function () {
     function QueryMetadataWithSetter(setter, metadata) {
@@ -22425,7 +22815,7 @@ var QueryMetadataWithSetter = (function () {
         this.metadata = metadata;
     }
     return QueryMetadataWithSetter;
-})();
+}());
 exports.QueryMetadataWithSetter = QueryMetadataWithSetter;
 function setProvidersVisibility(providers, visibility, result) {
     for (var i = 0; i < providers.length; i++) {
@@ -22487,7 +22877,7 @@ var AppProtoElement = (function () {
     };
     AppProtoElement.prototype.getProviderAtIndex = function (index) { return this.protoInjector.getProviderAtIndex(index); };
     return AppProtoElement;
-})();
+}());
 exports.AppProtoElement = AppProtoElement;
 var _Context = (function () {
     function _Context(element, componentElement, injector) {
@@ -22496,14 +22886,14 @@ var _Context = (function () {
         this.injector = injector;
     }
     return _Context;
-})();
+}());
 var InjectorWithHostBoundary = (function () {
     function InjectorWithHostBoundary(injector, hostInjectorBoundary) {
         this.injector = injector;
         this.hostInjectorBoundary = hostInjectorBoundary;
     }
     return InjectorWithHostBoundary;
-})();
+}());
 exports.InjectorWithHostBoundary = InjectorWithHostBoundary;
 var AppElement = (function () {
     function AppElement(proto, parentView, parent, nativeElement, embeddedViewFactory) {
@@ -22718,7 +23108,7 @@ var AppElement = (function () {
         }
     };
     return AppElement;
-})();
+}());
 exports.AppElement = AppElement;
 var _EmptyQueryStrategy = (function () {
     function _EmptyQueryStrategy() {
@@ -22731,7 +23121,7 @@ var _EmptyQueryStrategy = (function () {
         throw new exceptions_1.BaseException("Cannot find query for directive " + query + ".");
     };
     return _EmptyQueryStrategy;
-})();
+}());
 var _emptyQueryStrategy = new _EmptyQueryStrategy();
 var InlineQueryStrategy = (function () {
     function InlineQueryStrategy(ei) {
@@ -22795,7 +23185,7 @@ var InlineQueryStrategy = (function () {
     };
     InlineQueryStrategy.NUMBER_OF_SUPPORTED_QUERIES = 3;
     return InlineQueryStrategy;
-})();
+}());
 var DynamicQueryStrategy = (function () {
     function DynamicQueryStrategy(ei) {
         this.queries = ei.proto.protoQueryRefs.map(function (p) { return new QueryRef(p, ei); });
@@ -22840,7 +23230,7 @@ var DynamicQueryStrategy = (function () {
         throw new exceptions_1.BaseException("Cannot find query for directive " + query + ".");
     };
     return DynamicQueryStrategy;
-})();
+}());
 /**
  * Strategy used by the `ElementInjector` when the number of providers is 10 or less.
  * In such a case, inlining fields is beneficial for performances.
@@ -22935,7 +23325,7 @@ var ElementDirectiveInlineStrategy = (function () {
         }
     };
     return ElementDirectiveInlineStrategy;
-})();
+}());
 /**
  * Strategy used by the `ElementInjector` when the number of bindings is 11 or more.
  * In such a case, there are too many fields to inline (see ElementInjectorInlineStrategy).
@@ -22974,7 +23364,7 @@ var ElementDirectiveDynamicStrategy = (function () {
         }
     };
     return ElementDirectiveDynamicStrategy;
-})();
+}());
 var ProtoQueryRef = (function () {
     function ProtoQueryRef(dirIndex, setter, query) {
         this.dirIndex = dirIndex;
@@ -22987,7 +23377,7 @@ var ProtoQueryRef = (function () {
         configurable: true
     });
     return ProtoQueryRef;
-})();
+}());
 exports.ProtoQueryRef = ProtoQueryRef;
 var QueryRef = (function () {
     function QueryRef(protoQueryRef, originator) {
@@ -23087,7 +23477,7 @@ var QueryRef = (function () {
         inj.addDirectivesMatchingQuery(this.protoQueryRef.query, aggregator);
     };
     return QueryRef;
-})();
+}());
 exports.QueryRef = QueryRef;
 var _ComponentViewChangeDetectorRef = (function (_super) {
     __extends(_ComponentViewChangeDetectorRef, _super);
@@ -23101,9 +23491,10 @@ var _ComponentViewChangeDetectorRef = (function (_super) {
     _ComponentViewChangeDetectorRef.prototype.checkNoChanges = function () { this._appElement.componentView.changeDetector.ref.checkNoChanges(); };
     _ComponentViewChangeDetectorRef.prototype.reattach = function () { this._appElement.componentView.changeDetector.ref.reattach(); };
     return _ComponentViewChangeDetectorRef;
-})(change_detection_1.ChangeDetectorRef);
+}(change_detection_1.ChangeDetectorRef));
 },{"../metadata/di":172,"../metadata/directives":173,"./element_ref":159,"./query_list":162,"./template_ref":164,"./view_container_ref":166,"./view_type":170,"angular2/src/core/change_detection/change_detection":114,"angular2/src/core/di":144,"angular2/src/core/di/injector":148,"angular2/src/core/di/provider":152,"angular2/src/core/pipes/pipe_provider":175,"angular2/src/core/reflection/reflection":183,"angular2/src/core/render/api":188,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],159:[function(require,module,exports){
-'use strict';var exceptions_1 = require('angular2/src/facade/exceptions');
+'use strict';"use strict";
+var exceptions_1 = require('angular2/src/facade/exceptions');
 /**
  * Represents a location in a View that has an injection, change-detection and render context
  * associated with it.
@@ -23142,7 +23533,7 @@ var ElementRef = (function () {
         configurable: true
     });
     return ElementRef;
-})();
+}());
 exports.ElementRef = ElementRef;
 var ElementRef_ = (function () {
     function ElementRef_(_appElement) {
@@ -23159,10 +23550,11 @@ var ElementRef_ = (function () {
         configurable: true
     });
     return ElementRef_;
-})();
+}());
 exports.ElementRef_ = ElementRef_;
 },{"angular2/src/facade/exceptions":201}],160:[function(require,module,exports){
-'use strict';(function (LifecycleHooks) {
+'use strict';"use strict";
+(function (LifecycleHooks) {
     LifecycleHooks[LifecycleHooks["OnInit"] = 0] = "OnInit";
     LifecycleHooks[LifecycleHooks["OnDestroy"] = 1] = "OnDestroy";
     LifecycleHooks[LifecycleHooks["DoCheck"] = 2] = "DoCheck";
@@ -23187,7 +23579,8 @@ exports.LIFECYCLE_HOOKS_VALUES = [
     LifecycleHooks.AfterViewChecked
 ];
 },{}],161:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -23239,11 +23632,12 @@ var PipeResolver = (function () {
         __metadata('design:paramtypes', [reflector_reader_1.ReflectorReader])
     ], PipeResolver);
     return PipeResolver;
-})();
+}());
 exports.PipeResolver = PipeResolver;
 exports.CODEGEN_PIPE_RESOLVER = new PipeResolver(reflection_1.reflector);
 },{"angular2/src/core/di":144,"angular2/src/core/metadata":171,"angular2/src/core/reflection/reflection":183,"angular2/src/core/reflection/reflector_reader":186,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],162:[function(require,module,exports){
-'use strict';var collection_1 = require('angular2/src/facade/collection');
+'use strict';"use strict";
+var collection_1 = require('angular2/src/facade/collection');
 var lang_1 = require('angular2/src/facade/lang');
 var async_1 = require('angular2/src/facade/async');
 /**
@@ -23324,10 +23718,11 @@ var QueryList = (function () {
     /** @internal */
     QueryList.prototype.notifyOnChanges = function () { this._emitter.emit(this); };
     return QueryList;
-})();
+}());
 exports.QueryList = QueryList;
 },{"angular2/src/facade/async":196,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204}],163:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -23370,11 +23765,12 @@ var ResolvedMetadataCache = (function () {
         __metadata('design:paramtypes', [directive_resolver_1.DirectiveResolver, pipe_resolver_1.PipeResolver])
     ], ResolvedMetadataCache);
     return ResolvedMetadataCache;
-})();
+}());
 exports.ResolvedMetadataCache = ResolvedMetadataCache;
 exports.CODEGEN_RESOLVED_METADATA_CACHE = new ResolvedMetadataCache(directive_resolver_1.CODEGEN_DIRECTIVE_RESOLVER, pipe_resolver_1.CODEGEN_PIPE_RESOLVER);
 },{"../di":144,"../pipes/pipe_provider":175,"./directive_resolver":156,"./element":158,"./pipe_resolver":161,"angular2/src/facade/lang":204}],164:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -23412,7 +23808,7 @@ var TemplateRef = (function () {
         configurable: true
     });
     return TemplateRef;
-})();
+}());
 exports.TemplateRef = TemplateRef;
 var TemplateRef_ = (function (_super) {
     __extends(TemplateRef_, _super);
@@ -23426,10 +23822,11 @@ var TemplateRef_ = (function (_super) {
         configurable: true
     });
     return TemplateRef_;
-})(TemplateRef);
+}(TemplateRef));
 exports.TemplateRef_ = TemplateRef_;
 },{}],165:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -23652,7 +24049,7 @@ var AppView = (function () {
         return this.changeDetector.handleEvent(eventName, boundElementIndex, eventObj);
     };
     return AppView;
-})();
+}());
 exports.AppView = AppView;
 function _localsToStringMap(locals) {
     var res = {};
@@ -23684,7 +24081,7 @@ var AppProtoView = (function () {
         return new AppProtoView(type, protoPipes, templateVariableBindings);
     };
     return AppProtoView;
-})();
+}());
 exports.AppProtoView = AppProtoView;
 var HostViewFactory = (function () {
     function HostViewFactory(selector, viewFactory) {
@@ -23696,7 +24093,7 @@ var HostViewFactory = (function () {
         __metadata('design:paramtypes', [String, Function])
     ], HostViewFactory);
     return HostViewFactory;
-})();
+}());
 exports.HostViewFactory = HostViewFactory;
 function flattenNestedViewRenderNodes(nodes) {
     return _flattenNestedViewRenderNodes(nodes, []);
@@ -23750,7 +24147,8 @@ function checkSlotCount(componentName, expectedSlotCount, projectableNodes) {
 }
 exports.checkSlotCount = checkSlotCount;
 },{"./element":158,"./view_ref":168,"./view_type":170,"angular2/src/core/change_detection/change_detection":114,"angular2/src/core/change_detection/interfaces":131,"angular2/src/core/pipes/pipes":176,"angular2/src/core/render/api":188,"angular2/src/core/render/util":189,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],166:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -23808,7 +24206,7 @@ var ViewContainerRef = (function () {
     });
     ;
     return ViewContainerRef;
-})();
+}());
 exports.ViewContainerRef = ViewContainerRef;
 var ViewContainerRef_ = (function (_super) {
     __extends(ViewContainerRef_, _super);
@@ -23877,10 +24275,11 @@ var ViewContainerRef_ = (function (_super) {
         return vm.detachViewInContainer(this._element.ref, index);
     };
     return ViewContainerRef_;
-})(ViewContainerRef);
+}(ViewContainerRef));
 exports.ViewContainerRef_ = ViewContainerRef_;
 },{"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],167:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -23916,7 +24315,7 @@ var AppViewManager = (function () {
     function AppViewManager() {
     }
     return AppViewManager;
-})();
+}());
 exports.AppViewManager = AppViewManager;
 var AppViewManager_ = (function (_super) {
     __extends(AppViewManager_, _super);
@@ -24073,10 +24472,11 @@ var AppViewManager_ = (function (_super) {
         __metadata('design:paramtypes', [api_1.RootRenderer, String])
     ], AppViewManager_);
     return AppViewManager_;
-})(AppViewManager);
+}(AppViewManager));
 exports.AppViewManager_ = AppViewManager_;
 },{"../profile/profile":180,"./view":165,"./view_type":170,"angular2/src/core/application_tokens":110,"angular2/src/core/di":144,"angular2/src/core/render/api":188,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],168:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -24100,7 +24500,7 @@ var ViewRef = (function () {
         configurable: true
     });
     return ViewRef;
-})();
+}());
 exports.ViewRef = ViewRef;
 /**
  * Represents a View containing a single Element that is the Host Element of a {@link Component}
@@ -24123,7 +24523,7 @@ var HostViewRef = (function (_super) {
     });
     ;
     return HostViewRef;
-})(ViewRef);
+}(ViewRef));
 exports.HostViewRef = HostViewRef;
 /**
  * Represents an Angular View.
@@ -24190,7 +24590,7 @@ var EmbeddedViewRef = (function (_super) {
     });
     ;
     return EmbeddedViewRef;
-})(ViewRef);
+}(ViewRef));
 exports.EmbeddedViewRef = EmbeddedViewRef;
 var ViewRef_ = (function () {
     function ViewRef_(_view) {
@@ -24223,13 +24623,13 @@ var ViewRef_ = (function () {
         configurable: true
     });
     return ViewRef_;
-})();
+}());
 exports.ViewRef_ = ViewRef_;
 var HostViewFactoryRef = (function () {
     function HostViewFactoryRef() {
     }
     return HostViewFactoryRef;
-})();
+}());
 exports.HostViewFactoryRef = HostViewFactoryRef;
 var HostViewFactoryRef_ = (function () {
     function HostViewFactoryRef_(_hostViewFactory) {
@@ -24241,10 +24641,11 @@ var HostViewFactoryRef_ = (function () {
         configurable: true
     });
     return HostViewFactoryRef_;
-})();
+}());
 exports.HostViewFactoryRef_ = HostViewFactoryRef_;
 },{"angular2/src/facade/exceptions":201}],169:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -24354,10 +24755,11 @@ var ViewResolver = (function () {
         __metadata('design:paramtypes', [reflector_reader_1.ReflectorReader])
     ], ViewResolver);
     return ViewResolver;
-})();
+}());
 exports.ViewResolver = ViewResolver;
 },{"../metadata/directives":173,"../metadata/view":174,"angular2/src/core/di":144,"angular2/src/core/reflection/reflection":183,"angular2/src/core/reflection/reflector_reader":186,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],170:[function(require,module,exports){
-'use strict';(function (ViewType) {
+'use strict';"use strict";
+(function (ViewType) {
     // A view that contains the host element with bound component directive.
     // Contains a COMPONENT view
     ViewType[ViewType["HOST"] = 0] = "HOST";
@@ -24374,6 +24776,7 @@ var ViewType = exports.ViewType;
  * This indirection is needed to free up Component, etc symbols in the public API
  * to be used by the decorator versions of these annotations.
  */
+"use strict";
 var di_1 = require('./metadata/di');
 exports.QueryMetadata = di_1.QueryMetadata;
 exports.ContentChildrenMetadata = di_1.ContentChildrenMetadata;
@@ -24904,7 +25307,7 @@ exports.Attribute = decorators_1.makeParamDecorator(di_2.AttributeMetadata);
  *   <div #findme>...</div>
  * </seeker>
  *
- * @Component({ selector: 'foo' })
+ * @Component({ selector: 'seeker' })
  * class seeker {
  *   constructor(@Query('findme') elList: QueryList<ElementRef>) {...}
  * }
@@ -24922,7 +25325,7 @@ exports.Attribute = decorators_1.makeParamDecorator(di_2.AttributeMetadata);
  * </seeker>
  *
  *  @Component({
- *   selector: 'foo'
+ *   selector: 'seeker'
  * })
  * class Seeker {
  *   constructor(@Query('findMe, findMeToo') elList: QueryList<ElementRef>) {...}
@@ -25258,7 +25661,8 @@ exports.HostBinding = decorators_1.makePropDecorator(directives_2.HostBindingMet
  */
 exports.HostListener = decorators_1.makePropDecorator(directives_2.HostListenerMetadata);
 },{"./metadata/di":172,"./metadata/directives":173,"./metadata/view":174,"./util/decorators":192}],172:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -25316,7 +25720,7 @@ var AttributeMetadata = (function (_super) {
         __metadata('design:paramtypes', [String])
     ], AttributeMetadata);
     return AttributeMetadata;
-})(metadata_1.DependencyMetadata);
+}(metadata_1.DependencyMetadata));
 exports.AttributeMetadata = AttributeMetadata;
 /**
  * Declares an injectable parameter to be a live list of directives or variable
@@ -25473,7 +25877,7 @@ var QueryMetadata = (function (_super) {
         __metadata('design:paramtypes', [Object, Object])
     ], QueryMetadata);
     return QueryMetadata;
-})(metadata_1.DependencyMetadata);
+}(metadata_1.DependencyMetadata));
 exports.QueryMetadata = QueryMetadata;
 // TODO: add an example after ContentChildren and ViewChildren are in master
 /**
@@ -25507,7 +25911,7 @@ var ContentChildrenMetadata = (function (_super) {
         __metadata('design:paramtypes', [Object, Object])
     ], ContentChildrenMetadata);
     return ContentChildrenMetadata;
-})(QueryMetadata);
+}(QueryMetadata));
 exports.ContentChildrenMetadata = ContentChildrenMetadata;
 // TODO: add an example after ContentChild and ViewChild are in master
 /**
@@ -25540,7 +25944,7 @@ var ContentChildMetadata = (function (_super) {
         __metadata('design:paramtypes', [Object])
     ], ContentChildMetadata);
     return ContentChildMetadata;
-})(QueryMetadata);
+}(QueryMetadata));
 exports.ContentChildMetadata = ContentChildMetadata;
 /**
  * Similar to {@link QueryMetadata}, but querying the component view, instead of
@@ -25560,7 +25964,7 @@ exports.ContentChildMetadata = ContentChildMetadata;
  * class MyComponent {
  *   shown: boolean;
  *
- *   constructor(private @Query(Item) items:QueryList<Item>) {
+ *   constructor(private @ViewQuery(Item) items:QueryList<Item>) {
  *     items.changes.subscribe(() => console.log(items.length));
  *   }
  * }
@@ -25597,7 +26001,7 @@ var ViewQueryMetadata = (function (_super) {
         __metadata('design:paramtypes', [Object, Object])
     ], ViewQueryMetadata);
     return ViewQueryMetadata;
-})(QueryMetadata);
+}(QueryMetadata));
 exports.ViewQueryMetadata = ViewQueryMetadata;
 /**
  * Configures a view query.
@@ -25631,7 +26035,7 @@ var ViewChildrenMetadata = (function (_super) {
         __metadata('design:paramtypes', [Object])
     ], ViewChildrenMetadata);
     return ViewChildrenMetadata;
-})(ViewQueryMetadata);
+}(ViewQueryMetadata));
 exports.ViewChildrenMetadata = ViewChildrenMetadata;
 /**
  * Configures a view query.
@@ -25665,10 +26069,11 @@ var ViewChildMetadata = (function (_super) {
         __metadata('design:paramtypes', [Object])
     ], ViewChildMetadata);
     return ViewChildMetadata;
-})(ViewQueryMetadata);
+}(ViewQueryMetadata));
 exports.ViewChildMetadata = ViewChildMetadata;
 },{"angular2/src/core/di":144,"angular2/src/core/di/metadata":150,"angular2/src/facade/lang":204}],173:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -26245,7 +26650,7 @@ var DirectiveMetadata = (function (_super) {
         __metadata('design:paramtypes', [Object])
     ], DirectiveMetadata);
     return DirectiveMetadata;
-})(metadata_1.InjectableMetadata);
+}(metadata_1.InjectableMetadata));
 exports.DirectiveMetadata = DirectiveMetadata;
 /**
  * Declare reusable UI building blocks for an application.
@@ -26357,7 +26762,7 @@ var ComponentMetadata = (function (_super) {
         __metadata('design:paramtypes', [Object])
     ], ComponentMetadata);
     return ComponentMetadata;
-})(DirectiveMetadata);
+}(DirectiveMetadata));
 exports.ComponentMetadata = ComponentMetadata;
 /**
  * Declare reusable pipe function.
@@ -26388,7 +26793,7 @@ var PipeMetadata = (function (_super) {
         __metadata('design:paramtypes', [Object])
     ], PipeMetadata);
     return PipeMetadata;
-})(metadata_1.InjectableMetadata);
+}(metadata_1.InjectableMetadata));
 exports.PipeMetadata = PipeMetadata;
 /**
  * Declares a data-bound input property.
@@ -26444,7 +26849,7 @@ var InputMetadata = (function () {
         __metadata('design:paramtypes', [String])
     ], InputMetadata);
     return InputMetadata;
-})();
+}());
 exports.InputMetadata = InputMetadata;
 /**
  * Declares an event-bound output property.
@@ -26496,7 +26901,7 @@ var OutputMetadata = (function () {
         __metadata('design:paramtypes', [String])
     ], OutputMetadata);
     return OutputMetadata;
-})();
+}());
 exports.OutputMetadata = OutputMetadata;
 /**
  * Declares a host property binding.
@@ -26542,7 +26947,7 @@ var HostBindingMetadata = (function () {
         __metadata('design:paramtypes', [String])
     ], HostBindingMetadata);
     return HostBindingMetadata;
-})();
+}());
 exports.HostBindingMetadata = HostBindingMetadata;
 /**
  * Declares a host listener.
@@ -26588,10 +26993,11 @@ var HostListenerMetadata = (function () {
         __metadata('design:paramtypes', [String, Array])
     ], HostListenerMetadata);
     return HostListenerMetadata;
-})();
+}());
 exports.HostListenerMetadata = HostListenerMetadata;
 },{"angular2/src/core/change_detection":111,"angular2/src/core/di/metadata":150,"angular2/src/facade/lang":204}],174:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -26675,10 +27081,11 @@ var ViewMetadata = (function () {
         __metadata('design:paramtypes', [Object])
     ], ViewMetadata);
     return ViewMetadata;
-})();
+}());
 exports.ViewMetadata = ViewMetadata;
 },{"angular2/src/facade/lang":204}],175:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -26698,10 +27105,11 @@ var PipeProvider = (function (_super) {
         return new PipeProvider(metadata.name, metadata.pure, rb.key, rb.resolvedFactories, rb.multiProvider);
     };
     return PipeProvider;
-})(provider_1.ResolvedProvider_);
+}(provider_1.ResolvedProvider_));
 exports.PipeProvider = PipeProvider;
 },{"angular2/src/core/di":144,"angular2/src/core/di/provider":152}],176:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var exceptions_1 = require('angular2/src/facade/exceptions');
 var collection_1 = require('angular2/src/facade/collection');
 var cd = require('angular2/src/core/change_detection/pipes');
@@ -26726,7 +27134,7 @@ var ProtoPipes = (function () {
         return provider;
     };
     return ProtoPipes;
-})();
+}());
 exports.ProtoPipes = ProtoPipes;
 var Pipes = (function () {
     function Pipes(proto, injector) {
@@ -26748,10 +27156,11 @@ var Pipes = (function () {
         return res;
     };
     return Pipes;
-})();
+}());
 exports.Pipes = Pipes;
 },{"angular2/src/core/change_detection/pipes":138,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],177:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var di_1 = require('angular2/src/core/di');
 var console_1 = require('angular2/src/core/console');
 var reflection_1 = require('./reflection/reflection');
@@ -26770,7 +27179,8 @@ exports.PLATFORM_COMMON_PROVIDERS = lang_1.CONST_EXPR([
     console_1.Console
 ]);
 },{"./reflection/reflection":183,"./reflection/reflector_reader":186,"angular2/src/core/console":141,"angular2/src/core/di":144,"angular2/src/core/testability/testability":190,"angular2/src/facade/lang":204}],178:[function(require,module,exports){
-'use strict';var di_1 = require("angular2/src/core/di");
+'use strict';"use strict";
+var di_1 = require("angular2/src/core/di");
 var lang_1 = require("angular2/src/facade/lang");
 /**
  * A token that can be provided when bootstraping an application to make an array of directives
@@ -26822,10 +27232,12 @@ exports.PLATFORM_DIRECTIVES = lang_1.CONST_EXPR(new di_1.OpaqueToken("Platform D
  */
 exports.PLATFORM_PIPES = lang_1.CONST_EXPR(new di_1.OpaqueToken("Platform Pipes"));
 },{"angular2/src/core/di":144,"angular2/src/facade/lang":204}],179:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 exports.enableProdMode = lang_1.enableProdMode;
 },{"angular2/src/facade/lang":204}],180:[function(require,module,exports){
-'use strict';var impl = require("./wtf_impl");
+'use strict';"use strict";
+var impl = require("./wtf_impl");
 // Change exports to const once https://github.com/angular/ts2dart/issues/150
 /**
  * True if WTF is enabled.
@@ -26895,7 +27307,8 @@ exports.wtfEndTimeRange = exports.wtfEnabled ? impl.endTimeRange : function (r) 
     return null;
 };
 },{"./wtf_impl":181}],181:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var trace;
 var events;
 function detectWTF() {
@@ -26929,13 +27342,15 @@ function endTimeRange(range) {
 }
 exports.endTimeRange = endTimeRange;
 },{"angular2/src/facade/lang":204}],182:[function(require,module,exports){
-'use strict';/**
+'use strict';"use strict";
+/**
  * This is here because DART requires it. It is noop in JS.
  */
 function wtfInit() { }
 exports.wtfInit = wtfInit;
 },{}],183:[function(require,module,exports){
-'use strict';var reflector_1 = require('./reflector');
+'use strict';"use strict";
+var reflector_1 = require('./reflector');
 var reflector_2 = require('./reflector');
 exports.Reflector = reflector_2.Reflector;
 exports.ReflectionInfo = reflector_2.ReflectionInfo;
@@ -26946,7 +27361,8 @@ var reflection_capabilities_1 = require('./reflection_capabilities');
  */
 exports.reflector = new reflector_1.Reflector(new reflection_capabilities_1.ReflectionCapabilities());
 },{"./reflection_capabilities":184,"./reflector":185}],184:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var exceptions_1 = require('angular2/src/facade/exceptions');
 var ReflectionCapabilities = (function () {
     function ReflectionCapabilities(reflect) {
@@ -27122,10 +27538,11 @@ var ReflectionCapabilities = (function () {
     // There is not a concept of import uri in Js, but this is useful in developing Dart applications.
     ReflectionCapabilities.prototype.importUri = function (type) { return './'; };
     return ReflectionCapabilities;
-})();
+}());
 exports.ReflectionCapabilities = ReflectionCapabilities;
 },{"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],185:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -27146,7 +27563,7 @@ var ReflectionInfo = (function () {
         this.propMetadata = propMetadata;
     }
     return ReflectionInfo;
-})();
+}());
 exports.ReflectionInfo = ReflectionInfo;
 /**
  * Provides access to reflection data about symbols. Used internally by Angular
@@ -27275,13 +27692,14 @@ var Reflector = (function (_super) {
     Reflector.prototype._containsReflectionInfo = function (typeOrFunc) { return this._injectableInfo.has(typeOrFunc); };
     Reflector.prototype.importUri = function (type) { return this.reflectionCapabilities.importUri(type); };
     return Reflector;
-})(reflector_reader_1.ReflectorReader);
+}(reflector_reader_1.ReflectorReader));
 exports.Reflector = Reflector;
 function _mergeMaps(target, config) {
     collection_1.StringMapWrapper.forEach(config, function (v, k) { return target.set(k, v); });
 }
 },{"./reflector_reader":186,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],186:[function(require,module,exports){
-'use strict';/**
+'use strict';"use strict";
+/**
  * Provides read-only access to reflection data about symbols. Used internally by Angular
  * to power dependency injection and compilation.
  */
@@ -27289,23 +27707,25 @@ var ReflectorReader = (function () {
     function ReflectorReader() {
     }
     return ReflectorReader;
-})();
+}());
 exports.ReflectorReader = ReflectorReader;
 },{}],187:[function(require,module,exports){
-'use strict';// Public API for render
+'use strict';"use strict";
+// Public API for render
 var api_1 = require('./render/api');
 exports.RootRenderer = api_1.RootRenderer;
 exports.Renderer = api_1.Renderer;
 exports.RenderComponentType = api_1.RenderComponentType;
 },{"./render/api":188}],188:[function(require,module,exports){
-'use strict';var RenderComponentType = (function () {
+'use strict';"use strict";
+var RenderComponentType = (function () {
     function RenderComponentType(id, encapsulation, styles) {
         this.id = id;
         this.encapsulation = encapsulation;
         this.styles = styles;
     }
     return RenderComponentType;
-})();
+}());
 exports.RenderComponentType = RenderComponentType;
 var RenderDebugInfo = (function () {
     function RenderDebugInfo(injector, component, providerTokens, locals) {
@@ -27315,13 +27735,13 @@ var RenderDebugInfo = (function () {
         this.locals = locals;
     }
     return RenderDebugInfo;
-})();
+}());
 exports.RenderDebugInfo = RenderDebugInfo;
 var Renderer = (function () {
     function Renderer() {
     }
     return Renderer;
-})();
+}());
 exports.Renderer = Renderer;
 /**
  * Injectable service that provides a low-level interface for modifying the UI.
@@ -27339,10 +27759,11 @@ var RootRenderer = (function () {
     function RootRenderer() {
     }
     return RootRenderer;
-})();
+}());
 exports.RootRenderer = RootRenderer;
 },{}],189:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var CAMEL_CASE_REGEXP = /([A-Z])/g;
 var DASH_CASE_REGEXP = /-([a-z])/g;
 function camelCaseToDashCase(input) {
@@ -27354,7 +27775,8 @@ function dashCaseToCamelCase(input) {
 }
 exports.dashCaseToCamelCase = dashCaseToCamelCase;
 },{"angular2/src/facade/lang":204}],190:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -27379,6 +27801,7 @@ var Testability = (function () {
         this._ngZone = _ngZone;
         /** @internal */
         this._pendingCount = 0;
+        /** @internal */
         this._isZoneStable = true;
         /**
          * Whether any work was done since the last 'whenStable' callback. This is
@@ -27459,7 +27882,7 @@ var Testability = (function () {
         __metadata('design:paramtypes', [ng_zone_1.NgZone])
     ], Testability);
     return Testability;
-})();
+}());
 exports.Testability = Testability;
 /**
  * A global registry of {@link Testability} instances for specific elements.
@@ -27485,7 +27908,7 @@ var TestabilityRegistry = (function () {
         __metadata('design:paramtypes', [])
     ], TestabilityRegistry);
     return TestabilityRegistry;
-})();
+}());
 exports.TestabilityRegistry = TestabilityRegistry;
 var _NoopGetTestability = (function () {
     function _NoopGetTestability() {
@@ -27499,7 +27922,7 @@ var _NoopGetTestability = (function () {
         __metadata('design:paramtypes', [])
     ], _NoopGetTestability);
     return _NoopGetTestability;
-})();
+}());
 /**
  * Set the {@link GetTestability} implementation used by the Angular testing framework.
  */
@@ -27509,11 +27932,13 @@ function setTestabilityGetter(getter) {
 exports.setTestabilityGetter = setTestabilityGetter;
 var _testabilityGetter = lang_1.CONST_EXPR(new _NoopGetTestability());
 },{"../zone/ng_zone":194,"angular2/src/core/di":144,"angular2/src/facade/async":196,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],191:[function(require,module,exports){
-'use strict';// Public API for util
+'use strict';"use strict";
+// Public API for util
 var decorators_1 = require('./util/decorators');
 exports.Class = decorators_1.Class;
 },{"./util/decorators":192}],192:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var _nextClassId = 0;
 function extractAnnotation(annotation) {
     if (lang_1.isFunction(annotation) && annotation.hasOwnProperty('annotation')) {
@@ -27767,12 +28192,14 @@ function makePropDecorator(decoratorCls) {
 }
 exports.makePropDecorator = makePropDecorator;
 },{"angular2/src/facade/lang":204}],193:[function(require,module,exports){
-'use strict';// Public API for Zone
+'use strict';"use strict";
+// Public API for Zone
 var ng_zone_1 = require('./zone/ng_zone');
 exports.NgZone = ng_zone_1.NgZone;
 exports.NgZoneError = ng_zone_1.NgZoneError;
 },{"./zone/ng_zone":194}],194:[function(require,module,exports){
-'use strict';var async_1 = require('angular2/src/facade/async');
+'use strict';"use strict";
+var async_1 = require('angular2/src/facade/async');
 var ng_zone_impl_1 = require('./ng_zone_impl');
 var exceptions_1 = require('../../facade/exceptions');
 var ng_zone_impl_2 = require('./ng_zone_impl');
@@ -28006,10 +28433,11 @@ var NgZone = (function () {
      */
     NgZone.prototype.runOutsideAngular = function (fn) { return this._zoneImpl.runOuter(fn); };
     return NgZone;
-})();
+}());
 exports.NgZone = NgZone;
 },{"../../facade/exceptions":201,"./ng_zone_impl":195,"angular2/src/facade/async":196}],195:[function(require,module,exports){
-'use strict';/**
+'use strict';"use strict";
+/**
  * Stores error information; delivered via [NgZone.onError] stream.
  */
 var NgZoneError = (function () {
@@ -28018,7 +28446,7 @@ var NgZoneError = (function () {
         this.stackTrace = stackTrace;
     }
     return NgZoneError;
-})();
+}());
 exports.NgZoneError = NgZoneError;
 var NgZoneImpl = (function () {
     function NgZoneImpl(_a) {
@@ -28088,10 +28516,11 @@ var NgZoneImpl = (function () {
     NgZoneImpl.prototype.runOuter = function (fn) { return this.outer.run(fn); };
     ;
     return NgZoneImpl;
-})();
+}());
 exports.NgZoneImpl = NgZoneImpl;
 },{}],196:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -28119,7 +28548,7 @@ var TimerWrapper = (function () {
     };
     TimerWrapper.clearInterval = function (id) { lang_1.global.clearInterval(id); };
     return TimerWrapper;
-})();
+}());
 exports.TimerWrapper = TimerWrapper;
 var ObservableWrapper = (function () {
     function ObservableWrapper() {
@@ -28149,7 +28578,7 @@ var ObservableWrapper = (function () {
     };
     ObservableWrapper.toPromise = function (obj) { return toPromise_1.toPromise.call(obj); };
     return ObservableWrapper;
-})();
+}());
 exports.ObservableWrapper = ObservableWrapper;
 /**
  * Use by directives and components to emit custom Events.
@@ -28237,10 +28666,11 @@ var EventEmitter = (function (_super) {
         return _super.prototype.subscribe.call(this, schedulerFn, errorFn, completeFn);
     };
     return EventEmitter;
-})(Subject_1.Subject);
+}(Subject_1.Subject));
 exports.EventEmitter = EventEmitter;
 },{"angular2/src/facade/lang":204,"angular2/src/facade/promise":206,"rxjs/Observable":420,"rxjs/Subject":422,"rxjs/observable/PromiseObservable":427,"rxjs/operator/toPromise":430}],197:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -28286,10 +28716,11 @@ var BaseWrappedException = (function (_super) {
         configurable: true
     });
     return BaseWrappedException;
-})(Error);
+}(Error));
 exports.BaseWrappedException = BaseWrappedException;
 },{}],198:[function(require,module,exports){
-'use strict';/**
+'use strict';"use strict";
+/**
  * JS version of browser APIs. This library can only run in the browser.
  */
 var win = window;
@@ -28306,7 +28737,8 @@ exports.History = window['History'];
 exports.Location = window['Location'];
 exports.EventListener = window['EventListener'];
 },{}],199:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 exports.Map = lang_1.global.Map;
 exports.Set = lang_1.global.Set;
 // Safari and Internet Explorer do not support the iterable parameter to the
@@ -28401,7 +28833,7 @@ var MapWrapper = (function () {
     MapWrapper.keys = function (m) { return _arrayFromMap(m, false); };
     MapWrapper.values = function (m) { return _arrayFromMap(m, true); };
     return MapWrapper;
-})();
+}());
 exports.MapWrapper = MapWrapper;
 /**
  * Wraps Javascript Objects
@@ -28473,7 +28905,7 @@ var StringMapWrapper = (function () {
         return true;
     };
     return StringMapWrapper;
-})();
+}());
 exports.StringMapWrapper = StringMapWrapper;
 var ListWrapper = (function () {
     function ListWrapper() {
@@ -28483,11 +28915,6 @@ var ListWrapper = (function () {
     ListWrapper.createFixedSize = function (size) { return new Array(size); };
     ListWrapper.createGrowableSize = function (size) { return new Array(size); };
     ListWrapper.clone = function (array) { return array.slice(0); };
-    ListWrapper.createImmutable = function (array) {
-        var result = ListWrapper.clone(array);
-        Object.seal(result);
-        return result;
-    };
     ListWrapper.forEachWithIndex = function (array, fn) {
         for (var i = 0; i < array.length; i++) {
             fn(array[i], i);
@@ -28584,14 +29011,13 @@ var ListWrapper = (function () {
         }
         return solution;
     };
-    ListWrapper.isImmutable = function (list) { return Object.isSealed(list); };
     ListWrapper.flatten = function (array) {
         var res = [];
         array.forEach(function (a) { return res = res.concat(a); });
         return res;
     };
     return ListWrapper;
-})();
+}());
 exports.ListWrapper = ListWrapper;
 function isListLikeIterable(obj) {
     if (!lang_1.isJsObject(obj))
@@ -28657,10 +29083,11 @@ var SetWrapper = (function () {
     SetWrapper.has = function (s, key) { return s.has(key); };
     SetWrapper.delete = function (m, k) { m.delete(k); };
     return SetWrapper;
-})();
+}());
 exports.SetWrapper = SetWrapper;
 },{"angular2/src/facade/lang":204}],200:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var base_wrapped_exception_1 = require('angular2/src/facade/base_wrapped_exception');
 var collection_1 = require('angular2/src/facade/collection');
 var _ArrayLogger = (function () {
@@ -28673,7 +29100,7 @@ var _ArrayLogger = (function () {
     _ArrayLogger.prototype.logGroupEnd = function () { };
     ;
     return _ArrayLogger;
-})();
+}());
 /**
  * Provides a hook for centralized exception handling.
  *
@@ -28788,10 +29215,11 @@ var ExceptionHandler = (function () {
         return stack;
     };
     return ExceptionHandler;
-})();
+}());
 exports.ExceptionHandler = ExceptionHandler;
 },{"angular2/src/facade/base_wrapped_exception":197,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204}],201:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -28810,7 +29238,7 @@ var BaseException = (function (_super) {
     }
     BaseException.prototype.toString = function () { return this.message; };
     return BaseException;
-})(Error);
+}(Error));
 exports.BaseException = BaseException;
 /**
  * Wraps an exception and provides additional context or information.
@@ -28857,7 +29285,7 @@ var WrappedException = (function (_super) {
     });
     WrappedException.prototype.toString = function () { return this.message; };
     return WrappedException;
-})(base_wrapped_exception_1.BaseWrappedException);
+}(base_wrapped_exception_1.BaseWrappedException));
 exports.WrappedException = WrappedException;
 function makeTypeError(message) {
     return new TypeError(message);
@@ -28868,7 +29296,8 @@ function unimplemented() {
 }
 exports.unimplemented = unimplemented;
 },{"./base_wrapped_exception":197,"./exception_handler":200}],202:[function(require,module,exports){
-'use strict';// Public API for Facade
+'use strict';"use strict";
+// Public API for Facade
 var lang_1 = require('./lang');
 exports.Type = lang_1.Type;
 var async_1 = require('./async');
@@ -28878,7 +29307,8 @@ exports.WrappedException = exceptions_1.WrappedException;
 var exception_handler_1 = require('./exception_handler');
 exports.ExceptionHandler = exception_handler_1.ExceptionHandler;
 },{"./async":196,"./exception_handler":200,"./exceptions":201,"./lang":204}],203:[function(require,module,exports){
-'use strict';(function (NumberFormatStyle) {
+'use strict';"use strict";
+(function (NumberFormatStyle) {
     NumberFormatStyle[NumberFormatStyle["Decimal"] = 0] = "Decimal";
     NumberFormatStyle[NumberFormatStyle["Percent"] = 1] = "Percent";
     NumberFormatStyle[NumberFormatStyle["Currency"] = 2] = "Currency";
@@ -28902,7 +29332,7 @@ var NumberFormatter = (function () {
         return new Intl.NumberFormat(locale, intlOptions).format(num);
     };
     return NumberFormatter;
-})();
+}());
 exports.NumberFormatter = NumberFormatter;
 function digitCondition(len) {
     return len == 2 ? '2-digit' : 'numeric';
@@ -28979,11 +29409,12 @@ var DateFormatter = (function () {
         return formatter.format(date);
     };
     return DateFormatter;
-})();
+}());
 exports.DateFormatter = DateFormatter;
 },{}],204:[function(require,module,exports){
 (function (global){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -29070,6 +29501,14 @@ function isBlank(obj) {
     return obj === undefined || obj === null;
 }
 exports.isBlank = isBlank;
+function isBoolean(obj) {
+    return typeof obj === "boolean";
+}
+exports.isBoolean = isBoolean;
+function isNumber(obj) {
+    return typeof obj === "number";
+}
+exports.isNumber = isNumber;
 function isString(obj) {
     return typeof obj === "string";
 }
@@ -29094,10 +29533,6 @@ function isArray(obj) {
     return Array.isArray(obj);
 }
 exports.isArray = isArray;
-function isNumber(obj) {
-    return typeof obj === 'number';
-}
-exports.isNumber = isNumber;
 function isDate(obj) {
     return obj instanceof exports.Date && !isNaN(obj.valueOf());
 }
@@ -29203,7 +29638,7 @@ var StringWrapper = (function () {
         }
     };
     return StringWrapper;
-})();
+}());
 exports.StringWrapper = StringWrapper;
 var StringJoiner = (function () {
     function StringJoiner(parts) {
@@ -29213,7 +29648,7 @@ var StringJoiner = (function () {
     StringJoiner.prototype.add = function (part) { this.parts.push(part); };
     StringJoiner.prototype.toString = function () { return this.parts.join(""); };
     return StringJoiner;
-})();
+}());
 exports.StringJoiner = StringJoiner;
 var NumberParseError = (function (_super) {
     __extends(NumberParseError, _super);
@@ -29223,7 +29658,7 @@ var NumberParseError = (function (_super) {
     }
     NumberParseError.prototype.toString = function () { return this.message; };
     return NumberParseError;
-})(Error);
+}(Error));
 exports.NumberParseError = NumberParseError;
 var NumberWrapper = (function () {
     function NumberWrapper() {
@@ -29267,7 +29702,7 @@ var NumberWrapper = (function () {
     NumberWrapper.isNaN = function (value) { return isNaN(value); };
     NumberWrapper.isInteger = function (value) { return Number.isInteger(value); };
     return NumberWrapper;
-})();
+}());
 exports.NumberWrapper = NumberWrapper;
 exports.RegExp = _global.RegExp;
 var RegExpWrapper = (function () {
@@ -29310,7 +29745,7 @@ var RegExpWrapper = (function () {
         return res;
     };
     return RegExpWrapper;
-})();
+}());
 exports.RegExpWrapper = RegExpWrapper;
 var RegExpMatcherWrapper = (function () {
     function RegExpMatcherWrapper() {
@@ -29319,14 +29754,14 @@ var RegExpMatcherWrapper = (function () {
         return matcher.re.exec(matcher.input);
     };
     return RegExpMatcherWrapper;
-})();
+}());
 exports.RegExpMatcherWrapper = RegExpMatcherWrapper;
 var FunctionWrapper = (function () {
     function FunctionWrapper() {
     }
     FunctionWrapper.apply = function (fn, posArgs) { return fn.apply(null, posArgs); };
     return FunctionWrapper;
-})();
+}());
 exports.FunctionWrapper = FunctionWrapper;
 // JS has NaN !== NaN
 function looseIdentical(a, b) {
@@ -29365,7 +29800,7 @@ var Json = (function () {
         return _global.JSON.stringify(data, null, 2);
     };
     return Json;
-})();
+}());
 exports.Json = Json;
 var DateWrapper = (function () {
     function DateWrapper() {
@@ -29385,7 +29820,7 @@ var DateWrapper = (function () {
     DateWrapper.now = function () { return new exports.Date(); };
     DateWrapper.toJson = function (date) { return date.toJSON(); };
     return DateWrapper;
-})();
+}());
 exports.DateWrapper = DateWrapper;
 function setValueOnPath(global, path, value) {
     var parts = path.split('.');
@@ -29460,11 +29895,13 @@ exports.escape = escape;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{}],205:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 exports.Math = lang_1.global.Math;
 exports.NaN = typeof exports.NaN;
 },{"angular2/src/facade/lang":204}],206:[function(require,module,exports){
-'use strict';var PromiseCompleter = (function () {
+'use strict';"use strict";
+var PromiseCompleter = (function () {
     function PromiseCompleter() {
         var _this = this;
         this.promise = new Promise(function (res, rej) {
@@ -29473,7 +29910,7 @@ exports.NaN = typeof exports.NaN;
         });
     }
     return PromiseCompleter;
-})();
+}());
 exports.PromiseCompleter = PromiseCompleter;
 var PromiseWrapper = (function () {
     function PromiseWrapper() {
@@ -29509,10 +29946,11 @@ var PromiseWrapper = (function () {
     PromiseWrapper.isPromise = function (obj) { return obj instanceof Promise; };
     PromiseWrapper.completer = function () { return new PromiseCompleter(); };
     return PromiseWrapper;
-})();
+}());
 exports.PromiseWrapper = PromiseWrapper;
 },{}],207:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -29565,10 +30003,11 @@ var BrowserJsonp = (function () {
         __metadata('design:paramtypes', [])
     ], BrowserJsonp);
     return BrowserJsonp;
-})();
+}());
 exports.BrowserJsonp = BrowserJsonp;
 },{"angular2/core":20,"angular2/src/facade/lang":204}],208:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -29592,10 +30031,11 @@ var BrowserXhr = (function () {
         __metadata('design:paramtypes', [])
     ], BrowserXhr);
     return BrowserXhr;
-})();
+}());
 exports.BrowserXhr = BrowserXhr;
 },{"angular2/core":20}],209:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -29627,7 +30067,7 @@ var JSONPConnection = (function () {
     function JSONPConnection() {
     }
     return JSONPConnection;
-})();
+}());
 exports.JSONPConnection = JSONPConnection;
 var JSONPConnection_ = (function (_super) {
     __extends(JSONPConnection_, _super);
@@ -29709,7 +30149,7 @@ var JSONPConnection_ = (function (_super) {
         this._responseData = data;
     };
     return JSONPConnection_;
-})(JSONPConnection);
+}(JSONPConnection));
 exports.JSONPConnection_ = JSONPConnection_;
 /**
  * A {@link ConnectionBackend} that uses the JSONP strategy of making requests.
@@ -29720,7 +30160,7 @@ var JSONPBackend = (function (_super) {
         _super.apply(this, arguments);
     }
     return JSONPBackend;
-})(interfaces_1.ConnectionBackend);
+}(interfaces_1.ConnectionBackend));
 exports.JSONPBackend = JSONPBackend;
 var JSONPBackend_ = (function (_super) {
     __extends(JSONPBackend_, _super);
@@ -29737,10 +30177,11 @@ var JSONPBackend_ = (function (_super) {
         __metadata('design:paramtypes', [browser_jsonp_1.BrowserJsonp, base_response_options_1.ResponseOptions])
     ], JSONPBackend_);
     return JSONPBackend_;
-})(JSONPBackend);
+}(JSONPBackend));
 exports.JSONPBackend_ = JSONPBackend_;
 },{"../base_response_options":212,"../enums":213,"../interfaces":217,"../static_response":219,"./browser_jsonp":207,"angular2/core":20,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204,"rxjs/Observable":420}],210:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -29824,7 +30265,7 @@ var XHRConnection = (function () {
         });
     }
     return XHRConnection;
-})();
+}());
 exports.XHRConnection = XHRConnection;
 /**
  * Creates {@link XHRConnection} instances.
@@ -29865,10 +30306,11 @@ var XHRBackend = (function () {
         __metadata('design:paramtypes', [browser_xhr_1.BrowserXhr, base_response_options_1.ResponseOptions])
     ], XHRBackend);
     return XHRBackend;
-})();
+}());
 exports.XHRBackend = XHRBackend;
 },{"../base_response_options":212,"../enums":213,"../headers":214,"../http_utils":216,"../static_response":219,"./browser_xhr":208,"angular2/core":20,"angular2/src/facade/lang":204,"rxjs/Observable":420}],211:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -29961,7 +30403,7 @@ var RequestOptions = (function () {
         });
     };
     return RequestOptions;
-})();
+}());
 exports.RequestOptions = RequestOptions;
 /**
  * Subclass of {@link RequestOptions}, with default values.
@@ -30017,10 +30459,11 @@ var BaseRequestOptions = (function (_super) {
         __metadata('design:paramtypes', [])
     ], BaseRequestOptions);
     return BaseRequestOptions;
-})(RequestOptions);
+}(RequestOptions));
 exports.BaseRequestOptions = BaseRequestOptions;
 },{"./enums":213,"./headers":214,"./http_utils":216,"./url_search_params":220,"angular2/core":20,"angular2/src/facade/lang":204}],212:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -30111,7 +30554,7 @@ var ResponseOptions = (function () {
         });
     };
     return ResponseOptions;
-})();
+}());
 exports.ResponseOptions = ResponseOptions;
 /**
  * Subclass of {@link ResponseOptions}, with default values.
@@ -30167,10 +30610,11 @@ var BaseResponseOptions = (function (_super) {
         __metadata('design:paramtypes', [])
     ], BaseResponseOptions);
     return BaseResponseOptions;
-})(ResponseOptions);
+}(ResponseOptions));
 exports.BaseResponseOptions = BaseResponseOptions;
 },{"./enums":213,"./headers":214,"angular2/core":20,"angular2/src/facade/lang":204}],213:[function(require,module,exports){
-'use strict';/**
+'use strict';"use strict";
+/**
  * Supported http methods.
  */
 (function (RequestMethod) {
@@ -30210,7 +30654,8 @@ var ReadyState = exports.ReadyState;
 })(exports.ResponseType || (exports.ResponseType = {}));
 var ResponseType = exports.ResponseType;
 },{}],214:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var exceptions_1 = require('angular2/src/facade/exceptions');
 var collection_1 = require('angular2/src/facade/collection');
 /**
@@ -30341,10 +30786,11 @@ var Headers = (function () {
      */
     Headers.prototype.entries = function () { throw new exceptions_1.BaseException('"entries" method is not implemented on Headers class'); };
     return Headers;
-})();
+}());
 exports.Headers = Headers;
 },{"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],215:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -30510,7 +30956,7 @@ var Http = (function () {
         __metadata('design:paramtypes', [interfaces_1.ConnectionBackend, base_request_options_1.RequestOptions])
     ], Http);
     return Http;
-})();
+}());
 exports.Http = Http;
 var Jsonp = (function (_super) {
     __extends(Jsonp, _super);
@@ -30545,10 +30991,11 @@ var Jsonp = (function (_super) {
         __metadata('design:paramtypes', [interfaces_1.ConnectionBackend, base_request_options_1.RequestOptions])
     ], Jsonp);
     return Jsonp;
-})(Http);
+}(Http));
 exports.Jsonp = Jsonp;
 },{"./base_request_options":211,"./enums":213,"./interfaces":217,"./static_request":218,"angular2/core":20,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],216:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var enums_1 = require('./enums');
 var exceptions_1 = require('angular2/src/facade/exceptions');
 function normalizeMethodName(method) {
@@ -30579,7 +31026,8 @@ exports.getResponseURL = getResponseURL;
 var lang_2 = require('angular2/src/facade/lang');
 exports.isJsObject = lang_2.isJsObject;
 },{"./enums":213,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],217:[function(require,module,exports){
-'use strict';/**
+'use strict';"use strict";
+/**
  * Abstract class from which real backends are derived.
  *
  * The primary purpose of a `ConnectionBackend` is to create new connections to fulfill a given
@@ -30589,7 +31037,7 @@ var ConnectionBackend = (function () {
     function ConnectionBackend() {
     }
     return ConnectionBackend;
-})();
+}());
 exports.ConnectionBackend = ConnectionBackend;
 /**
  * Abstract class from which real connections are derived.
@@ -30598,10 +31046,11 @@ var Connection = (function () {
     function Connection() {
     }
     return Connection;
-})();
+}());
 exports.Connection = Connection;
 },{}],218:[function(require,module,exports){
-'use strict';var headers_1 = require('./headers');
+'use strict';"use strict";
+var headers_1 = require('./headers');
 var http_utils_1 = require('./http_utils');
 var lang_1 = require('angular2/src/facade/lang');
 // TODO(jeffbcross): properly implement body accessors
@@ -30672,10 +31121,11 @@ var Request = (function () {
      */
     Request.prototype.text = function () { return lang_1.isPresent(this._body) ? this._body.toString() : ''; };
     return Request;
-})();
+}());
 exports.Request = Request;
 },{"./headers":214,"./http_utils":216,"angular2/src/facade/lang":204}],219:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var exceptions_1 = require('angular2/src/facade/exceptions');
 var http_utils_1 = require('./http_utils');
 /**
@@ -30735,10 +31185,11 @@ var Response = (function () {
         throw new exceptions_1.BaseException('"arrayBuffer()" method not implemented on Response superclass');
     };
     return Response;
-})();
+}());
 exports.Response = Response;
 },{"./http_utils":216,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],220:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var collection_1 = require('angular2/src/facade/collection');
 function paramParser(rawParams) {
     if (rawParams === void 0) { rawParams = ''; }
@@ -30862,10 +31313,11 @@ var URLSearchParams = (function () {
     };
     URLSearchParams.prototype.delete = function (param) { this.paramsMap.delete(param); };
     return URLSearchParams;
-})();
+}());
 exports.URLSearchParams = URLSearchParams;
 },{"angular2/src/facade/collection":199,"angular2/src/facade/lang":204}],221:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -31237,7 +31689,7 @@ var BrowserDomAdapter = (function (_super) {
         }
     };
     return BrowserDomAdapter;
-})(generic_browser_adapter_1.GenericBrowserDomAdapter);
+}(generic_browser_adapter_1.GenericBrowserDomAdapter));
 exports.BrowserDomAdapter = BrowserDomAdapter;
 var baseElement = null;
 function getBaseElementHref() {
@@ -31259,8 +31711,9 @@ function relativePath(url) {
     return (urlParsingNode.pathname.charAt(0) === '/') ? urlParsingNode.pathname :
         '/' + urlParsingNode.pathname;
 }
-},{"./generic_browser_adapter":222,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204,"angular2/src/platform/dom/dom_adapter":231}],222:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+},{"./generic_browser_adapter":222,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204,"angular2/src/platform/dom/dom_adapter":232}],222:[function(require,module,exports){
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -31327,10 +31780,11 @@ var GenericBrowserDomAdapter = (function (_super) {
         return lang_1.isPresent(this._animationPrefix) && lang_1.isPresent(this._transitionEnd);
     };
     return GenericBrowserDomAdapter;
-})(dom_adapter_1.DomAdapter);
+}(dom_adapter_1.DomAdapter));
 exports.GenericBrowserDomAdapter = GenericBrowserDomAdapter;
-},{"angular2/src/facade/collection":199,"angular2/src/facade/lang":204,"angular2/src/platform/browser/xhr_impl":227,"angular2/src/platform/dom/dom_adapter":231}],223:[function(require,module,exports){
-'use strict';var collection_1 = require('angular2/src/facade/collection');
+},{"angular2/src/facade/collection":199,"angular2/src/facade/lang":204,"angular2/src/platform/browser/xhr_impl":228,"angular2/src/platform/dom/dom_adapter":232}],223:[function(require,module,exports){
+'use strict';"use strict";
+var collection_1 = require('angular2/src/facade/collection');
 var lang_1 = require('angular2/src/facade/lang');
 var dom_adapter_1 = require('angular2/src/platform/dom/dom_adapter');
 var core_1 = require('angular2/core');
@@ -31347,7 +31801,7 @@ var PublicTestability = (function () {
         return this._testability.findBindings(using, provider, exactMatch);
     };
     return PublicTestability;
-})();
+}());
 var BrowserGetTestability = (function () {
     function BrowserGetTestability() {
     }
@@ -31401,10 +31855,11 @@ var BrowserGetTestability = (function () {
         return this.findTestabilityInTree(registry, dom_adapter_1.DOM.parentElement(elem), true);
     };
     return BrowserGetTestability;
-})();
+}());
 exports.BrowserGetTestability = BrowserGetTestability;
-},{"angular2/core":20,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204,"angular2/src/platform/dom/dom_adapter":231}],224:[function(require,module,exports){
-'use strict';var dom_adapter_1 = require('angular2/src/platform/dom/dom_adapter');
+},{"angular2/core":20,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204,"angular2/src/platform/dom/dom_adapter":232}],224:[function(require,module,exports){
+'use strict';"use strict";
+var dom_adapter_1 = require('angular2/src/platform/dom/dom_adapter');
 /**
  * A service that can be used to get and set the title of a current HTML document.
  *
@@ -31427,10 +31882,11 @@ var Title = (function () {
      */
     Title.prototype.setTitle = function (newTitle) { dom_adapter_1.DOM.setTitle(newTitle); };
     return Title;
-})();
+}());
 exports.Title = Title;
-},{"angular2/src/platform/dom/dom_adapter":231}],225:[function(require,module,exports){
-'use strict';var application_ref_1 = require('angular2/src/core/application_ref');
+},{"angular2/src/platform/dom/dom_adapter":232}],225:[function(require,module,exports){
+'use strict';"use strict";
+var application_ref_1 = require('angular2/src/core/application_ref');
 var lang_1 = require('angular2/src/facade/lang');
 var browser_1 = require('angular2/src/facade/browser');
 var dom_adapter_1 = require('angular2/src/platform/dom/dom_adapter');
@@ -31443,7 +31899,7 @@ var AngularTools = (function () {
         this.profiler = new AngularProfiler(ref);
     }
     return AngularTools;
-})();
+}());
 exports.AngularTools = AngularTools;
 /**
  * Entry point for all Angular profiling-related debug tools. This object
@@ -31496,10 +31952,11 @@ var AngularProfiler = (function () {
         browser_1.window.console.log(lang_1.NumberWrapper.toFixed(msPerTick, 2) + " ms per check");
     };
     return AngularProfiler;
-})();
+}());
 exports.AngularProfiler = AngularProfiler;
-},{"angular2/src/core/application_ref":109,"angular2/src/facade/browser":198,"angular2/src/facade/lang":204,"angular2/src/platform/dom/dom_adapter":231}],226:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+},{"angular2/src/core/application_ref":109,"angular2/src/facade/browser":198,"angular2/src/facade/lang":204,"angular2/src/platform/dom/dom_adapter":232}],226:[function(require,module,exports){
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var common_tools_1 = require('./common_tools');
 var context = lang_1.global;
 /**
@@ -31525,7 +31982,46 @@ function disableDebugTools() {
 }
 exports.disableDebugTools = disableDebugTools;
 },{"./common_tools":225,"angular2/src/facade/lang":204}],227:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+var xhr_1 = require('angular2/src/compiler/xhr');
+var exceptions_1 = require('angular2/src/facade/exceptions');
+var lang_1 = require('angular2/src/facade/lang');
+var promise_1 = require('angular2/src/facade/promise');
+/**
+ * An implementation of XHR that uses a template cache to avoid doing an actual
+ * XHR.
+ *
+ * The template cache needs to be built and loaded into window.$templateCache
+ * via a separate mechanism.
+ */
+var CachedXHR = (function (_super) {
+    __extends(CachedXHR, _super);
+    function CachedXHR() {
+        _super.call(this);
+        this._cache = lang_1.global.$templateCache;
+        if (this._cache == null) {
+            throw new exceptions_1.BaseException('CachedXHR: Template cache was not found in $templateCache.');
+        }
+    }
+    CachedXHR.prototype.get = function (url) {
+        if (this._cache.hasOwnProperty(url)) {
+            return promise_1.PromiseWrapper.resolve(this._cache[url]);
+        }
+        else {
+            return promise_1.PromiseWrapper.reject('CachedXHR: Did not find cached template for ' + url, null);
+        }
+    };
+    return CachedXHR;
+}(xhr_1.XHR));
+exports.CachedXHR = CachedXHR;
+},{"angular2/src/compiler/xhr":106,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204,"angular2/src/facade/promise":206}],228:[function(require,module,exports){
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -31567,11 +32063,13 @@ var XHRImpl = (function (_super) {
         return completer.promise;
     };
     return XHRImpl;
-})(xhr_1.XHR);
+}(xhr_1.XHR));
 exports.XHRImpl = XHRImpl;
-},{"angular2/src/compiler/xhr":106,"angular2/src/facade/lang":204,"angular2/src/facade/promise":206}],228:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+},{"angular2/src/compiler/xhr":106,"angular2/src/facade/lang":204,"angular2/src/facade/promise":206}],229:[function(require,module,exports){
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var di_1 = require('angular2/src/core/di');
+var xhr_1 = require('angular2/src/compiler/xhr');
 var core_1 = require("angular2/core");
 var common_1 = require("angular2/common");
 var testability_1 = require('angular2/src/core/testability/testability');
@@ -31587,8 +32085,10 @@ var browser_details_1 = require("angular2/src/animate/browser_details");
 var animation_builder_1 = require("angular2/src/animate/animation_builder");
 var browser_adapter_1 = require('./browser/browser_adapter');
 var testability_2 = require('angular2/src/platform/browser/testability');
+var xhr_cache_1 = require('angular2/src/platform/browser/xhr_cache');
 var wtf_init_1 = require('angular2/src/core/profile/wtf_init');
 var event_manager_1 = require("angular2/src/platform/dom/events/event_manager");
+var hammer_gestures_2 = require('angular2/src/platform/dom/events/hammer_gestures');
 var common_dom_1 = require('angular2/platform/common_dom');
 var dom_tokens_2 = require('angular2/src/platform/dom/dom_tokens');
 exports.DOCUMENT = dom_tokens_2.DOCUMENT;
@@ -31604,6 +32104,9 @@ exports.BrowserDomAdapter = browser_adapter_2.BrowserDomAdapter;
 var tools_1 = require('angular2/src/platform/browser/tools/tools');
 exports.enableDebugTools = tools_1.enableDebugTools;
 exports.disableDebugTools = tools_1.disableDebugTools;
+var hammer_gestures_3 = require('./dom/events/hammer_gestures');
+exports.HAMMER_GESTURE_CONFIG = hammer_gestures_3.HAMMER_GESTURE_CONFIG;
+exports.HammerGestureConfig = hammer_gestures_3.HammerGestureConfig;
 /**
  * A set of providers to initialize the Angular platform in a web browser.
  *
@@ -31636,6 +32139,7 @@ exports.BROWSER_APP_COMMON_PROVIDERS = lang_1.CONST_EXPR([
     new di_1.Provider(event_manager_1.EVENT_MANAGER_PLUGINS, { useClass: dom_events_1.DomEventsPlugin, multi: true }),
     new di_1.Provider(event_manager_1.EVENT_MANAGER_PLUGINS, { useClass: key_events_1.KeyEventsPlugin, multi: true }),
     new di_1.Provider(event_manager_1.EVENT_MANAGER_PLUGINS, { useClass: hammer_gestures_1.HammerGesturesPlugin, multi: true }),
+    new di_1.Provider(hammer_gestures_2.HAMMER_GESTURE_CONFIG, { useClass: hammer_gestures_2.HammerGestureConfig }),
     new di_1.Provider(dom_renderer_1.DomRootRenderer, { useClass: dom_renderer_1.DomRootRenderer_ }),
     new di_1.Provider(core_1.RootRenderer, { useExisting: dom_renderer_1.DomRootRenderer }),
     new di_1.Provider(shared_styles_host_2.SharedStylesHost, { useExisting: shared_styles_host_1.DomSharedStylesHost }),
@@ -31646,14 +32150,16 @@ exports.BROWSER_APP_COMMON_PROVIDERS = lang_1.CONST_EXPR([
     event_manager_1.EventManager,
     common_dom_1.ELEMENT_PROBE_PROVIDERS
 ]);
+exports.CACHED_TEMPLATE_PROVIDER = lang_1.CONST_EXPR([new di_1.Provider(xhr_1.XHR, { useClass: xhr_cache_1.CachedXHR })]);
 function initDomAdapter() {
     browser_adapter_1.BrowserDomAdapter.makeCurrent();
     wtf_init_1.wtfInit();
     testability_2.BrowserGetTestability.init();
 }
 exports.initDomAdapter = initDomAdapter;
-},{"./browser/browser_adapter":221,"angular2/common":18,"angular2/core":20,"angular2/platform/common_dom":24,"angular2/src/animate/animation_builder":27,"angular2/src/animate/browser_details":28,"angular2/src/core/di":144,"angular2/src/core/profile/wtf_init":182,"angular2/src/core/testability/testability":190,"angular2/src/facade/lang":204,"angular2/src/platform/browser/testability":223,"angular2/src/platform/browser/title":224,"angular2/src/platform/browser/tools/tools":226,"angular2/src/platform/dom/dom_adapter":231,"angular2/src/platform/dom/dom_renderer":232,"angular2/src/platform/dom/dom_tokens":233,"angular2/src/platform/dom/events/dom_events":234,"angular2/src/platform/dom/events/event_manager":235,"angular2/src/platform/dom/events/hammer_gestures":237,"angular2/src/platform/dom/events/key_events":238,"angular2/src/platform/dom/shared_styles_host":239}],229:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+},{"./browser/browser_adapter":221,"./dom/events/hammer_gestures":238,"angular2/common":18,"angular2/core":20,"angular2/platform/common_dom":24,"angular2/src/animate/animation_builder":27,"angular2/src/animate/browser_details":28,"angular2/src/compiler/xhr":106,"angular2/src/core/di":144,"angular2/src/core/profile/wtf_init":182,"angular2/src/core/testability/testability":190,"angular2/src/facade/lang":204,"angular2/src/platform/browser/testability":223,"angular2/src/platform/browser/title":224,"angular2/src/platform/browser/tools/tools":226,"angular2/src/platform/browser/xhr_cache":227,"angular2/src/platform/dom/dom_adapter":232,"angular2/src/platform/dom/dom_renderer":233,"angular2/src/platform/dom/dom_tokens":234,"angular2/src/platform/dom/events/dom_events":235,"angular2/src/platform/dom/events/event_manager":236,"angular2/src/platform/dom/events/hammer_gestures":238,"angular2/src/platform/dom/events/key_events":239,"angular2/src/platform/dom/shared_styles_host":240}],230:[function(require,module,exports){
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var dom_adapter_1 = require('angular2/src/platform/dom/dom_adapter');
 /**
  * Predicates for use with {@link DebugElement}'s query functions.
@@ -31694,10 +32200,11 @@ var By = (function () {
         return function (debugElement) { return debugElement.providerTokens.indexOf(type) !== -1; };
     };
     return By;
-})();
+}());
 exports.By = By;
-},{"angular2/src/facade/lang":204,"angular2/src/platform/dom/dom_adapter":231}],230:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+},{"angular2/src/facade/lang":204,"angular2/src/platform/dom/dom_adapter":232}],231:[function(require,module,exports){
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var di_1 = require('angular2/src/core/di');
 var dom_adapter_1 = require('angular2/src/platform/dom/dom_adapter');
 var debug_node_1 = require('angular2/src/core/debug/debug_node');
@@ -31734,8 +32241,9 @@ exports.ELEMENT_PROBE_PROVIDERS = lang_1.CONST_EXPR([
     new di_1.Provider(core_1.RootRenderer, { useFactory: _createConditionalRootRenderer, deps: [dom_renderer_1.DomRootRenderer] })
 ]);
 exports.ELEMENT_PROBE_PROVIDERS_PROD_MODE = lang_1.CONST_EXPR([new di_1.Provider(core_1.RootRenderer, { useFactory: _createRootRenderer, deps: [dom_renderer_1.DomRootRenderer] })]);
-},{"angular2/core":20,"angular2/src/core/debug/debug_node":142,"angular2/src/core/debug/debug_renderer":143,"angular2/src/core/di":144,"angular2/src/facade/lang":204,"angular2/src/platform/dom/dom_adapter":231,"angular2/src/platform/dom/dom_renderer":232}],231:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+},{"angular2/core":20,"angular2/src/core/debug/debug_node":142,"angular2/src/core/debug/debug_renderer":143,"angular2/src/core/di":144,"angular2/src/facade/lang":204,"angular2/src/platform/dom/dom_adapter":232,"angular2/src/platform/dom/dom_renderer":233}],232:[function(require,module,exports){
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 exports.DOM = null;
 function setRootDomAdapter(adapter) {
     if (lang_1.isBlank(exports.DOM)) {
@@ -31763,10 +32271,11 @@ var DomAdapter = (function () {
     ;
     ;
     return DomAdapter;
-})();
+}());
 exports.DomAdapter = DomAdapter;
-},{"angular2/src/facade/lang":204}],232:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+},{"angular2/src/facade/lang":204}],233:[function(require,module,exports){
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -31813,7 +32322,7 @@ var DomRootRenderer = (function () {
         return renderer;
     };
     return DomRootRenderer;
-})();
+}());
 exports.DomRootRenderer = DomRootRenderer;
 var DomRootRenderer_ = (function (_super) {
     __extends(DomRootRenderer_, _super);
@@ -31826,7 +32335,7 @@ var DomRootRenderer_ = (function (_super) {
         __metadata('design:paramtypes', [Object, event_manager_1.EventManager, shared_styles_host_1.DomSharedStylesHost, animation_builder_1.AnimationBuilder])
     ], DomRootRenderer_);
     return DomRootRenderer_;
-})(DomRootRenderer);
+}(DomRootRenderer));
 exports.DomRootRenderer_ = DomRootRenderer_;
 var DomRenderer = (function () {
     function DomRenderer(_rootRenderer, componentProto) {
@@ -32022,7 +32531,7 @@ var DomRenderer = (function () {
         }
     };
     return DomRenderer;
-})();
+}());
 exports.DomRenderer = DomRenderer;
 function moveNodesAfterSibling(sibling, nodes) {
     var parent = dom_adapter_1.DOM.parentElement(sibling);
@@ -32085,8 +32594,9 @@ function splitNamespace(name) {
     var match = lang_1.RegExpWrapper.firstMatch(NS_PREFIX_RE, name);
     return [match[1], match[2]];
 }
-},{"./dom_tokens":233,"./events/event_manager":235,"./shared_styles_host":239,"./util":240,"angular2/src/animate/animation_builder":27,"angular2/src/core/di":144,"angular2/src/core/metadata":171,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204,"angular2/src/platform/dom/dom_adapter":231}],233:[function(require,module,exports){
-'use strict';var di_1 = require('angular2/src/core/di');
+},{"./dom_tokens":234,"./events/event_manager":236,"./shared_styles_host":240,"./util":241,"angular2/src/animate/animation_builder":27,"angular2/src/core/di":144,"angular2/src/core/metadata":171,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204,"angular2/src/platform/dom/dom_adapter":232}],234:[function(require,module,exports){
+'use strict';"use strict";
+var di_1 = require('angular2/src/core/di');
 var lang_1 = require('angular2/src/facade/lang');
 /**
  * A DI Token representing the main rendering context. In a browser this is the DOM Document.
@@ -32095,8 +32605,9 @@ var lang_1 = require('angular2/src/facade/lang');
  * Contexts are not the same (e.g. when running the application into a Web Worker).
  */
 exports.DOCUMENT = lang_1.CONST_EXPR(new di_1.OpaqueToken('DocumentToken'));
-},{"angular2/src/core/di":144,"angular2/src/facade/lang":204}],234:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+},{"angular2/src/core/di":144,"angular2/src/facade/lang":204}],235:[function(require,module,exports){
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -32137,10 +32648,11 @@ var DomEventsPlugin = (function (_super) {
         __metadata('design:paramtypes', [])
     ], DomEventsPlugin);
     return DomEventsPlugin;
-})(event_manager_1.EventManagerPlugin);
+}(event_manager_1.EventManagerPlugin));
 exports.DomEventsPlugin = DomEventsPlugin;
-},{"./event_manager":235,"angular2/core":20,"angular2/src/platform/dom/dom_adapter":231}],235:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+},{"./event_manager":236,"angular2/core":20,"angular2/src/platform/dom/dom_adapter":232}],236:[function(require,module,exports){
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -32191,7 +32703,7 @@ var EventManager = (function () {
         __metadata('design:paramtypes', [Array, ng_zone_1.NgZone])
     ], EventManager);
     return EventManager;
-})();
+}());
 exports.EventManager = EventManager;
 var EventManagerPlugin = (function () {
     function EventManagerPlugin() {
@@ -32205,10 +32717,11 @@ var EventManagerPlugin = (function () {
         throw "not implemented";
     };
     return EventManagerPlugin;
-})();
+}());
 exports.EventManagerPlugin = EventManagerPlugin;
-},{"angular2/src/core/di":144,"angular2/src/core/zone/ng_zone":194,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],236:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+},{"angular2/src/core/di":144,"angular2/src/core/zone/ng_zone":194,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],237:[function(require,module,exports){
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -32262,10 +32775,11 @@ var HammerGesturesPluginCommon = (function (_super) {
         return collection_1.StringMapWrapper.contains(_eventNames, eventName);
     };
     return HammerGesturesPluginCommon;
-})(event_manager_1.EventManagerPlugin);
+}(event_manager_1.EventManagerPlugin));
 exports.HammerGesturesPluginCommon = HammerGesturesPluginCommon;
-},{"./event_manager":235,"angular2/src/facade/collection":199}],237:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+},{"./event_manager":236,"angular2/src/facade/collection":199}],238:[function(require,module,exports){
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -32279,17 +32793,43 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 var hammer_common_1 = require('./hammer_common');
 var lang_1 = require('angular2/src/facade/lang');
 var exceptions_1 = require('angular2/src/facade/exceptions');
-var di_1 = require('angular2/src/core/di');
+var core_1 = require('angular2/core');
+exports.HAMMER_GESTURE_CONFIG = lang_1.CONST_EXPR(new core_1.OpaqueToken("HammerGestureConfig"));
+var HammerGestureConfig = (function () {
+    function HammerGestureConfig() {
+        this.events = [];
+        this.overrides = {};
+    }
+    HammerGestureConfig.prototype.buildHammer = function (element) {
+        var mc = new Hammer(element);
+        mc.get('pinch').set({ enable: true });
+        mc.get('rotate').set({ enable: true });
+        for (var eventName in this.overrides) {
+            mc.get(eventName).set(this.overrides[eventName]);
+        }
+        return mc;
+    };
+    HammerGestureConfig = __decorate([
+        core_1.Injectable(), 
+        __metadata('design:paramtypes', [])
+    ], HammerGestureConfig);
+    return HammerGestureConfig;
+}());
+exports.HammerGestureConfig = HammerGestureConfig;
 var HammerGesturesPlugin = (function (_super) {
     __extends(HammerGesturesPlugin, _super);
-    function HammerGesturesPlugin() {
-        _super.apply(this, arguments);
+    function HammerGesturesPlugin(_config) {
+        _super.call(this);
+        this._config = _config;
     }
     HammerGesturesPlugin.prototype.supports = function (eventName) {
-        if (!_super.prototype.supports.call(this, eventName))
+        if (!_super.prototype.supports.call(this, eventName) && !this.isCustomEvent(eventName))
             return false;
         if (!lang_1.isPresent(window['Hammer'])) {
             throw new exceptions_1.BaseException("Hammer.js is not loaded, can not bind " + eventName + " event");
@@ -32297,27 +32837,29 @@ var HammerGesturesPlugin = (function (_super) {
         return true;
     };
     HammerGesturesPlugin.prototype.addEventListener = function (element, eventName, handler) {
+        var _this = this;
         var zone = this.manager.getZone();
         eventName = eventName.toLowerCase();
         return zone.runOutsideAngular(function () {
             // Creating the manager bind events, must be done outside of angular
-            var mc = new Hammer(element);
-            mc.get('pinch').set({ enable: true });
-            mc.get('rotate').set({ enable: true });
+            var mc = _this._config.buildHammer(element);
             var callback = function (eventObj) { zone.run(function () { handler(eventObj); }); };
             mc.on(eventName, callback);
             return function () { mc.off(eventName, callback); };
         });
     };
+    HammerGesturesPlugin.prototype.isCustomEvent = function (eventName) { return this._config.events.indexOf(eventName) > -1; };
     HammerGesturesPlugin = __decorate([
-        di_1.Injectable(), 
-        __metadata('design:paramtypes', [])
+        core_1.Injectable(),
+        __param(0, core_1.Inject(exports.HAMMER_GESTURE_CONFIG)), 
+        __metadata('design:paramtypes', [HammerGestureConfig])
     ], HammerGesturesPlugin);
     return HammerGesturesPlugin;
-})(hammer_common_1.HammerGesturesPluginCommon);
+}(hammer_common_1.HammerGesturesPluginCommon));
 exports.HammerGesturesPlugin = HammerGesturesPlugin;
-},{"./hammer_common":236,"angular2/src/core/di":144,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],238:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+},{"./hammer_common":237,"angular2/core":20,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],239:[function(require,module,exports){
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -32427,10 +32969,11 @@ var KeyEventsPlugin = (function (_super) {
         __metadata('design:paramtypes', [])
     ], KeyEventsPlugin);
     return KeyEventsPlugin;
-})(event_manager_1.EventManagerPlugin);
+}(event_manager_1.EventManagerPlugin));
 exports.KeyEventsPlugin = KeyEventsPlugin;
-},{"./event_manager":235,"angular2/src/core/di":144,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204,"angular2/src/platform/dom/dom_adapter":231}],239:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+},{"./event_manager":236,"angular2/src/core/di":144,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204,"angular2/src/platform/dom/dom_adapter":232}],240:[function(require,module,exports){
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -32477,7 +33020,7 @@ var SharedStylesHost = (function () {
         __metadata('design:paramtypes', [])
     ], SharedStylesHost);
     return SharedStylesHost;
-})();
+}());
 exports.SharedStylesHost = SharedStylesHost;
 var DomSharedStylesHost = (function (_super) {
     __extends(DomSharedStylesHost, _super);
@@ -32508,10 +33051,11 @@ var DomSharedStylesHost = (function (_super) {
         __metadata('design:paramtypes', [Object])
     ], DomSharedStylesHost);
     return DomSharedStylesHost;
-})(SharedStylesHost);
+}(SharedStylesHost));
 exports.DomSharedStylesHost = DomSharedStylesHost;
-},{"./dom_tokens":233,"angular2/src/core/di":144,"angular2/src/facade/collection":199,"angular2/src/platform/dom/dom_adapter":231}],240:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+},{"./dom_tokens":234,"angular2/src/core/di":144,"angular2/src/facade/collection":199,"angular2/src/platform/dom/dom_adapter":232}],241:[function(require,module,exports){
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var CAMEL_CASE_REGEXP = /([A-Z])/g;
 var DASH_CASE_REGEXP = /-([a-z])/g;
 function camelCaseToDashCase(input) {
@@ -32522,8 +33066,9 @@ function dashCaseToCamelCase(input) {
     return lang_1.StringWrapper.replaceAllMapped(input, DASH_CASE_REGEXP, function (m) { return m[1].toUpperCase(); });
 }
 exports.dashCaseToCamelCase = dashCaseToCamelCase;
-},{"angular2/src/facade/lang":204}],241:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+},{"angular2/src/facade/lang":204}],242:[function(require,module,exports){
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -32614,10 +33159,11 @@ var RouterLink = (function () {
         __metadata('design:paramtypes', [router_1.Router, location_1.Location])
     ], RouterLink);
     return RouterLink;
-})();
+}());
 exports.RouterLink = RouterLink;
-},{"../location/location":249,"../router":258,"angular2/core":20,"angular2/src/facade/lang":204}],242:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+},{"../location/location":250,"../router":258,"angular2/core":20,"angular2/src/facade/lang":204}],243:[function(require,module,exports){
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -32794,10 +33340,11 @@ var RouterOutlet = (function () {
         __metadata('design:paramtypes', [core_1.ElementRef, core_1.DynamicComponentLoader, routerMod.Router, String])
     ], RouterOutlet);
     return RouterOutlet;
-})();
+}());
 exports.RouterOutlet = RouterOutlet;
-},{"../instruction":243,"../lifecycle/lifecycle_annotations":244,"../lifecycle/route_lifecycle_reflector":246,"../router":258,"angular2/core":20,"angular2/src/facade/async":196,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204}],243:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+},{"../instruction":244,"../lifecycle/lifecycle_annotations":245,"../lifecycle/route_lifecycle_reflector":247,"../router":258,"angular2/core":20,"angular2/src/facade/async":196,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204}],244:[function(require,module,exports){
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -32842,7 +33389,7 @@ var RouteParams = (function () {
     }
     RouteParams.prototype.get = function (param) { return lang_1.normalizeBlank(collection_1.StringMapWrapper.get(this.params, param)); };
     return RouteParams;
-})();
+}());
 exports.RouteParams = RouteParams;
 /**
  * `RouteData` is an immutable map of additional data you can configure in your {@link Route}.
@@ -32884,7 +33431,7 @@ var RouteData = (function () {
     }
     RouteData.prototype.get = function (key) { return lang_1.normalizeBlank(collection_1.StringMapWrapper.get(this.data, key)); };
     return RouteData;
-})();
+}());
 exports.RouteData = RouteData;
 exports.BLANK_ROUTE_DATA = new RouteData();
 /**
@@ -33011,7 +33558,7 @@ var Instruction = (function () {
         return '';
     };
     return Instruction;
-})();
+}());
 exports.Instruction = Instruction;
 /**
  * a resolved instruction has an outlet instruction for itself, but maybe not for...
@@ -33025,7 +33572,7 @@ var ResolvedInstruction = (function (_super) {
         return async_1.PromiseWrapper.resolve(this.component);
     };
     return ResolvedInstruction;
-})(Instruction);
+}(Instruction));
 exports.ResolvedInstruction = ResolvedInstruction;
 /**
  * Represents a resolved default route
@@ -33039,7 +33586,7 @@ var DefaultInstruction = (function (_super) {
     /** @internal */
     DefaultInstruction.prototype._toLinkUrl = function () { return ''; };
     return DefaultInstruction;
-})(ResolvedInstruction);
+}(ResolvedInstruction));
 exports.DefaultInstruction = DefaultInstruction;
 /**
  * Represents a component that may need to do some redirection or lazy loading at a later time.
@@ -33091,7 +33638,7 @@ var UnresolvedInstruction = (function (_super) {
         });
     };
     return UnresolvedInstruction;
-})(Instruction);
+}(Instruction));
 exports.UnresolvedInstruction = UnresolvedInstruction;
 var RedirectInstruction = (function (_super) {
     __extends(RedirectInstruction, _super);
@@ -33105,7 +33652,7 @@ var RedirectInstruction = (function (_super) {
         configurable: true
     });
     return RedirectInstruction;
-})(ResolvedInstruction);
+}(ResolvedInstruction));
 exports.RedirectInstruction = RedirectInstruction;
 /**
  * A `ComponentInstruction` represents the route state for a single component.
@@ -33123,7 +33670,7 @@ var ComponentInstruction = (function () {
     /**
      * @internal
      */
-    function ComponentInstruction(urlPath, urlParams, data, componentType, terminal, specificity, params) {
+    function ComponentInstruction(urlPath, urlParams, data, componentType, terminal, specificity, params, routeName) {
         if (params === void 0) { params = null; }
         this.urlPath = urlPath;
         this.urlParams = urlParams;
@@ -33131,17 +33678,19 @@ var ComponentInstruction = (function () {
         this.terminal = terminal;
         this.specificity = specificity;
         this.params = params;
+        this.routeName = routeName;
         this.reuse = false;
         this.routeData = lang_1.isPresent(data) ? data : exports.BLANK_ROUTE_DATA;
     }
     return ComponentInstruction;
-})();
+}());
 exports.ComponentInstruction = ComponentInstruction;
-},{"angular2/src/facade/async":196,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204}],244:[function(require,module,exports){
+},{"angular2/src/facade/async":196,"angular2/src/facade/collection":199,"angular2/src/facade/lang":204}],245:[function(require,module,exports){
 'use strict';/**
  * This indirection is needed to free up Component, etc symbols in the public API
  * to be used by the decorator versions of these annotations.
  */
+"use strict";
 var decorators_1 = require('angular2/src/core/util/decorators');
 var lifecycle_annotations_impl_1 = require('./lifecycle_annotations_impl');
 var lifecycle_annotations_impl_2 = require('./lifecycle_annotations_impl');
@@ -33177,8 +33726,9 @@ exports.routerOnDeactivate = lifecycle_annotations_impl_2.routerOnDeactivate;
  * {@example router/ts/can_activate/can_activate_example.ts region='canActivate' }
  */
 exports.CanActivate = decorators_1.makeDecorator(lifecycle_annotations_impl_1.CanActivate);
-},{"./lifecycle_annotations_impl":245,"angular2/src/core/util/decorators":192}],245:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+},{"./lifecycle_annotations_impl":246,"angular2/src/core/util/decorators":192}],246:[function(require,module,exports){
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -33197,7 +33747,7 @@ var RouteLifecycleHook = (function () {
         __metadata('design:paramtypes', [String])
     ], RouteLifecycleHook);
     return RouteLifecycleHook;
-})();
+}());
 exports.RouteLifecycleHook = RouteLifecycleHook;
 var CanActivate = (function () {
     function CanActivate(fn) {
@@ -33208,15 +33758,16 @@ var CanActivate = (function () {
         __metadata('design:paramtypes', [Function])
     ], CanActivate);
     return CanActivate;
-})();
+}());
 exports.CanActivate = CanActivate;
 exports.routerCanReuse = lang_1.CONST_EXPR(new RouteLifecycleHook("routerCanReuse"));
 exports.routerCanDeactivate = lang_1.CONST_EXPR(new RouteLifecycleHook("routerCanDeactivate"));
 exports.routerOnActivate = lang_1.CONST_EXPR(new RouteLifecycleHook("routerOnActivate"));
 exports.routerOnReuse = lang_1.CONST_EXPR(new RouteLifecycleHook("routerOnReuse"));
 exports.routerOnDeactivate = lang_1.CONST_EXPR(new RouteLifecycleHook("routerOnDeactivate"));
-},{"angular2/src/facade/lang":204}],246:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+},{"angular2/src/facade/lang":204}],247:[function(require,module,exports){
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var lifecycle_annotations_impl_1 = require('./lifecycle_annotations_impl');
 var reflection_1 = require('angular2/src/core/reflection/reflection');
 function hasLifecycleHook(e, type) {
@@ -33236,8 +33787,9 @@ function getCanActivateHook(type) {
     return null;
 }
 exports.getCanActivateHook = getCanActivateHook;
-},{"./lifecycle_annotations_impl":245,"angular2/src/core/reflection/reflection":183,"angular2/src/facade/lang":204}],247:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+},{"./lifecycle_annotations_impl":246,"angular2/src/core/reflection/reflection":183,"angular2/src/facade/lang":204}],248:[function(require,module,exports){
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -33313,10 +33865,11 @@ var BrowserPlatformLocation = (function (_super) {
         __metadata('design:paramtypes', [])
     ], BrowserPlatformLocation);
     return BrowserPlatformLocation;
-})(platform_location_1.PlatformLocation);
+}(platform_location_1.PlatformLocation));
 exports.BrowserPlatformLocation = BrowserPlatformLocation;
-},{"./platform_location":252,"angular2/core":20,"angular2/src/platform/dom/dom_adapter":231}],248:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+},{"./platform_location":253,"angular2/core":20,"angular2/src/platform/dom/dom_adapter":232}],249:[function(require,module,exports){
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -33428,10 +33981,11 @@ var HashLocationStrategy = (function (_super) {
         __metadata('design:paramtypes', [platform_location_1.PlatformLocation, String])
     ], HashLocationStrategy);
     return HashLocationStrategy;
-})(location_strategy_1.LocationStrategy);
+}(location_strategy_1.LocationStrategy));
 exports.HashLocationStrategy = HashLocationStrategy;
-},{"./location_strategy":250,"./platform_location":252,"angular2/core":20,"angular2/src/facade/lang":204}],249:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+},{"./location_strategy":251,"./platform_location":253,"angular2/core":20,"angular2/src/facade/lang":204}],250:[function(require,module,exports){
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -33556,7 +34110,7 @@ var Location = (function () {
         __metadata('design:paramtypes', [location_strategy_1.LocationStrategy])
     ], Location);
     return Location;
-})();
+}());
 exports.Location = Location;
 function _stripBaseHref(baseHref, url) {
     if (baseHref.length > 0 && url.startsWith(baseHref)) {
@@ -33577,8 +34131,9 @@ function stripTrailingSlash(url) {
     }
     return url;
 }
-},{"./location_strategy":250,"angular2/core":20,"angular2/src/facade/async":196}],250:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+},{"./location_strategy":251,"angular2/core":20,"angular2/src/facade/async":196}],251:[function(require,module,exports){
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var core_1 = require('angular2/core');
 /**
  * `LocationStrategy` is responsible for representing and reading route state
@@ -33600,7 +34155,7 @@ var LocationStrategy = (function () {
     function LocationStrategy() {
     }
     return LocationStrategy;
-})();
+}());
 exports.LocationStrategy = LocationStrategy;
 /**
  * The `APP_BASE_HREF` token represents the base href to be used with the
@@ -33658,8 +34213,9 @@ function joinWithSlash(start, end) {
     return start + '/' + end;
 }
 exports.joinWithSlash = joinWithSlash;
-},{"angular2/core":20,"angular2/src/facade/lang":204}],251:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+},{"angular2/core":20,"angular2/src/facade/lang":204}],252:[function(require,module,exports){
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -33765,10 +34321,11 @@ var PathLocationStrategy = (function (_super) {
         __metadata('design:paramtypes', [platform_location_1.PlatformLocation, String])
     ], PathLocationStrategy);
     return PathLocationStrategy;
-})(location_strategy_1.LocationStrategy);
+}(location_strategy_1.LocationStrategy));
 exports.PathLocationStrategy = PathLocationStrategy;
-},{"./location_strategy":250,"./platform_location":252,"angular2/core":20,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],252:[function(require,module,exports){
-'use strict';/**
+},{"./location_strategy":251,"./platform_location":253,"angular2/core":20,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],253:[function(require,module,exports){
+'use strict';"use strict";
+/**
  * This class should not be used directly by an application developer. Instead, use
  * {@link Location}.
  *
@@ -33811,10 +34368,11 @@ var PlatformLocation = (function () {
         configurable: true
     });
     return PlatformLocation;
-})();
+}());
 exports.PlatformLocation = PlatformLocation;
-},{}],253:[function(require,module,exports){
-'use strict';var route_config_impl_1 = require('./route_config_impl');
+},{}],254:[function(require,module,exports){
+'use strict';"use strict";
+var route_config_impl_1 = require('./route_config_impl');
 var decorators_1 = require('angular2/src/core/util/decorators');
 var route_config_impl_2 = require('./route_config_impl');
 exports.Route = route_config_impl_2.Route;
@@ -33828,8 +34386,9 @@ exports.AsyncRoute = route_config_impl_2.AsyncRoute;
  * It takes an array of {@link RouteDefinition}s.
  */
 exports.RouteConfig = decorators_1.makeDecorator(route_config_impl_1.RouteConfig);
-},{"./route_config_impl":254,"angular2/src/core/util/decorators":192}],254:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+},{"./route_config_impl":255,"angular2/src/core/util/decorators":192}],255:[function(require,module,exports){
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -33859,7 +34418,7 @@ var RouteConfig = (function () {
         __metadata('design:paramtypes', [Array])
     ], RouteConfig);
     return RouteConfig;
-})();
+}());
 exports.RouteConfig = RouteConfig;
 var AbstractRoute = (function () {
     function AbstractRoute(_a) {
@@ -33876,7 +34435,7 @@ var AbstractRoute = (function () {
         __metadata('design:paramtypes', [Object])
     ], AbstractRoute);
     return AbstractRoute;
-})();
+}());
 exports.AbstractRoute = AbstractRoute;
 /**
  * `Route` is a type of {@link RouteDefinition} used to route a path to a component.
@@ -33920,7 +34479,7 @@ var Route = (function (_super) {
         __metadata('design:paramtypes', [Object])
     ], Route);
     return Route;
-})(AbstractRoute);
+}(AbstractRoute));
 exports.Route = Route;
 /**
  * `AuxRoute` is a type of {@link RouteDefinition} used to define an auxiliary route.
@@ -33961,7 +34520,7 @@ var AuxRoute = (function (_super) {
         __metadata('design:paramtypes', [Object])
     ], AuxRoute);
     return AuxRoute;
-})(AbstractRoute);
+}(AbstractRoute));
 exports.AuxRoute = AuxRoute;
 /**
  * `AsyncRoute` is a type of {@link RouteDefinition} used to route a path to an asynchronously
@@ -34007,7 +34566,7 @@ var AsyncRoute = (function (_super) {
         __metadata('design:paramtypes', [Object])
     ], AsyncRoute);
     return AsyncRoute;
-})(AbstractRoute);
+}(AbstractRoute));
 exports.AsyncRoute = AsyncRoute;
 /**
  * `Redirect` is a type of {@link RouteDefinition} used to route a path to a canonical route.
@@ -34049,10 +34608,11 @@ var Redirect = (function (_super) {
         __metadata('design:paramtypes', [Object])
     ], Redirect);
     return Redirect;
-})(AbstractRoute);
+}(AbstractRoute));
 exports.Redirect = Redirect;
-},{"angular2/src/facade/lang":204}],255:[function(require,module,exports){
-'use strict';var route_config_decorator_1 = require('./route_config_decorator');
+},{"angular2/src/facade/lang":204}],256:[function(require,module,exports){
+'use strict';"use strict";
+var route_config_decorator_1 = require('./route_config_decorator');
 var lang_1 = require('angular2/src/facade/lang');
 var exceptions_1 = require('angular2/src/facade/exceptions');
 /**
@@ -34145,10 +34705,9 @@ function assertComponentExists(component, path) {
     }
 }
 exports.assertComponentExists = assertComponentExists;
-},{"./route_config_decorator":253,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],256:[function(require,module,exports){
-'use strict';
-},{}],257:[function(require,module,exports){
-'use strict';var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+},{"./route_config_decorator":254,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],257:[function(require,module,exports){
+'use strict';"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
@@ -34542,7 +35101,7 @@ var RouteRegistry = (function () {
         __metadata('design:paramtypes', [lang_1.Type])
     ], RouteRegistry);
     return RouteRegistry;
-})();
+}());
 exports.RouteRegistry = RouteRegistry;
 /*
  * Given: ['/a/b', {c: 2}]
@@ -34612,8 +35171,9 @@ function assertTerminalComponent(component, path) {
         }
     }
 }
-},{"./instruction":243,"./route_config/route_config_impl":254,"./route_config/route_config_normalizer":255,"./rules/rule_set":266,"./rules/rules":267,"./url_parser":268,"angular2/core":20,"angular2/src/core/reflection/reflection":183,"angular2/src/facade/async":196,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],258:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+},{"./instruction":244,"./route_config/route_config_impl":255,"./route_config/route_config_normalizer":256,"./rules/rule_set":266,"./rules/rules":267,"./url_parser":268,"angular2/core":20,"angular2/src/core/reflection/reflection":183,"angular2/src/facade/async":196,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],258:[function(require,module,exports){
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -34739,13 +35299,29 @@ var Router = (function () {
      * otherwise `false`.
      */
     Router.prototype.isRouteActive = function (instruction) {
+        var _this = this;
         var router = this;
+        if (lang_1.isBlank(this.currentInstruction)) {
+            return false;
+        }
+        // `instruction` corresponds to the root router
         while (lang_1.isPresent(router.parent) && lang_1.isPresent(instruction.child)) {
             router = router.parent;
             instruction = instruction.child;
         }
-        return lang_1.isPresent(this.currentInstruction) &&
-            this.currentInstruction.component == instruction.component;
+        if (lang_1.isBlank(instruction.component) || lang_1.isBlank(this.currentInstruction.component) ||
+            this.currentInstruction.component.routeName != instruction.component.routeName) {
+            return false;
+        }
+        var paramEquals = true;
+        if (lang_1.isPresent(this.currentInstruction.component.params)) {
+            collection_1.StringMapWrapper.forEach(instruction.component.params, function (value, key) {
+                if (_this.currentInstruction.component.params[key] !== value) {
+                    paramEquals = false;
+                }
+            });
+        }
+        return paramEquals;
     };
     /**
      * Dynamically update the routing configuration and trigger a navigation.
@@ -34856,6 +35432,7 @@ var Router = (function () {
         });
     };
     Router.prototype._emitNavigationFinish = function (url) { async_1.ObservableWrapper.callEmit(this._subject, url); };
+    /** @internal */
     Router.prototype._emitNavigationFail = function (url) { async_1.ObservableWrapper.callError(this._subject, url); };
     Router.prototype._afterPromiseFinishNavigating = function (promise) {
         var _this = this;
@@ -34913,6 +35490,8 @@ var Router = (function () {
                 return false;
             }
             if (lang_1.isPresent(_this._childRouter)) {
+                // TODO: ideally, this closure would map to async-await in Dart.
+                // For now, casting to any to suppress an error.
                 return _this._childRouter._routerCanDeactivate(childInstruction);
             }
             return true;
@@ -35019,7 +35598,7 @@ var Router = (function () {
         __metadata('design:paramtypes', [route_registry_1.RouteRegistry, Router, Object, Router])
     ], Router);
     return Router;
-})();
+}());
 exports.Router = Router;
 var RootRouter = (function (_super) {
     __extends(RootRouter, _super);
@@ -35044,9 +35623,11 @@ var RootRouter = (function (_super) {
                         if (emitPath.length > 0 && emitPath[0] != '/') {
                             emitPath = '/' + emitPath;
                         }
-                        // Because we've opted to use All hashchange events occur outside Angular.
+                        // We've opted to use pushstate and popState APIs regardless of whether you
+                        // an app uses HashLocationStrategy or PathLocationStrategy.
                         // However, apps that are migrating might have hash links that operate outside
                         // angular to which routing must respond.
+                        // Therefore we know that all hashchange events occur outside Angular.
                         // To support these cases where we respond to hashchanges and redirect as a
                         // result, we need to replace the top item on the stack.
                         if (change['type'] == 'hashchange') {
@@ -35093,7 +35674,7 @@ var RootRouter = (function (_super) {
         __metadata('design:paramtypes', [route_registry_1.RouteRegistry, location_1.Location, lang_1.Type])
     ], RootRouter);
     return RootRouter;
-})(Router);
+}(Router));
 exports.RootRouter = RootRouter;
 var ChildRouter = (function (_super) {
     __extends(ChildRouter, _super);
@@ -35112,7 +35693,7 @@ var ChildRouter = (function (_super) {
         return this.parent.navigateByInstruction(instruction, _skipLocationChange);
     };
     return ChildRouter;
-})(Router);
+}(Router));
 function canActivateOne(nextInstruction, prevInstruction) {
     var next = _resolveToTrue;
     if (lang_1.isBlank(nextInstruction.component)) {
@@ -35135,8 +35716,9 @@ function canActivateOne(nextInstruction, prevInstruction) {
         return true;
     });
 }
-},{"./lifecycle/route_lifecycle_reflector":246,"./location/location":249,"./route_registry":257,"angular2/core":20,"angular2/src/facade/async":196,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],259:[function(require,module,exports){
-'use strict';var router_providers_common_1 = require('./router_providers_common');
+},{"./lifecycle/route_lifecycle_reflector":247,"./location/location":250,"./route_registry":257,"angular2/core":20,"angular2/src/facade/async":196,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],259:[function(require,module,exports){
+'use strict';"use strict";
+var router_providers_common_1 = require('./router_providers_common');
 var core_1 = require('angular2/core');
 var lang_1 = require('angular2/src/facade/lang');
 var browser_platform_location_1 = require('./location/browser_platform_location');
@@ -35175,8 +35757,9 @@ exports.ROUTER_PROVIDERS = lang_1.CONST_EXPR([
  * @deprecated
  */
 exports.ROUTER_BINDINGS = exports.ROUTER_PROVIDERS;
-},{"./location/browser_platform_location":247,"./location/platform_location":252,"./router_providers_common":260,"angular2/core":20,"angular2/src/facade/lang":204}],260:[function(require,module,exports){
-'use strict';var location_strategy_1 = require('angular2/src/router/location/location_strategy');
+},{"./location/browser_platform_location":248,"./location/platform_location":253,"./router_providers_common":260,"angular2/core":20,"angular2/src/facade/lang":204}],260:[function(require,module,exports){
+'use strict';"use strict";
+var location_strategy_1 = require('angular2/src/router/location/location_strategy');
 var path_location_strategy_1 = require('angular2/src/router/location/path_location_strategy');
 var router_1 = require('angular2/src/router/router');
 var route_registry_1 = require('angular2/src/router/route_registry');
@@ -35208,8 +35791,9 @@ function routerPrimaryComponentFactory(app) {
     }
     return app.componentTypes[0];
 }
-},{"angular2/core":20,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204,"angular2/src/router/location/location":249,"angular2/src/router/location/location_strategy":250,"angular2/src/router/location/path_location_strategy":251,"angular2/src/router/route_registry":257,"angular2/src/router/router":258}],261:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+},{"angular2/core":20,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204,"angular2/src/router/location/location":250,"angular2/src/router/location/location_strategy":251,"angular2/src/router/location/path_location_strategy":252,"angular2/src/router/route_registry":257,"angular2/src/router/router":258}],261:[function(require,module,exports){
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var instruction_1 = require('../../instruction');
 var AsyncRouteHandler = (function () {
     function AsyncRouteHandler(_loader, data) {
@@ -35230,10 +35814,11 @@ var AsyncRouteHandler = (function () {
         });
     };
     return AsyncRouteHandler;
-})();
+}());
 exports.AsyncRouteHandler = AsyncRouteHandler;
-},{"../../instruction":243,"angular2/src/facade/lang":204}],262:[function(require,module,exports){
-'use strict';var async_1 = require('angular2/src/facade/async');
+},{"../../instruction":244,"angular2/src/facade/lang":204}],262:[function(require,module,exports){
+'use strict';"use strict";
+var async_1 = require('angular2/src/facade/async');
 var lang_1 = require('angular2/src/facade/lang');
 var instruction_1 = require('../../instruction');
 var SyncRouteHandler = (function () {
@@ -35246,10 +35831,11 @@ var SyncRouteHandler = (function () {
     }
     SyncRouteHandler.prototype.resolveComponentType = function () { return this._resolvedComponent; };
     return SyncRouteHandler;
-})();
+}());
 exports.SyncRouteHandler = SyncRouteHandler;
-},{"../../instruction":243,"angular2/src/facade/async":196,"angular2/src/facade/lang":204}],263:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+},{"../../instruction":244,"angular2/src/facade/async":196,"angular2/src/facade/lang":204}],263:[function(require,module,exports){
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var exceptions_1 = require('angular2/src/facade/exceptions');
 var collection_1 = require('angular2/src/facade/collection');
 var utils_1 = require('../../utils');
@@ -35268,7 +35854,7 @@ var ContinuationPathSegment = (function () {
     ContinuationPathSegment.prototype.generate = function (params) { return ''; };
     ContinuationPathSegment.prototype.match = function (path) { return true; };
     return ContinuationPathSegment;
-})();
+}());
 /**
  * Identified by a string not starting with a `:` or `*`.
  * Only matches the URL segments that equal the segment path
@@ -35283,7 +35869,7 @@ var StaticPathSegment = (function () {
     StaticPathSegment.prototype.match = function (path) { return path == this.path; };
     StaticPathSegment.prototype.generate = function (params) { return this.path; };
     return StaticPathSegment;
-})();
+}());
 /**
  * Identified by a string starting with `:`. Indicates a segment
  * that can contain a value that will be extracted and provided to
@@ -35304,7 +35890,7 @@ var DynamicPathSegment = (function () {
     };
     DynamicPathSegment.paramMatcher = /^:([^\/]+)$/g;
     return DynamicPathSegment;
-})();
+}());
 /**
  * Identified by a string starting with `*` Indicates that all the following
  * segments match this route and that the value of these segments should
@@ -35320,7 +35906,7 @@ var StarPathSegment = (function () {
     StarPathSegment.prototype.generate = function (params) { return utils_1.normalizeString(params.get(this.name)); };
     StarPathSegment.wildcardMatcher = /^\*([^\/]+)$/g;
     return StarPathSegment;
-})();
+}());
 /**
  * Parses a URL string using a given matcher DSL, and generates URLs from param maps
  */
@@ -35480,7 +36066,7 @@ var ParamRoutePath = (function () {
     };
     ParamRoutePath.RESERVED_CHARS = lang_1.RegExpWrapper.create('//|\\(|\\)|;|\\?|=');
     return ParamRoutePath;
-})();
+}());
 exports.ParamRoutePath = ParamRoutePath;
 var REGEXP_PERCENT = /%/g;
 var REGEXP_SLASH = /\//g;
@@ -35515,7 +36101,8 @@ function decodeDynamicSegment(value) {
     return value;
 }
 },{"../../url_parser":268,"../../utils":269,"./route_path":265,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],264:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var route_path_1 = require('./route_path');
 var RegexRoutePath = (function () {
     function RegexRoutePath(_reString, _serializer) {
@@ -35542,10 +36129,11 @@ var RegexRoutePath = (function () {
     RegexRoutePath.prototype.generateUrl = function (params) { return this._serializer(params); };
     RegexRoutePath.prototype.toString = function () { return this._reString; };
     return RegexRoutePath;
-})();
+}());
 exports.RegexRoutePath = RegexRoutePath;
 },{"./route_path":265,"angular2/src/facade/lang":204}],265:[function(require,module,exports){
-'use strict';var MatchedUrl = (function () {
+'use strict';"use strict";
+var MatchedUrl = (function () {
     function MatchedUrl(urlPath, urlParams, allParams, auxiliary, rest) {
         this.urlPath = urlPath;
         this.urlParams = urlParams;
@@ -35554,7 +36142,7 @@ exports.RegexRoutePath = RegexRoutePath;
         this.rest = rest;
     }
     return MatchedUrl;
-})();
+}());
 exports.MatchedUrl = MatchedUrl;
 var GeneratedUrl = (function () {
     function GeneratedUrl(urlPath, urlParams) {
@@ -35562,10 +36150,11 @@ var GeneratedUrl = (function () {
         this.urlParams = urlParams;
     }
     return GeneratedUrl;
-})();
+}());
 exports.GeneratedUrl = GeneratedUrl;
 },{}],266:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var exceptions_1 = require('angular2/src/facade/exceptions');
 var collection_1 = require('angular2/src/facade/collection');
 var async_1 = require('angular2/src/facade/async');
@@ -35605,7 +36194,7 @@ var RuleSet = (function () {
         if (config instanceof route_config_impl_1.AuxRoute) {
             handler = new sync_route_handler_1.SyncRouteHandler(config.component, config.data);
             var routePath_1 = this._getRoutePath(config);
-            var auxRule = new rules_1.RouteRule(routePath_1, handler);
+            var auxRule = new rules_1.RouteRule(routePath_1, handler, config.name);
             this.auxRulesByPath.set(routePath_1.toString(), auxRule);
             if (lang_1.isPresent(config.name)) {
                 this.auxRulesByName.set(config.name, auxRule);
@@ -35629,7 +36218,7 @@ var RuleSet = (function () {
             useAsDefault = lang_1.isPresent(config.useAsDefault) && config.useAsDefault;
         }
         var routePath = this._getRoutePath(config);
-        var newRule = new rules_1.RouteRule(routePath, handler);
+        var newRule = new rules_1.RouteRule(routePath, handler, config.name);
         this._assertNoHashCollision(newRule.hash, config.path);
         if (useAsDefault) {
             if (lang_1.isPresent(this.defaultRule)) {
@@ -35714,10 +36303,11 @@ var RuleSet = (function () {
         throw new exceptions_1.BaseException('Route must provide either a path or regex property');
     };
     return RuleSet;
-})();
+}());
 exports.RuleSet = RuleSet;
-},{"../route_config/route_config_impl":254,"./route_handlers/async_route_handler":261,"./route_handlers/sync_route_handler":262,"./route_paths/param_route_path":263,"./route_paths/regex_route_path":264,"./rules":267,"angular2/src/facade/async":196,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],267:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+},{"../route_config/route_config_impl":255,"./route_handlers/async_route_handler":261,"./route_handlers/sync_route_handler":262,"./route_paths/param_route_path":263,"./route_paths/regex_route_path":264,"./rules":267,"angular2/src/facade/async":196,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],267:[function(require,module,exports){
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -35733,7 +36323,7 @@ var RouteMatch = (function () {
     function RouteMatch() {
     }
     return RouteMatch;
-})();
+}());
 exports.RouteMatch = RouteMatch;
 var PathMatch = (function (_super) {
     __extends(PathMatch, _super);
@@ -35744,7 +36334,7 @@ var PathMatch = (function (_super) {
         this.remainingAux = remainingAux;
     }
     return PathMatch;
-})(RouteMatch);
+}(RouteMatch));
 exports.PathMatch = PathMatch;
 var RedirectMatch = (function (_super) {
     __extends(RedirectMatch, _super);
@@ -35754,7 +36344,7 @@ var RedirectMatch = (function (_super) {
         this.specificity = specificity;
     }
     return RedirectMatch;
-})(RouteMatch);
+}(RouteMatch));
 exports.RedirectMatch = RedirectMatch;
 var RedirectRule = (function () {
     function RedirectRule(_pathRecognizer, redirectTo) {
@@ -35782,14 +36372,15 @@ var RedirectRule = (function () {
         throw new exceptions_1.BaseException("Tried to generate a redirect.");
     };
     return RedirectRule;
-})();
+}());
 exports.RedirectRule = RedirectRule;
 // represents something like '/foo/:bar'
 var RouteRule = (function () {
     // TODO: cache component instruction instances by params and by ParsedUrl instance
-    function RouteRule(_routePath, handler) {
+    function RouteRule(_routePath, handler, _routeName) {
         this._routePath = _routePath;
         this.handler = handler;
+        this._routeName = _routeName;
         this._cache = new collection_1.Map();
         this.specificity = this._routePath.specificity;
         this.hash = this._routePath.hash;
@@ -35829,15 +36420,16 @@ var RouteRule = (function () {
         if (this._cache.has(hashKey)) {
             return this._cache.get(hashKey);
         }
-        var instruction = new instruction_1.ComponentInstruction(urlPath, urlParams, this.handler.data, this.handler.componentType, this.terminal, this.specificity, params);
+        var instruction = new instruction_1.ComponentInstruction(urlPath, urlParams, this.handler.data, this.handler.componentType, this.terminal, this.specificity, params, this._routeName);
         this._cache.set(hashKey, instruction);
         return instruction;
     };
     return RouteRule;
-})();
+}());
 exports.RouteRule = RouteRule;
-},{"../instruction":243,"../url_parser":268,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204,"angular2/src/facade/promise":206}],268:[function(require,module,exports){
-'use strict';var __extends = (this && this.__extends) || function (d, b) {
+},{"../instruction":244,"../url_parser":268,"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204,"angular2/src/facade/promise":206}],268:[function(require,module,exports){
+'use strict';"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -35893,7 +36485,7 @@ var Url = (function () {
     /** @internal */
     Url.prototype._childString = function () { return lang_1.isPresent(this.child) ? ('/' + this.child.toString()) : ''; };
     return Url;
-})();
+}());
 exports.Url = Url;
 var RootUrl = (function (_super) {
     __extends(RootUrl, _super);
@@ -35914,7 +36506,7 @@ var RootUrl = (function (_super) {
         return '?' + serializeParams(this.params);
     };
     return RootUrl;
-})(Url);
+}(Url));
 exports.RootUrl = RootUrl;
 function pathSegmentsToUrl(pathSegments) {
     var url = new Url(pathSegments[pathSegments.length - 1]);
@@ -35927,6 +36519,11 @@ exports.pathSegmentsToUrl = pathSegmentsToUrl;
 var SEGMENT_RE = lang_1.RegExpWrapper.create('^[^\\/\\(\\)\\?;=&#]+');
 function matchUrlSegment(str) {
     var match = lang_1.RegExpWrapper.firstMatch(SEGMENT_RE, str);
+    return lang_1.isPresent(match) ? match[0] : '';
+}
+var QUERY_PARAM_VALUE_RE = lang_1.RegExpWrapper.create('^[^\\(\\)\\?;&#]+');
+function matchUrlQueryParamValue(str) {
+    var match = lang_1.RegExpWrapper.firstMatch(QUERY_PARAM_VALUE_RE, str);
     return lang_1.isPresent(match) ? match[0] : '';
 }
 var UrlParser = (function () {
@@ -36000,10 +36597,10 @@ var UrlParser = (function () {
     UrlParser.prototype.parseQueryParams = function () {
         var params = {};
         this.capture('?');
-        this.parseParam(params);
+        this.parseQueryParam(params);
         while (this._remaining.length > 0 && this.peekStartsWith('&')) {
             this.capture('&');
-            this.parseParam(params);
+            this.parseQueryParam(params);
         }
         return params;
     };
@@ -36032,6 +36629,23 @@ var UrlParser = (function () {
         }
         params[key] = value;
     };
+    UrlParser.prototype.parseQueryParam = function (params) {
+        var key = matchUrlSegment(this._remaining);
+        if (lang_1.isBlank(key)) {
+            return;
+        }
+        this.capture(key);
+        var value = true;
+        if (this.peekStartsWith('=')) {
+            this.capture('=');
+            var valueMatch = matchUrlQueryParamValue(this._remaining);
+            if (lang_1.isPresent(valueMatch)) {
+                value = valueMatch;
+                this.capture(value);
+            }
+        }
+        params[key] = value;
+    };
     UrlParser.prototype.parseAuxiliaryRoutes = function () {
         var routes = [];
         this.capture('(');
@@ -36045,11 +36659,12 @@ var UrlParser = (function () {
         return routes;
     };
     return UrlParser;
-})();
+}());
 exports.UrlParser = UrlParser;
 exports.parser = new UrlParser();
 },{"angular2/src/facade/collection":199,"angular2/src/facade/exceptions":201,"angular2/src/facade/lang":204}],269:[function(require,module,exports){
-'use strict';var lang_1 = require('angular2/src/facade/lang');
+'use strict';"use strict";
+var lang_1 = require('angular2/src/facade/lang');
 var collection_1 = require('angular2/src/facade/collection');
 var TouchMap = (function () {
     function TouchMap(map) {
@@ -36075,7 +36690,7 @@ var TouchMap = (function () {
         return unused;
     };
     return TouchMap;
-})();
+}());
 exports.TouchMap = TouchMap;
 function normalizeString(obj) {
     if (lang_1.isBlank(obj)) {
@@ -36087,7 +36702,8 @@ function normalizeString(obj) {
 }
 exports.normalizeString = normalizeString;
 },{"angular2/src/facade/collection":199,"angular2/src/facade/lang":204}],270:[function(require,module,exports){
-'use strict';// Note: This class is only here so that we can reference it from TypeScript code.
+'use strict';"use strict";
+// Note: This class is only here so that we can reference it from TypeScript code.
 // The actual implementation lives under modules_dart.
 // TODO(tbosch): Move the corresponding code into angular2/src/compiler once
 // the new compiler is done.
@@ -36099,7 +36715,7 @@ var Codegen = (function () {
     };
     Codegen.prototype.toString = function () { throw "Not implemented in JS"; };
     return Codegen;
-})();
+}());
 exports.Codegen = Codegen;
 },{}],271:[function(require,module,exports){
 (function (process,global){
@@ -40570,25 +41186,26 @@ __export(require('./components/app/app'));
 __export(require('./components/app/id'));
 __export(require('./components/action-sheet/action-sheet'));
 __export(require('./components/alert/alert'));
+__export(require('./components/badge/badge'));
 __export(require('./components/blur/blur'));
 __export(require('./components/button/button'));
 __export(require('./components/checkbox/checkbox'));
 __export(require('./components/content/content'));
 __export(require('./components/icon/icon'));
+__export(require('./components/img/img'));
 __export(require('./components/infinite-scroll/infinite-scroll'));
 __export(require('./components/infinite-scroll/infinite-scroll-content'));
 __export(require('./components/input/input'));
 __export(require('./components/item/item'));
 __export(require('./components/item/item-sliding'));
+__export(require('./components/label/label'));
+__export(require('./components/list/list'));
+__export(require('./components/loading/loading'));
 __export(require('./components/menu/menu-controller'));
 __export(require('./components/menu/menu'));
 __export(require('./components/menu/menu-types'));
 __export(require('./components/menu/menu-toggle'));
 __export(require('./components/menu/menu-close'));
-__export(require('./components/label/label'));
-__export(require('./components/list/list'));
-__export(require('./components/loading/loading'));
-__export(require('./components/show-hide-when/show-hide-when'));
 __export(require('./components/modal/modal'));
 __export(require('./components/nav/nav'));
 __export(require('./components/nav/nav-controller'));
@@ -40598,8 +41215,6 @@ __export(require('./components/nav/nav-push'));
 __export(require('./components/nav/nav-router'));
 __export(require('./components/navbar/navbar'));
 __export(require('./components/option/option'));
-__export(require('./components/overlay/overlay'));
-__export(require('./components/slides/slides'));
 __export(require('./components/radio/radio-button'));
 __export(require('./components/radio/radio-group'));
 __export(require('./components/refresher/refresher'));
@@ -40608,14 +41223,18 @@ __export(require('./components/scroll/scroll'));
 __export(require('./components/searchbar/searchbar'));
 __export(require('./components/segment/segment'));
 __export(require('./components/select/select'));
+__export(require('./components/show-hide-when/show-hide-when'));
+__export(require('./components/slides/slides'));
+__export(require('./components/spinner/spinner'));
 __export(require('./components/tabs/tabs'));
 __export(require('./components/tabs/tab'));
 __export(require('./components/tap-click/tap-click'));
 __export(require('./components/toggle/toggle'));
+__export(require('./components/toast/toast'));
 __export(require('./components/toolbar/toolbar'));
 __export(require('./components/virtual-scroll/virtual-scroll'));
 
-},{"./components/action-sheet/action-sheet":275,"./components/alert/alert":276,"./components/app/app":277,"./components/app/id":278,"./components/blur/blur":280,"./components/button/button":281,"./components/checkbox/checkbox":282,"./components/content/content":283,"./components/icon/icon":284,"./components/infinite-scroll/infinite-scroll":287,"./components/infinite-scroll/infinite-scroll-content":286,"./components/input/input":289,"./components/item/item":294,"./components/item/item-sliding":293,"./components/label/label":295,"./components/list/list":296,"./components/loading/loading":297,"./components/menu/menu":303,"./components/menu/menu-close":298,"./components/menu/menu-controller":299,"./components/menu/menu-toggle":301,"./components/menu/menu-types":302,"./components/modal/modal":304,"./components/nav/nav":311,"./components/nav/nav-controller":305,"./components/nav/nav-params":306,"./components/nav/nav-push":308,"./components/nav/nav-router":310,"./components/nav/view-controller":313,"./components/navbar/navbar":314,"./components/option/option":315,"./components/overlay/overlay":316,"./components/radio/radio-button":317,"./components/radio/radio-group":318,"./components/refresher/refresher":320,"./components/refresher/refresher-content":319,"./components/scroll/scroll":321,"./components/searchbar/searchbar":322,"./components/segment/segment":323,"./components/select/select":324,"./components/show-hide-when/show-hide-when":325,"./components/slides/slides":326,"./components/tabs/tab":331,"./components/tabs/tabs":332,"./components/tap-click/tap-click":335,"./components/toggle/toggle":336,"./components/toolbar/toolbar":337,"./components/virtual-scroll/virtual-scroll":339}],275:[function(require,module,exports){
+},{"./components/action-sheet/action-sheet":275,"./components/alert/alert":276,"./components/app/app":277,"./components/app/id":278,"./components/badge/badge":279,"./components/blur/blur":280,"./components/button/button":281,"./components/checkbox/checkbox":282,"./components/content/content":283,"./components/icon/icon":284,"./components/img/img":285,"./components/infinite-scroll/infinite-scroll":287,"./components/infinite-scroll/infinite-scroll-content":286,"./components/input/input":289,"./components/item/item":294,"./components/item/item-sliding":293,"./components/label/label":295,"./components/list/list":296,"./components/loading/loading":297,"./components/menu/menu":303,"./components/menu/menu-close":298,"./components/menu/menu-controller":299,"./components/menu/menu-toggle":301,"./components/menu/menu-types":302,"./components/modal/modal":304,"./components/nav/nav":311,"./components/nav/nav-controller":305,"./components/nav/nav-params":306,"./components/nav/nav-push":308,"./components/nav/nav-router":310,"./components/nav/view-controller":313,"./components/navbar/navbar":314,"./components/option/option":315,"./components/radio/radio-button":316,"./components/radio/radio-group":317,"./components/refresher/refresher":319,"./components/refresher/refresher-content":318,"./components/scroll/scroll":320,"./components/searchbar/searchbar":321,"./components/segment/segment":322,"./components/select/select":323,"./components/show-hide-when/show-hide-when":324,"./components/slides/slides":325,"./components/spinner/spinner":327,"./components/tabs/tab":330,"./components/tabs/tabs":331,"./components/tap-click/tap-click":334,"./components/toast/toast":335,"./components/toggle/toggle":336,"./components/toolbar/toolbar":337,"./components/virtual-scroll/virtual-scroll":339}],275:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -40704,6 +41323,62 @@ var view_controller_1 = require('../nav/view-controller');
  *   this.nav.present(actionSheet);
  * }
  * ```
+ *
+ *
+ * ### Dismissing And Async Navigation
+ *
+ * After an action sheet has been dismissed, the app may need to also transition
+ * to another page depending on the handler's logic. However, because multiple
+ * transitions were fired at roughly the same time, it's difficult for the
+ * nav controller to cleanly animate multiple transitions that may
+ * have been kicked off asynchronously. This is further described in the
+ * [`Nav Transition Promises`](../../nav/NavController) section. For action sheets,
+ * this means it's best to wait for the action sheet to finish its transition
+ * out before starting a new transition on the same nav controller.
+ *
+ * In the example below, after the button has been clicked, its handler
+ * waits on async operation to complete, *then* it uses `pop` to navigate
+ * back a page in the same stack. The potential problem is that the async operation
+ * may have been completed before the action sheet has even finished its transition
+ * out. In this case, it's best to ensure the action sheet has finished its transition
+ * out first, *then* start the next transition.
+ *
+ * ```ts
+ * let actionSheet = ActionSheet.create({
+ *   title: 'Hello',
+ *   buttons: [{
+ *     text: 'Ok',
+ *     handler: () => {
+ *       // user has clicked the action sheet button
+ *       // begin the action sheet's dimiss transition
+ *       let navTransition = actionSheet.dismiss();
+ *
+ *       // start some async method
+ *       someAsyncOperation().then(() => {
+ *         // once the async operation has completed
+ *         // then run the next nav transition after the
+ *         // first transition has finished animating out
+ *
+ *         navTransition.then(() => {
+ *           this.nav.pop();
+ *         });
+ *       });
+ *       return false;
+ *     }
+ *   }]
+ * });
+ *
+ * this.nav.present(actionSheet);
+ * ```
+ *
+ * It's important to note that the handler returns `false`. A feature of
+ * button handlers is that they automatically dismiss the action sheet when their button
+ * was clicked, however, we'll need more control regarding the transition. Because
+ * the handler returns `false`, then the action sheet does not automatically dismiss
+ * itself. Instead, you now have complete control of when the action sheet has finished
+ * transitioning, and the ability to wait for the action sheet to finish transitioning
+ * out before starting a new transition.
+ *
  *
  * @demo /docs/v2/demos/action-sheet/
  * @see {@link /docs/v2/components#action-sheets ActionSheet Component Docs}
@@ -40823,6 +41498,9 @@ var ActionSheetCmp = (function () {
                 if (button.role === 'destructive') {
                     button.cssClass = (button.cssClass + ' ' || '') + 'action-sheet-destructive';
                 }
+                else if (button.role === 'selected') {
+                    button.cssClass = (button.cssClass + ' ' || '') + 'action-sheet-selected';
+                }
                 buttons.push(button);
             }
         });
@@ -40897,14 +41575,14 @@ var ActionSheetCmp = (function () {
                 '<div class="action-sheet-group">' +
                 '<div class="action-sheet-title" id="{{hdrId}}" *ngIf="d.title">{{d.title}}</div>' +
                 '<div class="action-sheet-sub-title" id="{{descId}}" *ngIf="d.subTitle">{{d.subTitle}}</div>' +
-                '<button (click)="click(b)" *ngFor="#b of d.buttons" class="action-sheet-button disable-hover" [ngClass]="b.cssClass">' +
+                '<button category="action-sheet-button" (click)="click(b)" *ngFor="#b of d.buttons" class="disable-hover" [ngClass]="b.cssClass">' +
                 '<ion-icon [name]="b.icon" *ngIf="b.icon" class="action-sheet-icon"></ion-icon> ' +
                 '{{b.text}}' +
                 '<ion-button-effect></ion-button-effect>' +
                 '</button>' +
                 '</div>' +
                 '<div class="action-sheet-group" *ngIf="d.cancelButton">' +
-                '<button (click)="click(d.cancelButton)" class="action-sheet-button action-sheet-cancel disable-hover" [ngClass]="d.cancelButton.cssClass">' +
+                '<button category="action-sheet-button" (click)="click(d.cancelButton)" class="action-sheet-cancel disable-hover" [ngClass]="d.cancelButton.cssClass">' +
                 '<ion-icon [name]="d.cancelButton.icon" *ngIf="d.cancelButton.icon" class="action-sheet-icon"></ion-icon> ' +
                 '{{d.cancelButton.text}}' +
                 '<ion-button-effect></ion-button-effect>' +
@@ -40917,7 +41595,9 @@ var ActionSheetCmp = (function () {
                 '[attr.aria-labelledby]': 'hdrId',
                 '[attr.aria-describedby]': 'descId'
             },
-            directives: [common_1.NgFor, common_1.NgIf, icon_1.Icon]
+            directives: [common_1.NgFor, common_1.NgIf, icon_1.Icon],
+            changeDetection: core_1.ChangeDetectionStrategy.OnPush,
+            encapsulation: core_1.ViewEncapsulation.None,
         }), 
         __metadata('design:paramtypes', [view_controller_1.ViewController, config_1.Config, core_1.ElementRef, nav_params_1.NavParams, core_1.Renderer])
     ], ActionSheetCmp);
@@ -41152,6 +41832,62 @@ var view_controller_1 = require('../nav/view-controller');
  * }
  * ```
  *
+ *
+ * ### Dismissing And Async Navigation
+ *
+ * After an alert has been dismissed, the app may need to also transition
+ * to another page depending on the handler's logic. However, because multiple
+ * transitions were fired at roughly the same time, it's difficult for the
+ * nav controller to cleanly animate multiple transitions that may
+ * have been kicked off asynchronously. This is further described in the
+ * [`Nav Transition Promises`](../../nav/NavController) section. For alerts,
+ * this means it's best to wait for the alert to finish its transition
+ * out before starting a new transition on the same nav controller.
+ *
+ * In the example below, after the alert button has been clicked, its handler
+ * waits on async operation to complete, *then* it uses `pop` to navigate
+ * back a page in the same stack. The potential problem is that the async operation
+ * may have been completed before the alert has even finished its transition
+ * out. In this case, it's best to ensure the alert has finished its transition
+ * out first, *then* start the next transition.
+ *
+ * ```ts
+ * let alert = Alert.create({
+ *   title: 'Hello',
+ *   buttons: [{
+ *     text: 'Ok',
+ *     handler: () => {
+ *       // user has clicked the alert button
+ *       // begin the alert's dimiss transition
+ *       let navTransition = alert.dismiss();
+ *
+ *       // start some async method
+ *       someAsyncOperation().then(() => {
+ *         // once the async operation has completed
+ *         // then run the next nav transition after the
+ *         // first transition has finished animating out
+ *
+ *         navTransition.then(() => {
+ *           this.nav.pop();
+ *         });
+ *       });
+ *       return false;
+ *     }
+ *   }]
+ * });
+ *
+ * this.nav.present(alert);
+ * ```
+ *
+ * It's important to note that the handler returns `false`. A feature of
+ * button handlers is that they automatically dismiss the alert when their button
+ * was clicked, however, we'll need more control regarding the transition. Because
+ * the handler returns `false`, then the alert does not automatically dismiss
+ * itself. Instead, you now have complete control of when the alert has finished
+ * transitioning, and the ability to wait for the alert to finish transitioning
+ * out before starting a new transition.
+ *
+ *
  * @demo /docs/v2/demos/alert/
  */
 var Alert = (function (_super) {
@@ -41256,7 +41992,7 @@ var Alert = (function (_super) {
      *  | cssClass | `string` | An additional CSS class for the button                         |
      *  | role     | `string` | The buttons role, null or `cancel`                             |
      *
-     * @param {object} opts Alert. See the tabel above
+     * @param {object} opts Alert. See the table above
      */
     Alert.create = function (opts) {
         if (opts === void 0) { opts = {}; }
@@ -41461,7 +42197,7 @@ var AlertCmp = (function () {
                 '<div *ngIf="d.inputs.length" [ngSwitch]="inputType">' +
                 '<template ngSwitchWhen="radio">' +
                 '<div class="alert-radio-group" role="radiogroup" [attr.aria-labelledby]="hdrId" [attr.aria-activedescendant]="activeId">' +
-                '<button *ngFor="#i of d.inputs" (click)="rbClick(i)" [attr.aria-checked]="i.checked" [attr.id]="i.id" class="alert-tappable alert-radio" role="radio">' +
+                '<button category="alert-radio-button" *ngFor="#i of d.inputs" (click)="rbClick(i)" [attr.aria-checked]="i.checked" [attr.id]="i.id" class="alert-tappable alert-radio" role="radio">' +
                 '<div class="alert-radio-icon"><div class="alert-radio-inner"></div></div>' +
                 '<div class="alert-radio-label">' +
                 '{{i.label}}' +
@@ -41471,7 +42207,7 @@ var AlertCmp = (function () {
                 '</template>' +
                 '<template ngSwitchWhen="checkbox">' +
                 '<div class="alert-checkbox-group">' +
-                '<button *ngFor="#i of d.inputs" (click)="cbClick(i)" [attr.aria-checked]="i.checked" class="alert-tappable alert-checkbox" role="checkbox">' +
+                '<button category="alert-checkbox-button" *ngFor="#i of d.inputs" (click)="cbClick(i)" [attr.aria-checked]="i.checked" class="alert-tappable alert-checkbox" role="checkbox">' +
                 '<div class="alert-checkbox-icon"><div class="alert-checkbox-inner"></div></div>' +
                 '<div class="alert-checkbox-label">' +
                 '{{i.label}}' +
@@ -41488,7 +42224,7 @@ var AlertCmp = (function () {
                 '</template>' +
                 '</div>' +
                 '<div class="alert-button-group" [ngClass]="{vertical: d.buttons.length>2}">' +
-                '<button *ngFor="#b of d.buttons" (click)="btnClick(b)" [ngClass]="b.cssClass" class="alert-button">' +
+                '<button category="alert-button" *ngFor="#b of d.buttons" (click)="btnClick(b)" [ngClass]="b.cssClass">' +
                 '{{b.text}}' +
                 '<ion-button-effect></ion-button-effect>' +
                 '</button>' +
@@ -41499,7 +42235,9 @@ var AlertCmp = (function () {
                 '[attr.aria-labelledby]': 'hdrId',
                 '[attr.aria-describedby]': 'descId'
             },
-            directives: [common_1.NgClass, common_1.NgSwitch, common_1.NgIf, common_1.NgFor]
+            directives: [common_1.NgClass, common_1.NgSwitch, common_1.NgIf, common_1.NgFor],
+            changeDetection: core_1.ChangeDetectionStrategy.OnPush,
+            encapsulation: core_1.ViewEncapsulation.None,
         }), 
         __metadata('design:paramtypes', [view_controller_1.ViewController, core_1.ElementRef, config_1.Config, nav_params_1.NavParams, core_1.Renderer])
     ], AlertCmp);
@@ -41633,21 +42371,34 @@ var core_1 = require('angular2/core');
 var browser_1 = require('angular2/platform/browser');
 var config_1 = require('../../config/config');
 var click_block_1 = require('../../util/click-block');
+var platform_1 = require('../../platform/platform');
 /**
  * App utility service.  Allows you to look up components that have been
  * registered using the [Id directive](../Id/).
  */
 var IonicApp = (function () {
-    function IonicApp(_config, _clickBlock, _zone) {
+    function IonicApp(_config, _clickBlock, platform) {
+        var _this = this;
         this._config = _config;
         this._clickBlock = _clickBlock;
-        this._zone = _zone;
         this._cmps = {};
         this._disTime = 0;
         this._scrollTime = 0;
         this._title = '';
         this._titleSrv = new browser_1.Title();
         this._isProd = false;
+        this._rootNav = null;
+        platform.backButton.subscribe(function () {
+            var activeNav = _this.getActiveNav();
+            if (activeNav) {
+                if (activeNav.length() === 1) {
+                    platform.exitApp();
+                }
+                else {
+                    activeNav.pop();
+                }
+            }
+        });
     }
     /**
      * Sets the document title.
@@ -41717,6 +42468,33 @@ var IonicApp = (function () {
     };
     /**
      * @private
+     */
+    IonicApp.prototype.getActiveNav = function () {
+        var nav = this._rootNav || null;
+        var activeChildNav;
+        while (nav) {
+            activeChildNav = nav.getActiveChildNav();
+            if (!activeChildNav) {
+                break;
+            }
+            nav = activeChildNav;
+        }
+        return nav;
+    };
+    /**
+     * @private
+     */
+    IonicApp.prototype.getRootNav = function () {
+        return this._rootNav;
+    };
+    /**
+     * @private
+     */
+    IonicApp.prototype.setRootNav = function (nav) {
+        this._rootNav = nav;
+    };
+    /**
+     * @private
      * Register a known component with a key, for easy lookups later.
      * @param {string} id  The id to use to register the component
      * @param {object} component  The component to register
@@ -41756,15 +42534,29 @@ var IonicApp = (function () {
         }
         return this._cmps[id];
     };
+    /**
+     * Set the global app injector that contains references to all of the instantiated providers
+     * @param injector
+     */
+    IonicApp.prototype.setAppInjector = function (injector) {
+        this._appInjector = injector;
+    };
+    /**
+     * Get an instance of the global app injector that contains references to all of the instantiated providers
+     * @returns {Injector}
+     */
+    IonicApp.prototype.getAppInjector = function () {
+        return this._appInjector;
+    };
     IonicApp = __decorate([
         core_1.Injectable(), 
-        __metadata('design:paramtypes', [config_1.Config, click_block_1.ClickBlock, core_1.NgZone])
+        __metadata('design:paramtypes', [config_1.Config, click_block_1.ClickBlock, platform_1.Platform])
     ], IonicApp);
     return IonicApp;
 }());
 exports.IonicApp = IonicApp;
 
-},{"../../config/config":342,"../../util/click-block":366,"angular2/core":20,"angular2/platform/browser":23}],278:[function(require,module,exports){
+},{"../../config/config":342,"../../platform/platform":353,"../../util/click-block":366,"angular2/core":20,"angular2/platform/browser":23}],278:[function(require,module,exports){
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -41778,6 +42570,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var core_1 = require('angular2/core');
 var app_1 = require('./app');
 /**
+ * @private
  * @name Id
  * @description
  * The `id` attribute is an easy way to identify unique components in an app and access them
@@ -42012,7 +42805,7 @@ var util_1 = require('../../util/util');
   * @property [fab-center] - Position a fab button towards the center.
   * @property [fab-top] - Position a fab button towards the top.
   * @property [fab-bottom] - Position a fab button towards the bottom.
-  * @property [color] - Dynamically set which color attribute this button should use.
+  * @property [color] - Dynamically set which predefined color this button should use (e.g. default, secondary, danger, etc).
   *
   * @demo /docs/v2/demos/button/
   * @see {@link /docs/v2/components#buttons Button Component Docs}
@@ -42146,7 +42939,7 @@ var Button = (function () {
     };
     Object.defineProperty(Button.prototype, "color", {
         /**
-         * @input {string} Dynamically set which color attribute this button should use.
+         * @input {string} Dynamically set which predefined color this button should use (e.g. default, secondary, danger, etc).
          */
         set: function (val) {
             this._assignCss(false);
@@ -42156,6 +42949,15 @@ var Button = (function () {
         enumerable: true,
         configurable: true
     });
+    /**
+     * @private
+     */
+    Button.prototype.ngOnInit = function () {
+        // If the button has a role applied to it
+        if (this.category) {
+            this.setRole(this.category);
+        }
+    };
     /**
      * @private
      */
@@ -42283,6 +43085,10 @@ var Button = (function () {
     };
     __decorate([
         core_1.Input(), 
+        __metadata('design:type', String)
+    ], Button.prototype, "category", void 0);
+    __decorate([
+        core_1.Input(), 
         __metadata('design:type', Boolean), 
         __metadata('design:paramtypes', [Boolean])
     ], Button.prototype, "large", null);
@@ -42337,7 +43143,9 @@ var Button = (function () {
             template: '<span class="button-inner">' +
                 '<ng-content></ng-content>' +
                 '</span>' +
-                '<ion-button-effect></ion-button-effect>'
+                '<ion-button-effect></ion-button-effect>',
+            changeDetection: core_1.ChangeDetectionStrategy.OnPush,
+            encapsulation: core_1.ViewEncapsulation.None,
         }),
         __param(3, core_1.Attribute('ion-item')), 
         __metadata('design:paramtypes', [config_1.Config, core_1.ElementRef, core_1.Renderer, String])
@@ -42542,6 +43350,8 @@ var Checkbox = (function () {
                 '<div class="checkbox-inner"></div>' +
                 '</div>' +
                 '<button role="checkbox" ' +
+                'type="button" ' +
+                'category="item-cover" ' +
                 '[id]="id" ' +
                 '[attr.aria-checked]="_checked" ' +
                 '[attr.aria-labelledby]="_labelId" ' +
@@ -42551,7 +43361,8 @@ var Checkbox = (function () {
             host: {
                 '[class.checkbox-disabled]': '_disabled'
             },
-            providers: [CHECKBOX_VALUE_ACCESSOR]
+            providers: [CHECKBOX_VALUE_ACCESSOR],
+            encapsulation: core_1.ViewEncapsulation.None,
         }),
         __param(1, core_1.Optional()), 
         __metadata('design:paramtypes', [form_1.Form, item_1.Item])
@@ -42583,14 +43394,15 @@ var core_1 = require('angular2/core');
 var ion_1 = require('../ion');
 var app_1 = require('../app/app');
 var config_1 = require('../../config/config');
+var keyboard_1 = require('../../util/keyboard');
 var dom_1 = require('../../util/dom');
 var view_controller_1 = require('../nav/view-controller');
 var scroll_view_1 = require('../../util/scroll-view');
 /**
  * @name Content
  * @description
- * The Content component provides an easy to use content area with some useful
- * methods to control the scrollable area.
+ * The Content component provides an easy to use content area with
+ * some useful methods to control the scrollable area.
  *
  * The content area can also implement pull-to-refresh with the
  * [Refresher](../../scroll/Refresher) component.
@@ -42602,16 +43414,36 @@ var scroll_view_1 = require('../../util/scroll-view');
  * </ion-content>
  * ```
  *
+ * To get a reference to the content component from a Page's logic,
+ * you can use Angular's `@ViewChild` annotation:
+ *
+ * ```ts
+ * import {ViewChild} from 'angular2/core';
+ * import {Content} from 'ionic-angular';
+ *
+ * @Page({...}
+ * export class MyPage{
+ *   @ViewChild(Content) content: Content;
+ *
+ *   scrollToTop() {
+ *     this.content.scrollToTop();
+ *   }
+ * }
+ * ```
+ *
  */
 var Content = (function (_super) {
     __extends(Content, _super);
-    function Content(_elementRef, _config, _app, _zone, viewCtrl) {
+    function Content(_elementRef, _config, _app, _keyboard, _zone, viewCtrl) {
         _super.call(this, _elementRef);
         this._elementRef = _elementRef;
         this._config = _config;
         this._app = _app;
+        this._keyboard = _keyboard;
         this._zone = _zone;
         this._padding = 0;
+        this._inputPolling = false;
+        this._sbPadding = _config.getBoolean('statusbarPadding', false);
         if (viewCtrl) {
             viewCtrl.setContent(this);
             viewCtrl.setContentRef(_elementRef);
@@ -42622,9 +43454,9 @@ var Content = (function (_super) {
      */
     Content.prototype.ngOnInit = function () {
         var self = this;
-        self.scrollElement = self._elementRef.nativeElement.children[0];
+        self._scrollEle = self._elementRef.nativeElement.children[0];
         self._zone.runOutsideAngular(function () {
-            self._scroll = new scroll_view_1.ScrollView(self.scrollElement);
+            self._scroll = new scroll_view_1.ScrollView(self._scrollEle);
             if (self._config.getBoolean('tapPolyfill')) {
                 self._scLsn = self.addScrollListener(function () {
                     self._app.setScrolling();
@@ -42638,33 +43470,10 @@ var Content = (function (_super) {
     Content.prototype.ngOnDestroy = function () {
         this._scLsn && this._scLsn();
         this._scroll && this._scroll.destroy();
-        this.scrollElement = this._scLsn = null;
+        this._scrollEle = this._scLsn = null;
     };
     /**
      * @private
-     * Adds the specified scroll handler to the content' scroll element.
-     *
-     * ```ts
-     * @Page({
-     *   template: `<ion-content id="my-content"></ion-content>`
-     * )}
-     * export class MyPage{
-     *    constructor(app: IonicApp){
-     *        this.app = app;
-     *    }
-     *   // Need to wait until the component has been initialized
-     *   ngAfterViewInit() {
-     *     // Here 'my-content' is the ID of my ion-content
-     *     this.content = this.app.getComponent('my-content');
-     *     this.content.addScrollListener(this.myScroll);
-     *   }
-     *     myScroll() {
-     *      console.info('They see me scrolling...');
-     *    }
-     * }
-     * ```
-     * @param {Function} handler  The method you want perform when scrolling
-     * @returns {Function} A function that removes the scroll handler.
      */
     Content.prototype.addScrollListener = function (handler) {
         return this._addListener('scroll', handler);
@@ -42707,17 +43516,16 @@ var Content = (function (_super) {
     };
     Content.prototype._addListener = function (type, handler) {
         var _this = this;
-        if (!this.scrollElement) {
+        if (!this._scrollEle) {
             return;
         }
         // ensure we're not creating duplicates
-        this.scrollElement.removeEventListener(type, handler);
-        this.scrollElement.addEventListener(type, handler);
+        this._scrollEle.removeEventListener(type, handler);
+        this._scrollEle.addEventListener(type, handler);
         return function () {
-            if (!_this.scrollElement) {
-                return;
+            if (_this._scrollEle) {
+                _this._scrollEle.removeEventListener(type, handler);
             }
-            _this.scrollElement.removeEventListener(type, handler);
         };
     };
     /**
@@ -42728,7 +43536,7 @@ var Content = (function (_super) {
     Content.prototype.onScrollEnd = function (callback) {
         var lastScrollTop = null;
         var framesUnchanged = 0;
-        var _scrollEle = this.scrollElement;
+        var _scrollEle = this._scrollEle;
         function next() {
             var currentScrollTop = _scrollEle.scrollTop;
             if (lastScrollTop !== null) {
@@ -42747,88 +43555,100 @@ var Content = (function (_super) {
                 dom_1.raf(next);
             });
         }
-        setTimeout(next, 100);
+        dom_1.nativeTimeout(next, 100);
     };
+    /**
+     * @private
+     */
     Content.prototype.onScrollElementTransitionEnd = function (callback) {
-        dom_1.transitionEnd(this.scrollElement, callback);
+        dom_1.transitionEnd(this._scrollEle, callback);
     };
     /**
      * Scroll to the specified position.
      *
      * ```ts
+     * import {ViewChild} from 'angular2/core';
+     * import {Content} from 'ionic-angular';
+     *
      * @Page({
-     *   template: `<ion-content id="my-content">
-     *      <button (click)="scrollTo()"> Down 500px</button>
-     *   </ion-content>`
+     *   template: `<ion-content>
+     *                <button (click)="scrollTo()">Down 500px</button>
+     *              </ion-content>`
      * )}
      * export class MyPage{
-     *    constructor(app: IonicApp){
-     *        this.app = app;
-     *    }
-     *   // Need to wait until the component has been initialized
-     *   ngAfterViewInit() {
-     *     // Here 'my-content' is the ID of my ion-content
-     *     this.content = this.app.getComponent('my-content');
+     *   @ViewChild(Content) content: Content;
+     *
+     *   scrollTo() {
+     *     // set the scrollLeft to 0px, and scrollTop to 500px
+     *     // the scroll duration should take 200ms
+     *     this.content.scrollTo(0, 500, 200);
      *   }
-     *    scrollTo() {
-     *      this.content.scrollTo(0, 500, 200);
-     *    }
      * }
      * ```
      * @param {number} x  The x-value to scroll to.
      * @param {number} y  The y-value to scroll to.
-     * @param {number} duration  Duration of the scroll animation in ms.
-     * @returns {Promise} Returns a promise when done
+     * @param {number} [duration]  Duration of the scroll animation in milliseconds. Defaults to `300`.
+     * @returns {Promise} Returns a promise which is resolved when the scroll has completed.
      */
     Content.prototype.scrollTo = function (x, y, duration) {
+        if (duration === void 0) { duration = 300; }
         return this._scroll.scrollTo(x, y, duration);
     };
     /**
      * Scroll to the top of the content component.
      *
      * ```ts
+     * import {ViewChild} from 'angular2/core';
+     * import {Content} from 'ionic-angular';
+     *
      * @Page({
-     *   template: `<ion-content id="my-content">
-     *      <button (click)="scrollTop()"> Down 500px</button>
-     *   </ion-content>`
+     *   template: `<ion-content>
+     *                <button (click)="scrollToTop()">Scroll to top</button>
+     *              </ion-content>`
      * )}
      * export class MyPage{
-     *    constructor(app: IonicApp){
-     *        this.app = app;
-     *    }
-     *   // Need to wait until the component has been initialized
-     *   ngAfterViewInit() {
-     *     // Here 'my-content' is the ID of my ion-content
-     *     this.content = this.app.getComponent('my-content');
+     *   @ViewChild(Content) content: Content;
+     *
+     *   scrollToTop() {
+     *     this.content.scrollToTop();
      *   }
-     *    scrollTop() {
-     *      this.content.scrollToTop();
-     *    }
      * }
      * ```
-     * @returns {Promise} Returns a promise when done
+     * @param {number} [duration]  Duration of the scroll animation in milliseconds. Defaults to `300`.
+     * @returns {Promise} Returns a promise which is resolved when the scroll has completed.
      */
     Content.prototype.scrollToTop = function (duration) {
         if (duration === void 0) { duration = 300; }
-        return this.scrollTo(0, 0, duration);
+        return this._scroll.scrollToTop(duration);
+    };
+    /**
+     * Get the `scrollTop` property of the content's scrollable element.
+     * @returns {number}
+     */
+    Content.prototype.getScrollTop = function () {
+        return this._scroll.getTop();
+    };
+    /**
+     * Set the `scrollTop` property of the content's scrollable element.
+     * @param {number} top
+     */
+    Content.prototype.setScrollTop = function (top) {
+        this._scroll.setTop(top);
+    };
+    /**
+     * Scroll to the bottom of the content component.
+     * @param {number} [duration]  Duration of the scroll animation in milliseconds. Defaults to `300`.
+     * @returns {Promise} Returns a promise which is resolved when the scroll has completed.
+     */
+    Content.prototype.scrollToBottom = function (duration) {
+        if (duration === void 0) { duration = 300; }
+        return this._scroll.scrollToBottom(duration);
     };
     /**
      * @private
      */
     Content.prototype.jsScroll = function (onScrollCallback) {
         return this._scroll.jsScroll(onScrollCallback);
-    };
-    /**
-     * @private
-     */
-    Content.prototype.getScrollTop = function () {
-        return this._scroll.getTop();
-    };
-    /**
-     * @private
-     */
-    Content.prototype.setScrollTop = function (top) {
-        this._scroll.setTop(top);
     };
     /**
      * @private
@@ -42846,7 +43666,7 @@ var Content = (function (_super) {
      * @private
      */
     Content.prototype.setScrollElementStyle = function (prop, val) {
-        this.scrollElement.style[prop] = val;
+        this._scrollEle.style[prop] = val;
     };
     /**
      * Returns the content and scroll elements' dimensions.
@@ -42865,7 +43685,7 @@ var Content = (function (_super) {
      * {number} dimensions.scrollRight  scroll scrollLeft + scrollWidth
      */
     Content.prototype.getContentDimensions = function () {
-        var _scrollEle = this.scrollElement;
+        var _scrollEle = this._scrollEle;
         var parentElement = _scrollEle.parentElement;
         return {
             contentHeight: parentElement.offsetHeight,
@@ -42891,7 +43711,22 @@ var Content = (function (_super) {
         if (newPadding > this._padding) {
             void 0;
             this._padding = newPadding;
-            this.scrollElement.style.paddingBottom = newPadding + 'px';
+            this._scrollEle.style.paddingBottom = newPadding + 'px';
+        }
+    };
+    /**
+     * @private
+     */
+    Content.prototype.clearScrollPaddingFocusOut = function () {
+        var _this = this;
+        if (!this._inputPolling) {
+            this._inputPolling = true;
+            this._keyboard.onClose(function () {
+                _this._padding = 0;
+                _this._scrollEle.style.paddingBottom = '';
+                _this._inputPolling = false;
+                _this.addScrollPadding(0);
+            }, 200, Infinity);
         }
     };
     Content = __decorate([
@@ -42901,16 +43736,21 @@ var Content = (function (_super) {
                 '<ng-content></ng-content>' +
                 '</scroll-content>' +
                 '<ng-content select="ion-fixed"></ng-content>' +
-                '<ng-content select="ion-refresher"></ng-content>'
+                '<ng-content select="ion-refresher"></ng-content>',
+            changeDetection: core_1.ChangeDetectionStrategy.OnPush,
+            encapsulation: core_1.ViewEncapsulation.None,
+            host: {
+                '[class.statusbar-padding]': '_sbPadding'
+            }
         }),
-        __param(4, core_1.Optional()), 
-        __metadata('design:paramtypes', [core_1.ElementRef, config_1.Config, app_1.IonicApp, core_1.NgZone, view_controller_1.ViewController])
+        __param(5, core_1.Optional()), 
+        __metadata('design:paramtypes', [core_1.ElementRef, config_1.Config, app_1.IonicApp, keyboard_1.Keyboard, core_1.NgZone, view_controller_1.ViewController])
     ], Content);
     return Content;
 }(ion_1.Ion));
 exports.Content = Content;
 
-},{"../../config/config":342,"../../util/dom":367,"../../util/scroll-view":372,"../app/app":277,"../ion":291,"../nav/view-controller":313,"angular2/core":20}],284:[function(require,module,exports){
+},{"../../config/config":342,"../../util/dom":367,"../../util/keyboard":371,"../../util/scroll-view":372,"../app/app":277,"../ion":291,"../nav/view-controller":313,"angular2/core":20}],284:[function(require,module,exports){
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -42963,12 +43803,6 @@ var Icon = (function () {
         this._md = '';
         this._css = '';
         this.mode = config.get('iconMode');
-        if (_elementRef.nativeElement.tagName === 'ICON') {
-            // deprecated warning
-            void 0;
-            void 0;
-            void 0;
-        }
     }
     /**
      * @private
@@ -43090,7 +43924,7 @@ var Icon = (function () {
     ], Icon.prototype, "isActive", null);
     Icon = __decorate([
         core_1.Directive({
-            selector: 'ion-icon,icon',
+            selector: 'ion-icon',
             host: {
                 'role': 'img'
             }
@@ -43113,42 +43947,77 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var core_1 = require('angular2/core');
+var dom_1 = require('../../util/dom');
 var util_1 = require('../../util/util');
 var platform_1 = require('../../platform/platform');
 var Img = (function () {
-    function Img(_elementRef, _platform) {
+    function Img(_elementRef, _platform, _zone) {
         this._elementRef = _elementRef;
         this._platform = _platform;
+        this._zone = _zone;
         this._src = '';
-        this._srcA = '';
-        this._srcB = '';
-        this._useA = true;
+        this._normalizeSrc = '';
+        this._imgs = [];
         this._enabled = true;
-        this._loaded = false;
     }
     Object.defineProperty(Img.prototype, "src", {
         set: function (val) {
-            val = (util_1.isPresent(val) ? val : '');
-            if (this._src !== val) {
-                this._src = val;
-                this._loaded = false;
-                this._srcA = this._srcB = '';
-                this._useA = !this._useA;
-                this._update();
-            }
+            var tmpImg = new Image();
+            tmpImg.src = util_1.isPresent(val) ? val : '';
+            this._src = util_1.isPresent(val) ? val : '';
+            this._normalizeSrc = tmpImg.src;
+            this._update();
         },
         enumerable: true,
         configurable: true
     });
     Img.prototype._update = function () {
-        if (this._enabled && this.isVisible()) {
-            if (this._useA) {
-                this._srcA = this._src;
+        var _this = this;
+        if (this._enabled && this._src !== '' && this.isVisible()) {
+            // actively update the image
+            for (var i = this._imgs.length - 1; i >= 0; i--) {
+                if (this._imgs[i].src === this._normalizeSrc) {
+                    // this is the active image
+                    if (this._imgs[i].complete) {
+                        this._loaded(true);
+                    }
+                }
+                else {
+                    // no longer the active image
+                    if (this._imgs[i].parentElement) {
+                        this._imgs[i].parentElement.removeChild(this._imgs[i]);
+                    }
+                    this._imgs.splice(i, 1);
+                }
             }
-            else {
-                this._srcB = this._src;
+            if (!this._imgs.length) {
+                this._zone.runOutsideAngular(function () {
+                    var img = new Image();
+                    img.style.width = _this._w;
+                    img.style.height = _this._h;
+                    img.addEventListener('load', function () {
+                        if (img.src === _this._normalizeSrc) {
+                            _this._elementRef.nativeElement.appendChild(img);
+                            dom_1.raf(function () {
+                                _this._update();
+                            });
+                        }
+                    });
+                    img.src = _this._src;
+                    _this._imgs.push(img);
+                    _this._loaded(false);
+                });
             }
         }
+        else {
+            // do not actively update the image
+            if (!this._imgs.some(function (img) { return img.src === _this._normalizeSrc; })) {
+                this._loaded(false);
+            }
+        }
+    };
+    Img.prototype._loaded = function (isLoaded) {
+        this._elementRef.nativeElement.classList[isLoaded ? 'add' : 'remove']('img-loaded');
     };
     Img.prototype.enable = function (shouldEnable) {
         this._enabled = shouldEnable;
@@ -43157,19 +44026,6 @@ var Img = (function () {
     Img.prototype.isVisible = function () {
         var bounds = this._elementRef.nativeElement.getBoundingClientRect();
         return bounds.bottom > 0 && bounds.top < this._platform.height();
-    };
-    Img.prototype._onLoad = function () {
-        this._loaded = this.isLoaded();
-    };
-    Img.prototype.isLoaded = function () {
-        var imgEle;
-        if (this._useA && this._imgA) {
-            imgEle = this._imgA.nativeElement;
-        }
-        else if (this._imgB) {
-            imgEle = this._imgB.nativeElement;
-        }
-        return (imgEle && imgEle.src !== '' && imgEle.complete);
     };
     Object.defineProperty(Img.prototype, "width", {
         set: function (val) {
@@ -43186,22 +44042,10 @@ var Img = (function () {
         configurable: true
     });
     __decorate([
-        core_1.ViewChild('imgA'), 
-        __metadata('design:type', core_1.ElementRef)
-    ], Img.prototype, "_imgA", void 0);
-    __decorate([
-        core_1.ViewChild('imgB'), 
-        __metadata('design:type', core_1.ElementRef)
-    ], Img.prototype, "_imgB", void 0);
-    __decorate([
         core_1.Input(), 
         __metadata('design:type', String), 
         __metadata('design:paramtypes', [String])
     ], Img.prototype, "src", null);
-    __decorate([
-        core_1.HostBinding('class.img-loaded'), 
-        __metadata('design:type', Boolean)
-    ], Img.prototype, "_loaded", void 0);
     __decorate([
         core_1.Input(), 
         __metadata('design:type', Object), 
@@ -43215,18 +44059,17 @@ var Img = (function () {
     Img = __decorate([
         core_1.Component({
             selector: 'ion-img',
-            template: '<div *ngIf="_useA" class="img-placeholder" [style.height]="_h" [style.width]="_w"></div>' +
-                '<img #imgA *ngIf="_useA" (load)="_onLoad()" [src]="_srcA" [style.height]="_h" [style.width]="_w">' +
-                '<div *ngIf="!_useA" class="img-placeholder" [style.height]="_h" [style.width]="_w"></div>' +
-                '<img #imgB *ngIf="!_useA" (load)="_onLoad()" [src]="_srcB" [style.height]="_h" [style.width]="_w">'
+            template: '<div class="img-placeholder" [style.height]="_h" [style.width]="_w"></div>',
+            changeDetection: core_1.ChangeDetectionStrategy.OnPush,
+            encapsulation: core_1.ViewEncapsulation.None,
         }), 
-        __metadata('design:paramtypes', [core_1.ElementRef, platform_1.Platform])
+        __metadata('design:paramtypes', [core_1.ElementRef, platform_1.Platform, core_1.NgZone])
     ], Img);
     return Img;
 }());
 exports.Img = Img;
 
-},{"../../platform/platform":353,"../../util/util":373,"angular2/core":20}],286:[function(require,module,exports){
+},{"../../platform/platform":353,"../../util/dom":367,"../../util/util":373,"angular2/core":20}],286:[function(require,module,exports){
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -43278,7 +44121,8 @@ var InfiniteScrollContent = (function () {
             directives: [common_1.NgIf, spinner_1.Spinner],
             host: {
                 '[attr.state]': 'inf.state'
-            }
+            },
+            encapsulation: core_1.ViewEncapsulation.None,
         }), 
         __metadata('design:paramtypes', [infinite_scroll_1.InfiniteScroll, config_1.Config])
     ], InfiniteScrollContent);
@@ -43286,7 +44130,7 @@ var InfiniteScrollContent = (function () {
 }());
 exports.InfiniteScrollContent = InfiniteScrollContent;
 
-},{"../../config/config":342,"../spinner/spinner":328,"./infinite-scroll":287,"angular2/common":18,"angular2/core":20}],287:[function(require,module,exports){
+},{"../../config/config":342,"../spinner/spinner":327,"./infinite-scroll":287,"angular2/common":18,"angular2/core":20}],287:[function(require,module,exports){
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -43576,13 +44420,13 @@ var InputBase = (function () {
         this._nav = _nav;
         this._disabled = false;
         this._type = 'text';
-        this._useAssist = true;
         this._value = '';
         this.placeholder = '';
         this.blur = new core_1.EventEmitter;
         this.focus = new core_1.EventEmitter;
-        this._useAssist = config.get('scrollAssist');
-        this._keyboardHeight = config.get('keyboardHeight');
+        this._useAssist = config.getBoolean('scrollAssist', false);
+        this._usePadding = config.getBoolean('scrollPadding', this._useAssist);
+        this._keyboardHeight = config.getNumber('keyboardHeight');
         this._autoFocusAssist = config.get('autoFocusAssist', 'delay');
         this._autoComplete = config.get('autocomplete', 'off');
         this._autoCorrect = config.get('autocorrect', 'off');
@@ -43840,11 +44684,9 @@ var InputBase = (function () {
         if (scrollView) {
             // this input is inside of a scroll view
             // find out if text input should be manually scrolled into view
+            // get container of this input, probably an ion-item a few nodes up
             var ele = this._elementRef.nativeElement;
-            var itemEle = dom_1.closest(ele, 'ion-item');
-            if (itemEle) {
-                ele = itemEle;
-            }
+            ele = dom_1.closest(ele, 'ion-item,[ion-item]') || ele;
             var scrollData = InputBase.getScrollData(ele.offsetTop, ele.offsetHeight, scrollView.getContentDimensions(), this._keyboardHeight, this._platform.height());
             if (scrollData.scrollAmount > -3 && scrollData.scrollAmount < 3) {
                 // the text input is in a safe position that doesn't
@@ -43853,8 +44695,10 @@ var InputBase = (function () {
                 this.regScrollMove();
                 return;
             }
-            // add padding to the bottom of the scroll view (if needed)
-            scrollView.addScrollPadding(scrollData.scrollPadding);
+            if (this._usePadding) {
+                // add padding to the bottom of the scroll view (if needed)
+                scrollView.addScrollPadding(scrollData.scrollPadding);
+            }
             // manually scroll the text input to the top
             // do not allow any clicks while it's scrolling
             var scrollDuration = getScrollAssistDuration(scrollData.scrollAmount);
@@ -43863,17 +44707,21 @@ var InputBase = (function () {
             // temporarily move the focus to the focus holder so the browser
             // doesn't freak out while it's trying to get the input in place
             // at this point the native text input still does not have focus
-            this._native.relocate(true, scrollData.inputSafeY);
+            this._native.beginFocus(true, scrollData.inputSafeY);
             // scroll the input into place
             scrollView.scrollTo(0, scrollData.scrollTo, scrollDuration).then(function () {
                 // the scroll view is in the correct position now
                 // give the native text input focus
-                _this._native.relocate(false, 0);
+                _this._native.beginFocus(false, 0);
+                // ensure this is the focused input
                 _this.setFocus();
                 // all good, allow clicks again
                 _this._app.setEnabled(true);
                 _this._nav && _this._nav.setTransitioning(false);
                 _this.regScrollMove();
+                if (_this._usePadding) {
+                    _this._scrollView.clearScrollPaddingFocusOut();
+                }
             });
         }
         else {
@@ -43895,6 +44743,7 @@ var InputBase = (function () {
         // immediately set focus
         this._form.setAsFocused(this);
         // set focus on the actual input element
+        void 0;
         this._native.setFocus();
         // ensure the body hasn't scrolled down
         document.body.scrollTop = 0;
@@ -44162,8 +45011,8 @@ var platform_1 = require('../../platform/platform');
  *    <ion-input type="tel"></ion-input>
  *  </ion-item>
  *
- *  <ion-item clearInput>
- *    <ion-input placeholder="Username"></ion-input>
+ *  <ion-item>
+ *    <ion-input placeholder="Username" clearInput></ion-input>
  *  </ion-item>
  * ```
  *
@@ -44198,7 +45047,8 @@ var TextInput = (function (_super) {
                 native_input_1.NextInput,
                 native_input_1.NativeInput,
                 button_1.Button
-            ]
+            ],
+            encapsulation: core_1.ViewEncapsulation.None,
         }),
         __param(2, core_1.Optional()),
         __param(6, core_1.Optional()),
@@ -44282,7 +45132,8 @@ var TextArea = (function (_super) {
                 common_1.NgIf,
                 native_input_1.NextInput,
                 native_input_1.NativeInput
-            ]
+            ],
+            encapsulation: core_1.ViewEncapsulation.None,
         }),
         __param(2, core_1.Optional()),
         __param(6, core_1.Optional()),
@@ -44307,36 +45158,52 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 var core_1 = require('angular2/core');
 var common_1 = require('angular2/common');
+var config_1 = require('../../config/config');
 var dom_1 = require('../../util/dom');
 /**
  * @private
  */
 var NativeInput = (function () {
-    function NativeInput(_elementRef, _renderer, ngControl) {
+    function NativeInput(_elementRef, _renderer, config, ngControl) {
         this._elementRef = _elementRef;
         this._renderer = _renderer;
         this.ngControl = ngControl;
         this.focusChange = new core_1.EventEmitter();
         this.valueChange = new core_1.EventEmitter();
+        this._clone = config.getBoolean('inputCloning', false);
+        this._blurring = config.getBoolean('inputBlurring', false);
     }
-    /**
-     * @private
-     */
     NativeInput.prototype._change = function (ev) {
         this.valueChange.emit(ev.target.value);
     };
-    /**
-     * @private
-     */
     NativeInput.prototype._focus = function () {
-        this.focusChange.emit(true);
+        var self = this;
+        self.focusChange.emit(true);
+        function docTouchEnd(ev) {
+            var tapped = ev.target;
+            if (tapped && self.element()) {
+                if (tapped.tagName !== 'INPUT' && tapped.tagName !== 'TEXTAREA' && !tapped.classList.contains('input-cover')) {
+                    self.element().blur();
+                }
+            }
+        }
+        if (self._blurring) {
+            // automatically blur input if:
+            // 1) this input has focus
+            // 2) the newly tapped document element is not an input
+            void 0;
+            document.addEventListener('touchend', docTouchEnd, true);
+            self._unrefBlur = function () {
+                void 0;
+                document.removeEventListener('touchend', docTouchEnd, true);
+            };
+        }
     };
-    /**
-     * @private
-     */
     NativeInput.prototype._blur = function () {
         this.focusChange.emit(false);
         this.hideFocus(false);
+        this._unrefBlur && this._unrefBlur();
+        this._unrefBlur = null;
     };
     NativeInput.prototype.labelledBy = function (val) {
         this._renderer.setElementAttribute(this._elementRef.nativeElement, 'aria-labelledby', val);
@@ -44344,44 +45211,60 @@ var NativeInput = (function () {
     NativeInput.prototype.isDisabled = function (val) {
         this._renderer.setElementAttribute(this._elementRef.nativeElement, 'disabled', val ? '' : null);
     };
-    /**
-     * @private
-     */
     NativeInput.prototype.setFocus = function () {
-        this.element().focus();
-    };
-    /**
-     * @private
-     */
-    NativeInput.prototype.relocate = function (shouldRelocate, inputRelativeY) {
-        void 0;
-        if (this._relocated !== shouldRelocate) {
-            var focusedInputEle_1 = this.element();
-            if (shouldRelocate) {
-                var clonedInputEle = cloneInput(focusedInputEle_1, 'cloned-focus');
-                focusedInputEle_1.parentNode.insertBefore(clonedInputEle, focusedInputEle_1);
-                focusedInputEle_1.style[dom_1.CSS.transform] = "translate3d(-9999px," + inputRelativeY + "px,0)";
-                focusedInputEle_1.style.opacity = '0';
-                this.setFocus();
-                dom_1.raf(function () {
-                    focusedInputEle_1.classList.add('cloned-active');
-                });
-            }
-            else {
-                focusedInputEle_1.classList.remove('cloned-active');
-                focusedInputEle_1.style[dom_1.CSS.transform] = '';
-                focusedInputEle_1.style.opacity = '';
-                removeClone(focusedInputEle_1, 'cloned-focus');
-            }
-            this._relocated = shouldRelocate;
+        // let's set focus to the element
+        // but only if it does not already have focus
+        if (document.activeElement !== this.element()) {
+            this.element().focus();
         }
     };
-    /**
-     * @private
-     */
+    NativeInput.prototype.beginFocus = function (shouldFocus, inputRelativeY) {
+        if (this._relocated !== shouldFocus) {
+            var focusedInputEle = this.element();
+            if (shouldFocus) {
+                // we should focus into this element
+                if (this._clone) {
+                    // this platform needs the input to be cloned
+                    // this allows for the actual input to receive the focus from
+                    // the user's touch event, but before it receives focus, it
+                    // moves the actual input to a location that will not screw
+                    // up the app's layout, and does not allow the native browser
+                    // to attempt to scroll the input into place (messing up headers/footers)
+                    // the cloned input fills the area of where native input should be
+                    // while the native input fakes out the browser by relocating itself
+                    // before it receives the actual focus event
+                    var clonedInputEle = cloneInput(focusedInputEle, 'cloned-focus');
+                    focusedInputEle.parentNode.insertBefore(clonedInputEle, focusedInputEle);
+                    // move the native input to a location safe to receive focus
+                    // according to the browser, the native input receives focus in an
+                    // area which doesn't require the browser to scroll the input into place
+                    focusedInputEle.style[dom_1.CSS.transform] = "translate3d(-9999px," + inputRelativeY + "px,0)";
+                    focusedInputEle.style.opacity = '0';
+                }
+                // let's now set focus to the actual native element
+                // at this point it is safe to assume the browser will not attempt
+                // to scroll the input into view itself (screwing up headers/footers)
+                this.setFocus();
+                if (this._clone) {
+                    focusedInputEle.classList.add('cloned-active');
+                }
+            }
+            else {
+                // should remove the focus
+                if (this._clone) {
+                    // should remove the cloned node
+                    focusedInputEle.classList.remove('cloned-active');
+                    focusedInputEle.style[dom_1.CSS.transform] = '';
+                    focusedInputEle.style.opacity = '';
+                    removeClone(focusedInputEle, 'cloned-focus');
+                }
+            }
+            this._relocated = shouldFocus;
+        }
+    };
     NativeInput.prototype.hideFocus = function (shouldHideFocus) {
-        void 0;
         var focusedInputEle = this.element();
+        void 0;
         if (shouldHideFocus) {
             var clonedInputEle = cloneInput(focusedInputEle, 'cloned-move');
             focusedInputEle.classList.add('cloned-active');
@@ -44398,11 +45281,11 @@ var NativeInput = (function () {
     NativeInput.prototype.getValue = function () {
         return this.element().value;
     };
-    /**
-     * @private
-     */
     NativeInput.prototype.element = function () {
         return this._elementRef.nativeElement;
+    };
+    NativeInput.prototype.ngOnDestroy = function () {
+        this._unrefBlur && this._unrefBlur();
     };
     __decorate([
         core_1.Output(), 
@@ -44434,7 +45317,7 @@ var NativeInput = (function () {
         core_1.Directive({
             selector: '.text-input'
         }), 
-        __metadata('design:paramtypes', [core_1.ElementRef, core_1.Renderer, common_1.NgControl])
+        __metadata('design:paramtypes', [core_1.ElementRef, core_1.Renderer, config_1.Config, common_1.NgControl])
     ], NativeInput);
     return NativeInput;
 }());
@@ -44447,6 +45330,8 @@ function cloneInput(focusedInputEle, addCssClass) {
     clonedInputEle.removeAttribute('aria-labelledby');
     clonedInputEle.tabIndex = -1;
     clonedInputEle.style.width = (focusedInputEle.offsetWidth + 10) + 'px';
+    clonedInputEle.style.height = focusedInputEle.offsetHeight + 'px';
+    clonedInputEle.value = focusedInputEle.value;
     return clonedInputEle;
 }
 function removeClone(focusedInputEle, queryCssClass) {
@@ -44463,6 +45348,7 @@ var NextInput = (function () {
         this.focused = new core_1.EventEmitter();
     }
     NextInput.prototype.receivedFocus = function () {
+        void 0;
         this.focused.emit(true);
     };
     __decorate([
@@ -44485,7 +45371,7 @@ var NextInput = (function () {
 }());
 exports.NextInput = NextInput;
 
-},{"../../util/dom":367,"angular2/common":18,"angular2/core":20}],291:[function(require,module,exports){
+},{"../../config/config":342,"../../util/dom":367,"angular2/common":18,"angular2/core":20}],291:[function(require,module,exports){
 "use strict";
 var dom = require('../util/dom');
 var ids = 0;
@@ -44796,7 +45682,9 @@ var ItemSliding = (function () {
         core_1.Component({
             selector: 'ion-item-sliding',
             template: '<ng-content select="ion-item,[ion-item]"></ng-content>' +
-                '<ng-content select="ion-item-options"></ng-content>'
+                '<ng-content select="ion-item-options"></ng-content>',
+            changeDetection: core_1.ChangeDetectionStrategy.OnPush,
+            encapsulation: core_1.ViewEncapsulation.None,
         }),
         __param(0, core_1.Optional()), 
         __metadata('design:paramtypes', [list_1.List, core_1.ElementRef])
@@ -44994,7 +45882,9 @@ var Item = (function () {
             host: {
                 'class': 'item'
             },
-            directives: [common_1.NgIf, label_1.Label]
+            directives: [common_1.NgIf, label_1.Label],
+            changeDetection: core_1.ChangeDetectionStrategy.OnPush,
+            encapsulation: core_1.ViewEncapsulation.None,
         }), 
         __metadata('design:paramtypes', [form_1.Form, core_1.Renderer, core_1.ElementRef])
     ], Item);
@@ -45023,9 +45913,9 @@ var core_1 = require('angular2/core');
  * Labels are placed inside of an `ion-item` element and can be used
  * to describe an `ion-input`, `ion-toggle`, `ion-checkbox`, and more.
  *
- * @property [fixed] - a persistant label that sits next the the input
- * @property [floating] - a label that will float about the input if the input is empty of looses focus
- * @property [stacked] - A stacked label will always appear on top of the input
+ * @property [fixed] - A persistant label that sits next the input.
+ * @property [floating] - A label that will float about the input if the input is empty of looses focus.
+ * @property [stacked] - A stacked label will always appear on top of the input.
 
  *
  * @usage
@@ -45180,11 +46070,12 @@ var List = (function (_super) {
      * Enable sliding items if your page has them
      *
      * ```ts
+     * import {Page, List} from 'ionic-angular';
+     * import {ViewChild} from 'angular2/core';
+     * @Page...
      * export class MyClass {
-     *    constructor(app: IonicApp){
-     *      this.app = app;
-     *      this.list = this.app.getComponent('my-list');
-     *    }
+     *    @ViewChild(List) list: List;
+     *    constructor(){}
      *    stopSliding(){
      *      this.list.enableSlidingItems(false);
      *    }
@@ -45213,13 +46104,12 @@ var List = (function (_super) {
      * Enable sliding items if your page has
      *
      * ```ts
+     * import {Page, List} from 'ionic-angular';
+     * import {ViewChild} from 'angular2/core';
+     * @Page...
      * export class MyClass {
-     *    constructor(app: IonicApp){
-     *      this.app = app;
-     *      this.list = this.app.getComponent('my-list');
-     *    }
-     *    // Here we have some method that will close the items
-     *    // when called
+     *    @ViewChild(List) list: List;
+     *    constructor(){}
      *    closeItmes(){
      *      this.list.closeSlidingItems();
      *    }
@@ -45311,8 +46201,8 @@ var view_controller_1 = require('../nav/view-controller');
  * the loading indicator will use the spinner specified by the mode. To
  * set the spinner name across the app, set the value of `loadingSpinner`
  * in your app's config. To hide the spinner, set `loadingSpinner: 'hide'`
- * in the apps' config or pass `spinner: 'hide'` in the loading
- * options. See the create method below for all available options.
+ * in the app's config or pass `spinner: 'hide'` in the loading
+ * options. See the [create](#create) method below for all available options.
  *
  * ### Dismissing
  * The loading indicator can be dismissed automatically after a specific
@@ -45320,7 +46210,9 @@ var view_controller_1 = require('../nav/view-controller');
  * the `duration` of the loading options. By default the loading indicator
  * will show even during page changes, but this can be disabled by setting
  * `dismissOnPageChange` to `true`. To dismiss the loading indicator after
- * creation, call the `dismiss()` method on the Loading instance.
+ * creation, call the `dismiss()` method on the Loading instance. The
+ * `onDismiss` function can be called to perform an action after the loading
+ * indicator is dismissed.
  *
  * ### Limitations
  * The element is styled to appear on top of other content by setting its
@@ -45353,6 +46245,10 @@ var view_controller_1 = require('../nav/view-controller');
  *         <div class="custom-spinner-box"></div>
  *       </div>`,
  *     duration: 5000
+ *   });
+ *
+ *   loading.onDismiss(() => {
+ *     console.log('Dismissed loading');
  *   });
  *
  *   this.nav.present(loading);
@@ -45406,12 +46302,12 @@ var Loading = (function (_super) {
      *
      * | Option                | Type       | Description                                                                                                      |
      * |-----------------------|------------|------------------------------------------------------------------------------------------------------------------|
-     * | spinner               |`string`    | The name of the SVG spinner for the loading indicator.                                                                           |
+     * | spinner               |`string`    | The name of the SVG spinner for the loading indicator.                                                           |
      * | content               |`string`    | The html content for the loading indicator.                                                                      |
      * | cssClass              |`string`    | An additional class for custom styles.                                                                           |
      * | showBackdrop          |`boolean`   | Whether to show the backdrop. Default true.                                                                      |
      * | dismissOnPageChange   |`boolean`   | Whether to dismiss the indicator when navigating to a new page. Default false.                                   |
-     * | duration              |`number`    | How many milliseconds to wait before hiding the indicator. By default, it will show until `hide()` is called.    |
+     * | duration              |`number`    | How many milliseconds to wait before hiding the indicator. By default, it will show until `dismiss()` is called. |
      *
      *
      * @param {object} opts Loading options
@@ -45476,7 +46372,9 @@ var LoadingCmp = (function () {
             host: {
                 'role': 'dialog'
             },
-            directives: [common_1.NgIf, spinner_1.Spinner]
+            directives: [common_1.NgIf, spinner_1.Spinner],
+            changeDetection: core_1.ChangeDetectionStrategy.OnPush,
+            encapsulation: core_1.ViewEncapsulation.None,
         }), 
         __metadata('design:paramtypes', [view_controller_1.ViewController, config_1.Config, core_1.ElementRef, nav_params_1.NavParams, core_1.Renderer])
     ], LoadingCmp);
@@ -45595,7 +46493,7 @@ var LoadingWpPopOut = (function (_super) {
 transition_1.Transition.register('loading-wp-pop-out', LoadingWpPopOut);
 var loadingIds = -1;
 
-},{"../../animations/animation":272,"../../config/config":342,"../../transitions/transition":362,"../../util/util":373,"../nav/nav-params":306,"../nav/view-controller":313,"../spinner/spinner":328,"angular2/common":18,"angular2/core":20}],298:[function(require,module,exports){
+},{"../../animations/animation":272,"../../config/config":342,"../../transitions/transition":362,"../../util/util":373,"../nav/nav-params":306,"../nav/view-controller":313,"../spinner/spinner":327,"angular2/common":18,"angular2/core":20}],298:[function(require,module,exports){
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -45666,9 +46564,6 @@ exports.MenuClose = MenuClose;
 /**
  * @name Menu
  * @description
- * _For basic Menu usage, see the [Menu section](../../../../components/#menus)
- * of the Component docs._
- *
  * Menu is a side-menu interface that can be dragged and toggled to open or close.
  * An Ionic app can have numerous menus, all of which can be controlled within
  * template HTML, or programmatically.
@@ -46752,7 +47647,9 @@ var Menu = (function (_super) {
             },
             template: '<ng-content></ng-content>' +
                 '<div tappable disable-activated class="backdrop"></div>',
-            directives: [core_1.forwardRef(function () { return MenuBackdrop; })]
+            directives: [core_1.forwardRef(function () { return MenuBackdrop; })],
+            changeDetection: core_1.ChangeDetectionStrategy.OnPush,
+            encapsulation: core_1.ViewEncapsulation.None,
         }), 
         __metadata('design:paramtypes', [menu_controller_1.MenuController, core_1.ElementRef, config_1.Config, platform_1.Platform, core_1.Renderer, keyboard_1.Keyboard, core_1.NgZone])
     ], Menu);
@@ -47037,7 +47934,7 @@ var view_controller_1 = require('./view-controller');
  * specific NavController, most times you will inject and use a reference to the
  * nearest NavController to manipulate the navigation stack.
  *
- * <h3 id="injecting_nav_controller">Injecting NavController</h3>
+ * ### Injecting NavController
  * Injecting NavController will always get you an instance of the nearest
  * NavController, regardless of whether it is a Tab or a Nav.
  *
@@ -47058,7 +47955,8 @@ var view_controller_1 = require('./view-controller');
  *  }
  * ```
  *
- * <h2 id="creating_pages">Page creation</h2>
+ *
+ * ## Page creation
  * _For more information on the `@Page` decorator see the [@Page API
  * reference](../../../decorators/Page/)._
  *
@@ -47073,7 +47971,7 @@ var view_controller_1 = require('./view-controller');
  * [pop()](#pop) or [setRoot()](#setRoot)).
  *
  *
- * <h2 id="Lifecycle">Lifecycle events</h2>
+ * ## Lifecycle events
  * Lifecycle events are fired during various stages of navigation.  They can be
  * defined in any `@Page` decorated component class.
  *
@@ -47091,15 +47989,53 @@ var view_controller_1 = require('./view-controller');
  * }
  * ```
  *
+ *  | Page Event         | Description                                                                                                                                                                                                                                                                       |
+ *  |--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+ *  | `onPageLoaded`     | Runs when the page has loaded. This event only happens once per page being created and added to the DOM. If a page leaves but is cached, then this event will not fire again on a subsequent viewing. The `onPageLoaded` event is good place to put your setup code for the page. |
+ *  | `onPageWillEnter`  | Runs when the page is about to enter and become the active page.                                                                                                                                                                                                                  |
+ *  | `onPageDidEnter`   | Runs when the page has fully entered and is now the active page. This event will fire, whether it was the first load or a cached page.                                                                                                                                            |
+ *  | `onPageWillLeave`  | Runs when the page is about to leave and no longer be the active page.                                                                                                                                                                                                            |
+ *  | `onPageDidLeave`   | Runs when the page has finished leaving and is no longer the active page.                                                                                                                                                                                                         |
+ *  | `onPageWillUnload` | Runs when the page is about to be destroyed and have its elements removed.                                                                                                                                                                                                        |
+ *  | `onPageDidUnload`  | Runs after the page has been destroyed and its elements have been removed.
  *
  *
- * - `onPageLoaded` - Runs when the page has loaded. This event only happens once per page being created and added to the DOM. If a page leaves but is cached, then this event will not fire again on a subsequent viewing. The `onPageLoaded` event is good place to put your setup code for the page.
- * - `onPageWillEnter` - Runs when the page is about to enter and become the active page.
- * - `onPageDidEnter` - Runs when the page has fully entered and is now the active page. This event will fire, whether it was the first load or a cached page.
- * - `onPageWillLeave` - Runs when the page is about to leave and no longer be the active page.
- * - `onPageDidLeave` - Runs when the page has finished leaving and is no longer the active page.
- * - `onPageWillUnload` - Runs when the page is about to be destroyed and have its elements removed.
- * - `onPageDidUnload` - Runs after the page has been destroyed and its elements have been removed.
+ * ## Nav Transition Promises
+ *
+ * Navigation transitions are asynchronous, meaning they take a few moments to finish, and
+ * the duration of a transition could be any number. In most cases the async nature of a
+ * transition doesn't cause any problems and the nav controller is pretty good about handling
+ * which transition was the most recent when multiple transitions have been kicked off.
+ * However, when an app begins firing off many transitions, on the same stack at
+ * *roughly* the same time, the nav controller can start to get lost as to which transition
+ * should be finishing, and which transitions should not be animated.
+ *
+ * In cases where an app's navigation can be altered by other async tasks, which may or
+ * may not take a long time, it's best to rely on each nav transition's returned
+ * promise. So instead of firing and forgetting multiple `push` or `pop` nav transitions,
+ * it's better to fire the next nav transition when the previous one has finished.
+ *
+ * In the example below, after the async operation has completed, we then want to transition
+ * to another page. Where the potential problem comes in, is that if the async operation
+ * completed 100ms after the first transition started, then kicking off another transition
+ * halfway through the first transition ends up with a janky animation. Instead, it's best
+ * to always ensure the first transition has already finished before starting the next.
+ *
+ * ```ts
+ * // begin the first transition
+ * let navTransition = this.nav.push(SomePage);
+ *
+ * // start an async call, we're not sure how long it'll take
+ * someAsyncOperation().then(() => {
+ *   // incase the async operation completed faster than the time
+ *   // it took to finish the first transition, this logic should
+ *   // always ensure that the previous transition has resolved
+ *   // first before kicking off the next transition
+ *   navTransition.then(() => {
+ *     this.nav.push(AnotherPage);
+ *   });
+ * });
+ * ```
  *
  * @see {@link /docs/v2/components#navigation Navigation Component Docs}
  */
@@ -47116,6 +48052,7 @@ var NavController = (function (_super) {
         this._renderer = _renderer;
         this._transIds = 0;
         this._init = false;
+        this._children = [];
         this._ids = -1;
         this._trnsTime = 0;
         this._views = [];
@@ -47130,32 +48067,36 @@ var NavController = (function (_super) {
         this.parent = parent;
         this.config = config;
         this._trnsDelay = config.get('pageTransitionDelay');
-        this._sbEnabled = config.getBoolean('swipeBackEnabled') || false;
-        this._sbThreshold = config.get('swipeBackThreshold') || 40;
+        this._sbEnabled = config.getBoolean('swipeBackEnabled');
+        this._sbThreshold = config.getNumber('swipeBackThreshold', 40);
         this.id = (++ctrlIds).toString();
         // build a new injector for child ViewControllers to use
         this.providers = core_1.Injector.resolve([
             core_1.provide(NavController, { useValue: this })
         ]);
     }
+    /**
+     * @private
+     */
     NavController.prototype.setPortal = function (val) {
         this._portal = val;
     };
     /**
-     * Set the root for the current navigation stack
-     * @param {Type} page  The name of the component you want to push on the navigation stack
-     * @param {object} [params={}] Any nav-params you want to pass along to the next view
-     * @param {object} [opts={}] Any options you want to use pass to transtion
-     * @returns {Promise} Returns a promise when done
+     * Set the root for the current navigation stack.
+     * @param {Type} page  The name of the component you want to push on the navigation stack.
+     * @param {object} [params={}] Any nav-params you want to pass along to the next view.
+     * @param {object} [opts={}] Any options you want to use pass to transtion.
+     * @returns {Promise} Returns a promise which is resolved when the transition has completed.
      */
     NavController.prototype.setRoot = function (page, params, opts) {
         return this.setPages([{ page: page, params: params }], opts);
     };
     /**
-     * You can set the views of the current navigation stack and navigate to the last view past
+     * You can set the views of the current navigation stack and navigate to the
+     * last view.
      *
      *
-     *```typescript
+     *```ts
      * import {Page, NavController} from 'ionic-angular'
      * import {Detail} from '../detail/detail'
      * import {Info} from '../info/info'
@@ -47171,12 +48112,15 @@ var NavController = (function (_super) {
      *```
      *
      *
-     *In this example, we're giving the current nav stack an array of pages. Then the navigation stack will navigate to the last view in the array and remove the orignal view you came from.
+     * In this example, we're giving the current nav stack an array of pages.
+     * Then the navigation stack will navigate to the last page in the array
+     * and remove the previously active page.
      *
-     * By default, animations are disabled, but they can be enabled by passing options to the navigation controller
+     * By default animations are disabled, but they can be enabled by passing
+     * options to the navigation controller.
      *
      *
-     *```typescript
+     * ```ts
      * import {Page, NavController} from 'ionic-angular'
      * import {Detail} from '../detail/detail'
      *
@@ -47190,13 +48134,13 @@ var NavController = (function (_super) {
      *      });
      *    }
      *  }
-     *```
+     * ```
+     *
+     * You can also pass any navigation params to the individual pages in
+     * the array.
      *
      *
-     *You can also pass any navigation params to the individual pages in the array.
-     *
-     *
-     *```typescript
+     * ```ts
      * import {Page, NavController} from 'ionic-angular';
      * import {Info} from '../info/info';
      * import {List} from '../list/list';
@@ -47220,9 +48164,9 @@ var NavController = (function (_super) {
      *  }
      *```
      *
-     * @param {array<Type>} pages  An arry of page components and their params to load in the stack
-     * @param {object} [opts={}] Any options you want to use pass
-     * @returns {Promise} Returns a promise when the pages are set
+     * @param {array<Type>} pages  An arry of page components and their params to load in the stack.
+     * @param {object} [opts={}] Nav options to go with this transition.
+     * @returns {Promise} Returns a promise which is resolved when the transition has completed.
      */
     NavController.prototype.setPages = function (pages, opts) {
         if (!pages || !pages.length) {
@@ -47262,16 +48206,10 @@ var NavController = (function (_super) {
         return promise;
     };
     /**
-     * @private
-     */
-    NavController.prototype.setViews = function (components, opts) {
-        void 0;
-        return this.setPages(components, opts);
-    };
-    /**
-     * Push is how we can pass components and navigate to them. We push the component we want to navigate to on to the navigation stack.
+     * Push is how we can pass components and navigate to them. We push the component
+     * we want to navigate to on to the navigation stack.
      *
-     * ```typescript
+     * ```ts
      * class MyClass{
      *    constructor(nav:NavController){
      *      this.nav = nav;
@@ -47283,31 +48221,31 @@ var NavController = (function (_super) {
      * }
      * ```
      *
-     * We can also pass along parameters to the next view, such as data that we have on the current view. This is a similar concept to to V1 apps with `$stateParams`.
+     * We can also pass along parameters to the next view, such as data that we have
+     * on the current view. This is a similar concept to to V1 apps with `$stateParams`.
      *
-     * ```typescript
+     * ```ts
      * class MyClass{
      *    constructor(nav:NavController){
      *      this.nav = nav;
      *    }
      *
      *    pushPage(user){
-     *      this.nav.push(SecondView,{
      *       // user is an object we have in our view
      *       // typically this comes from an ngFor or some array
      *       // here we can create an object with a property of
-     *       // paramUser, and set it's value to the user object we passed in
-     *       paramUser: user
-     *      });
+     *       // paramUser, and set its value to the user object we passed in
+     *      this.nav.push(SecondView, { paramUser: user });
      *    }
      * }
      * ```
      *
-     * We'll look at how we can access that data in the `SecondView` in the navParam docs
+     * We'll look at how we can access that data in the `SecondView` in the
+     * navParam docs.
      *
-     * We can also pass any options to the transtion from that same method
+     * We can also pass any options to the transtion from that same method.
      *
-     * ```typescript
+     * ```ts
      * class MyClass{
      *    constructor(nav: NavController){
      *      this.nav = nav;
@@ -47330,21 +48268,21 @@ var NavController = (function (_super) {
      * ```
      * @param {Type} page  The page component class you want to push on to the navigation stack
      * @param {object} [params={}] Any nav-params you want to pass along to the next view
-     * @param {object} [opts={}] Any options you want to use pass to transtion
-     * @returns {Promise} Returns a promise, which resolves when the transition has completed
+     * @param {object} [opts={}] Nav options to go with this transition.
+     * @returns {Promise} Returns a promise which is resolved when the transition has completed.
      */
     NavController.prototype.push = function (page, params, opts) {
         return this.insertPages(-1, [{ page: page, params: params }], opts);
     };
     /**
-     * Present is how we display overlays on top of the content, from within the
+     * Present is how app display overlays on top of the content, from within the
      * root level `NavController`. The `present` method is used by overlays, such
      * as `ActionSheet`, `Alert`, and `Modal`. The main difference between `push`
-     * and `present`, is that `present` takes a `ViewController` instance, whereas
+     * and `present` is that `present` takes a `ViewController` instance, whereas
      * `push` takes a `Page` component class. Additionally, `present` will place
      * the overlay in the root NavController's stack.
      *
-     * ```typescript
+     * ```ts
      * class MyClass{
      *    constructor(nav: NavController) {
      *      this.nav = nav;
@@ -47357,9 +48295,9 @@ var NavController = (function (_super) {
      * }
      * ```
      *
-     * @param {ViewController} enteringView The name of the component you want to push on the navigation stack
-     * @param {object} [opts={}] Any options you want to use pass to transtion
-     * @returns {Promise} Returns a promise, which resolves when the transition has completed
+     * @param {ViewController} enteringView The component you want to push on the navigation stack.
+     * @param {object} [opts={}] Nav options to go with this transition.
+     * @returns {Promise} Returns a promise which is resolved when the transition has completed.
      */
     NavController.prototype.present = function (enteringView, opts) {
         var rootNav = this.rootNav;
@@ -47372,8 +48310,8 @@ var NavController = (function (_super) {
         if (util_1.isBlank(opts)) {
             opts = {};
         }
-        if (enteringView.usePortal && this._portal) {
-            return this._portal.present(enteringView, opts);
+        if (enteringView.usePortal && rootNav._portal) {
+            return rootNav._portal.present(enteringView, opts);
         }
         enteringView.setNav(rootNav);
         opts.keyboardClose = false;
@@ -47390,10 +48328,10 @@ var NavController = (function (_super) {
         return rootNav._insertViews(-1, [enteringView], opts);
     };
     /**
-     * Inserts a view into the nav stack at the specified index.
-     * This is useful if you need to add a view at any point in your navigation stack
+     * Inserts a view into the nav stack at the specified index. This is useful if
+     * you need to add a view at any point in your navigation stack.
      *
-     * ```typescript
+     * ```ts
      * export class Detail {
      *    constructor(nav: NavController) {
      *      this.nav = nav;
@@ -47404,13 +48342,13 @@ var NavController = (function (_super) {
      *  }
      * ```
      *
-     * This will insert the `Info` page into the second slot of our navigation stack
+     * This will insert the `Info` page into the second slot of our navigation stack.
      *
-     * @param {number} insertIndex  The index where you want to insert the page
-     * @param {Type} page  The name of the component you want to insert into the nav stack
-     * @param {object} [params={}] Any nav-params you want to pass along to the next page
-     * @param {object} [opts={}] Any options you want to use pass to transtion
-     * @returns {Promise} Returns a promise when the page has been inserted into the navigation stack
+     * @param {number} insertIndex  The index where to insert the page.
+     * @param {Type} page  The component you want to insert into the nav stack.
+     * @param {object} [params={}] Any nav-params you want to pass along to the next page.
+     * @param {object} [opts={}] Nav options to go with this transition.
+     * @returns {Promise} Returns a promise which is resolved when the transition has completed.
      */
     NavController.prototype.insert = function (insertIndex, page, params, opts) {
         return this.insertPages(insertIndex, [{ page: page, params: params }], opts);
@@ -47418,7 +48356,7 @@ var NavController = (function (_super) {
     /**
      * Inserts multiple pages into the nav stack at the specified index.
      *
-     * ```typescript
+     * ```ts
      * export class Detail {
      *    constructor(nav: NavController) {
      *      this.nav = nav;
@@ -47438,10 +48376,10 @@ var NavController = (function (_super) {
      * (second index) of the nav stack. The last page in the array will animate
      * in and become the active page.
      *
-     * @param {number} insertIndex  The index where you want to insert the page
-     * @param {array<{page: Type, params=: any}>} insertPages  An array of objects, each with a `page` and optionally `params` property
-     * @param {object} [opts={}] Any options you want to use pass to transtion
-     * @returns {Promise} Returns a promise when the pages have been inserted into the navigation stack
+     * @param {number} insertIndex  The index where you want to insert the page.
+     * @param {array<{page: Type, params=: any}>} insertPages  An array of objects, each with a `page` and optionally `params` property.
+     * @param {object} [opts={}] Nav options to go with this transition.
+     * @returns {Promise} Returns a promise which is resolved when the transition has completed.
      */
     NavController.prototype.insertPages = function (insertIndex, insertPages, opts) {
         var views = insertPages.map(function (p) { return new view_controller_1.ViewController(p.page, p.params); });
@@ -47538,10 +48476,11 @@ var NavController = (function (_super) {
         return insertView;
     };
     /**
-     * If you wanted to navigate back from a current view, you can use the back-button or programatically call `pop()`
-     * Similar to `push()`, you can pass animation options.
+     * If you wanted to navigate back from a current view, you can use the
+     * back-button or programatically call `pop()`. Similar to `push()`, you
+     * can also pass navigation options.
      *
-     * ```typescript
+     * ```ts
      * class SecondView{
      *    constructor(nav:NavController){
      *      this.nav = nav;
@@ -47552,8 +48491,8 @@ var NavController = (function (_super) {
      * }
      * ```
      *
-     * @param {object} [opts={}] Any options you want to use pass to transtion
-     * @returns {Promise} Returns a promise when the transition is completed
+     * @param {object} [opts={}] Nav options to go with this transition.
+     * @returns {Promise} Returns a promise which is resolved when the transition has completed.
      */
     NavController.prototype.pop = function (opts) {
         // get the index of the active view
@@ -47572,16 +48511,19 @@ var NavController = (function (_super) {
         return this.remove(this.indexOf(activeView), 1, opts);
     };
     /**
-     * Similar to `pop()`, this method let's you navigate back to the root of the stack, no matter how many views that is
-     * @param {object} [opts={}] Any options you want to use pass to transtion
+     * Similar to `pop()`, this method let's you navigate back to the root of
+     * the stack, no matter how many pages back that is.
+     * @param {object} [opts={}] Nav options to go with this transition.
+     * @returns {Promise} Returns a promise which is resolved when the transition has completed.
      */
     NavController.prototype.popToRoot = function (opts) {
         return this.popTo(this.first(), opts);
     };
     /**
-     * Pop to a specific view in the history stack
+     * Pop to a specific view in the history stack.
      * @param {ViewController} view  to pop to
-     * @param {object} [opts={}]  Any options you want to use pass to transtion
+     * @param {object} [opts={}] Nav options to go with this transition.
+     * @returns {Promise} Returns a promise which is resolved when the transition has completed.
      */
     NavController.prototype.popTo = function (view, opts) {
         var startIndex = this.indexOf(view);
@@ -47592,14 +48534,14 @@ var NavController = (function (_super) {
         return this.remove(startIndex + 1, removeCount, opts);
     };
     /**
-     * Removes a view from the nav stack at the specified index.
+     * Removes a page from the nav stack at the specified index.
      *
-     * ```typescript
+     * ```ts
      * export class Detail {
      *    constructor(nav: NavController) {
      *      this.nav = nav;
      *    }
-     *    removeView(){
+     *    removePage(){
      *      this.nav.remove(1);
      *    }
      *  }
@@ -47608,7 +48550,7 @@ var NavController = (function (_super) {
      * @param {number} [startIndex]  The starting index to remove pages from the stack. Default is the index of the last page.
      * @param {number} [removeCount]  The number of pages to remove, defaults to remove `1`.
      * @param {object} [opts={}] Any options you want to use pass to transtion.
-     * @returns {Promise} Returns a promise when the page has been removed.
+     * @returns {Promise} Returns a promise which is resolved when the transition has completed.
      */
     NavController.prototype.remove = function (startIndex, removeCount, opts) {
         if (startIndex === void 0) { startIndex = -1; }
@@ -48153,11 +49095,35 @@ var NavController = (function (_super) {
     /**
      * @private
      */
+    NavController.prototype.getActiveChildNav = function () {
+        return this._children[this._children.length - 1];
+    };
+    /**
+     * @private
+     */
+    NavController.prototype.registerChildNav = function (nav) {
+        this._children.push(nav);
+    };
+    /**
+     * @private
+     */
+    NavController.prototype.unregisterChildNav = function (nav) {
+        var index = this._children.indexOf(nav);
+        if (index > -1) {
+            this._children.splice(index, 1);
+        }
+    };
+    /**
+     * @private
+     */
     NavController.prototype.ngOnDestroy = function () {
         for (var i = this._views.length - 1; i >= 0; i--) {
             this._views[i].destroy();
         }
-        this._views = [];
+        this._views.length = 0;
+        if (this.parent && this.parent.unregisterChildNav) {
+            this.parent.unregisterChildNav(this);
+        }
     };
     /**
      * @private
@@ -48197,6 +49163,8 @@ var NavController = (function (_super) {
             // a new ComponentRef has been created
             // set the ComponentRef's instance to this ViewController
             view.setInstance(component);
+            // remember the ChangeDetectorRef for this ViewController
+            view.setChangeDetector(hostViewRef.changeDetectorRef);
             // remember the ElementRef to the ion-page elementRef that was just created
             view.setPageRef(pageElementRef);
             if (!navbarContainerRef) {
@@ -48296,18 +49264,18 @@ var NavController = (function (_super) {
     };
     /**
      * If it's possible to use swipe back or not. If it's not possible
-     * to go back, or swipe back is not enable then this will return false.
+     * to go back, or swipe back is not enabled, then this will return `false`.
      * If it is possible to go back, and swipe back is enabled, then this
-     * will return true.
-     * @returns {boolean} Whether you can swipe to go back
+     * will return `true`.
+     * @returns {boolean}
      */
     NavController.prototype.canSwipeBack = function () {
         return (this._sbEnabled && !this.isTransitioning() && this._app.isEnabled() && this.canGoBack());
     };
     /**
-     * Returns `true` if there's a valid previous page that we can pop back to.
-     * Otherwise returns false.
-     * @returns {boolean} Whether there is a page to go back to
+     * Returns `true` if there's a valid previous page that we can pop
+     * back to. Otherwise returns `false`.
+     * @returns {boolean}
      */
     NavController.prototype.canGoBack = function () {
         var activeView = this.getActive();
@@ -48317,8 +49285,7 @@ var NavController = (function (_super) {
         return false;
     };
     /**
-     * Boolean if the nav controller is actively transitioning or not.
-     * @private
+     * Returns if the nav controller is actively transitioning or not.
      * @return {boolean}
      */
     NavController.prototype.isTransitioning = function () {
@@ -48326,7 +49293,6 @@ var NavController = (function (_super) {
     };
     /**
      * @private
-     * @return {boolean}
      */
     NavController.prototype.setTransitioning = function (isTransitioning, fallback) {
         if (fallback === void 0) { fallback = 700; }
@@ -48334,7 +49300,6 @@ var NavController = (function (_super) {
     };
     /**
      * @private
-     * @returns {boolean}
      */
     NavController.prototype.hasOverlay = function () {
         for (var i = this._views.length - 1; i >= 0; i--) {
@@ -48346,7 +49311,6 @@ var NavController = (function (_super) {
     };
     /**
      * @private
-     * @returns {ViewController}
      */
     NavController.prototype.getByState = function (state) {
         for (var i = this._views.length - 1; i >= 0; i--) {
@@ -48357,8 +49321,8 @@ var NavController = (function (_super) {
         return null;
     };
     /**
-     * @param {number} index  The index of the page you want to get
-     * @returns {ViewController} Returns the component that matches the index given
+     * @param {number} index  The index of the page to get.
+     * @returns {ViewController} Returns the view controller that matches the given index.
      */
     NavController.prototype.getByIndex = function (index) {
         return (index < this._views.length && index > -1 ? this._views[index] : null);
@@ -48377,43 +49341,45 @@ var NavController = (function (_super) {
         return !!(view && view.state === STATE_ACTIVE);
     };
     /**
-     * @param {ViewController} view  The ViewController to get the previous view to
+     * Returns the view controller which is before the given view controller.
+     * @param {ViewController} view
      * @returns {viewController}
      */
     NavController.prototype.getPrevious = function (view) {
         return this.getByIndex(this.indexOf(view) - 1);
     };
     /**
-     * First page in this nav controller's stack.
-     * @returns {ViewController} Returns the first component page in the current stack
+     * Returns the first view controller in this nav controller's stack.
+     * @returns {ViewController}
      */
     NavController.prototype.first = function () {
         return (this._views.length ? this._views[0] : null);
     };
     /**
-     * Last page in this nav controller's stack. This would not return a page which is about to be destroyed.
-     * @returns {ViewController} Returns the last component page in the current stack
+     * Returns the last page in this nav controller's stack.
+     * @returns {ViewController}
      */
     NavController.prototype.last = function () {
         return (this._views.length ? this._views[this._views.length - 1] : null);
     };
     /**
+     * Returns the index number of the given view controller.
      * @param {ViewController} view
-     * @returns {number} Returns the index number of the view
+     * @returns {number}
      */
     NavController.prototype.indexOf = function (view) {
         return this._views.indexOf(view);
     };
     /**
-     * Number of sibling views in the nav controller.
-     * @returns {number} The number of views in stack, including the current view
+     * Returns the number of views in this nav controller.
+     * @returns {number} The number of views in this stack, including the current view.
      */
     NavController.prototype.length = function () {
         return this._views.length;
     };
     Object.defineProperty(NavController.prototype, "rootNav", {
         /**
-         * Returns the root NavController.
+         * Returns the root `NavController`.
          * @returns {NavController}
          */
         get: function () {
@@ -48931,7 +49897,7 @@ var view_controller_1 = require('./view-controller');
  * Nav automatically animates transitions between pages for you.
  *
  * For more information on using navigation controllers like Nav or [Tab](../../Tabs/Tab/),
- * take a look at the [NavController API reference](../NavController/).
+ * take a look at the [NavController API Docs](../NavController/).
  *
  * You must set a root page (where page is any [@Page](../../config/Page/)
  * component) to be loaded initially by any Nav you create, using
@@ -49016,14 +49982,22 @@ var view_controller_1 = require('./view-controller');
  */
 var Nav = (function (_super) {
     __extends(Nav, _super);
-    function Nav(hostNavCtrl, viewCtrl, app, config, keyboard, elementRef, compiler, viewManager, zone, renderer) {
-        _super.call(this, hostNavCtrl, app, config, keyboard, elementRef, 'contents', compiler, viewManager, zone, renderer);
+    function Nav(parent, viewCtrl, app, config, keyboard, elementRef, compiler, viewManager, zone, renderer) {
+        _super.call(this, parent, app, config, keyboard, elementRef, 'contents', compiler, viewManager, zone, renderer);
         this._hasInit = false;
         if (viewCtrl) {
             // an ion-nav can also act as an ion-page within a parent ion-nav
             // this would happen when an ion-nav nests a child ion-nav.
             viewCtrl.setContent(this);
             viewCtrl.setContentRef(elementRef);
+        }
+        if (parent) {
+            // this Nav has a parent Nav
+            parent.registerChildNav(this);
+        }
+        else if (app) {
+            // this is the root navcontroller for the entire app
+            this._app.setRootNav(this);
         }
     }
     Object.defineProperty(Nav.prototype, "root", {
@@ -49091,7 +50065,8 @@ var Nav = (function (_super) {
         core_1.Component({
             selector: 'ion-nav',
             template: '<div #contents></div><div portal></div>',
-            directives: [nav_portal_1.Portal]
+            directives: [nav_portal_1.Portal],
+            encapsulation: core_1.ViewEncapsulation.None,
         }),
         __param(0, core_1.Optional()),
         __param(1, core_1.Optional()), 
@@ -49279,6 +50254,12 @@ var ViewController = (function () {
             return !!(previousItem);
         }
         return false;
+    };
+    /**
+     * @private
+     */
+    ViewController.prototype.setChangeDetector = function (cd) {
+        this._cd = cd;
     };
     /**
      * @private
@@ -49558,6 +50539,12 @@ var ViewController = (function () {
      * The view is about to enter and become the active view.
      */
     ViewController.prototype.willEnter = function () {
+        if (this._cd) {
+            // ensure this has been re-attached to the change detector
+            this._cd.reattach();
+            // detect changes before we run any user code
+            this._cd.detectChanges();
+        }
         ctrlFn(this, 'onPageWillEnter');
     };
     /**
@@ -49584,6 +50571,9 @@ var ViewController = (function () {
      */
     ViewController.prototype.didLeave = function () {
         ctrlFn(this, 'onPageDidLeave');
+        // when this is not the active page
+        // we no longer need to detect changes
+        this._cd && this._cd.detach();
     };
     /**
      * @private
@@ -49745,6 +50735,7 @@ var Navbar = (function (_super) {
         viewCtrl && viewCtrl.setNavbar(this);
         this._bbIcon = config.get('backButtonIcon');
         this._bbText = config.get('backButtonText');
+        this._sbPadding = config.getBoolean('statusbarPadding', false);
     }
     Object.defineProperty(Navbar.prototype, "hideBackButton", {
         /**
@@ -49827,7 +50818,7 @@ var Navbar = (function (_super) {
         core_1.Component({
             selector: 'ion-navbar',
             template: '<div class="toolbar-background"></div>' +
-                '<button class="back-button bar-button bar-button-default" [hidden]="_hideBb">' +
+                '<button category="bar-button" class="back-button" [hidden]="_hideBb">' +
                 '<span class="button-inner">' +
                 '<ion-icon class="back-button-icon" [name]="_bbIcon"></ion-icon>' +
                 '<span class="back-button-text">' +
@@ -49844,7 +50835,8 @@ var Navbar = (function (_super) {
                 '</div>',
             host: {
                 '[hidden]': '_hidden',
-                'class': 'toolbar'
+                'class': 'toolbar',
+                '[class.statusbar-padding]': '_sbPadding'
             },
             directives: [BackButton, BackButtonText, icon_1.Icon, ToolbarBackground]
         }),
@@ -49969,38 +50961,6 @@ var Option = (function () {
 exports.Option = Option;
 
 },{"../../util/util":373,"angular2/core":20}],316:[function(require,module,exports){
-"use strict";
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
-var core_1 = require('angular2/core');
-/**
- * @private
- */
-var OverlayNav = (function () {
-    function OverlayNav() {
-        // deprecated warning
-        void 0;
-        void 0;
-        void 0;
-    }
-    OverlayNav = __decorate([
-        core_1.Directive({
-            selector: 'ion-overlay'
-        }), 
-        __metadata('design:paramtypes', [])
-    ], OverlayNav);
-    return OverlayNav;
-}());
-exports.OverlayNav = OverlayNav;
-
-},{"angular2/core":20}],317:[function(require,module,exports){
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -50164,6 +51124,8 @@ var RadioButton = (function () {
                 '<div class="radio-inner"></div>' +
                 '</div>' +
                 '<button role="radio" ' +
+                'type="button" ' +
+                'category="item-cover" ' +
                 '[id]="id" ' +
                 '[attr.aria-checked]="_checked" ' +
                 '[attr.aria-labelledby]="_labelId" ' +
@@ -50172,7 +51134,8 @@ var RadioButton = (function () {
                 '</button>',
             host: {
                 '[class.radio-disabled]': '_disabled'
-            }
+            },
+            encapsulation: core_1.ViewEncapsulation.None,
         }),
         __param(1, core_1.Optional()),
         __param(2, core_1.Optional()), 
@@ -50182,7 +51145,7 @@ var RadioButton = (function () {
 }());
 exports.RadioButton = RadioButton;
 
-},{"../../util/form":370,"../../util/util":373,"../item/item":294,"./radio-group":318,"angular2/core":20}],318:[function(require,module,exports){
+},{"../../util/form":370,"../../util/util":373,"../item/item":294,"./radio-group":317,"angular2/core":20}],317:[function(require,module,exports){
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -50404,7 +51367,7 @@ var RadioGroup = (function () {
 exports.RadioGroup = RadioGroup;
 var radioGroupIds = -1;
 
-},{"../../util/util":373,"../list/list":296,"angular2/common":18,"angular2/core":20}],319:[function(require,module,exports){
+},{"../../util/util":373,"../list/list":296,"angular2/common":18,"angular2/core":20}],318:[function(require,module,exports){
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -50474,7 +51437,9 @@ var RefresherContent = (function () {
             directives: [common_1.NgIf, icon_1.Icon, spinner_1.Spinner],
             host: {
                 '[attr.state]': 'r.state'
-            }
+            },
+            changeDetection: core_1.ChangeDetectionStrategy.OnPush,
+            encapsulation: core_1.ViewEncapsulation.None,
         }), 
         __metadata('design:paramtypes', [refresher_1.Refresher, config_1.Config])
     ], RefresherContent);
@@ -50482,7 +51447,7 @@ var RefresherContent = (function () {
 }());
 exports.RefresherContent = RefresherContent;
 
-},{"../../config/config":342,"../icon/icon":284,"../spinner/spinner":328,"./refresher":320,"angular2/common":18,"angular2/core":20}],320:[function(require,module,exports){
+},{"../../config/config":342,"../icon/icon":284,"../spinner/spinner":327,"./refresher":319,"angular2/common":18,"angular2/core":20}],319:[function(require,module,exports){
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -50999,7 +51964,7 @@ var STATE_REFRESHING = 'refreshing';
 var STATE_CANCELLING = 'cancelling';
 var STATE_COMPLETING = 'completing';
 
-},{"../../util/dom":367,"../../util/util":373,"../content/content":283,"angular2/core":20}],321:[function(require,module,exports){
+},{"../../util/dom":367,"../../util/util":373,"../content/content":283,"angular2/core":20}],320:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -51088,7 +52053,9 @@ var Scroll = (function (_super) {
                 '<div class="scroll-zoom-wrapper">' +
                 '<ng-content></ng-content>' +
                 '</div>' +
-                '</scroll-content>'
+                '</scroll-content>',
+            changeDetection: core_1.ChangeDetectionStrategy.OnPush,
+            encapsulation: core_1.ViewEncapsulation.None,
         }), 
         __metadata('design:paramtypes', [core_1.ElementRef])
     ], Scroll);
@@ -51096,7 +52063,7 @@ var Scroll = (function (_super) {
 }(ion_1.Ion));
 exports.Scroll = Scroll;
 
-},{"../ion":291,"angular2/core":20}],322:[function(require,module,exports){
+},{"../ion":291,"angular2/core":20}],321:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -51438,10 +52405,11 @@ var Searchbar = (function (_super) {
                 '</button>' +
                 '<div class="searchbar-search-icon"></div>' +
                 '<input [value]="value" (input)="inputChanged($event)" (blur)="inputBlurred()" (focus)="inputFocused()" class="searchbar-input" type="search" [attr.placeholder]="placeholder" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">' +
-                '<button clear *ngIf="value" class="searchbar-clear-icon" (click)="clearInput()" (mousedown)="clearInput()"></button>' +
+                '<button clear class="searchbar-clear-icon" (click)="clearInput()" (mousedown)="clearInput()"></button>' +
                 '</div>' +
                 '<button clear (click)="cancelSearchbar()" (mousedown)="cancelSearchbar()" [hidden]="hideCancelButton" class="searchbar-ios-cancel">{{cancelButtonText}}</button>',
-            directives: [common_1.FORM_DIRECTIVES, common_1.NgIf, common_1.NgClass, icon_1.Icon, button_1.Button, SearchbarInput]
+            directives: [common_1.FORM_DIRECTIVES, common_1.NgIf, common_1.NgClass, icon_1.Icon, button_1.Button, SearchbarInput],
+            encapsulation: core_1.ViewEncapsulation.None,
         }),
         __param(2, core_1.Optional()), 
         __metadata('design:paramtypes', [core_1.ElementRef, config_1.Config, common_1.NgControl])
@@ -51450,7 +52418,7 @@ var Searchbar = (function (_super) {
 }(ion_1.Ion));
 exports.Searchbar = Searchbar;
 
-},{"../../config/config":342,"../../util/util":373,"../button/button":281,"../icon/icon":284,"../ion":291,"angular2/common":18,"angular2/core":20}],323:[function(require,module,exports){
+},{"../../config/config":342,"../../util/util":373,"../button/button":281,"../icon/icon":284,"../ion":291,"angular2/common":18,"angular2/core":20}],322:[function(require,module,exports){
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -51565,7 +52533,8 @@ var SegmentButton = (function () {
                 'tappable': '',
                 'class': 'segment-button',
                 'role': 'button'
-            }
+            },
+            encapsulation: core_1.ViewEncapsulation.None,
         }), 
         __metadata('design:paramtypes', [core_1.Renderer, core_1.ElementRef])
     ], SegmentButton);
@@ -51694,7 +52663,7 @@ var Segment = (function () {
 }());
 exports.Segment = Segment;
 
-},{"../../util/util":373,"angular2/common":18,"angular2/core":20}],324:[function(require,module,exports){
+},{"../../util/util":373,"angular2/common":18,"angular2/core":20}],323:[function(require,module,exports){
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -51711,6 +52680,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 var core_1 = require('angular2/core');
 var common_1 = require('angular2/common');
 var alert_1 = require('../alert/alert');
+var action_sheet_1 = require('../action-sheet/action-sheet');
 var form_1 = require('../../util/form');
 var item_1 = require('../item/item');
 var util_1 = require('../../util/util');
@@ -51769,7 +52739,7 @@ var SELECT_VALUE_ACCESSOR = new core_1.Provider(common_1.NG_VALUE_ACCESSOR, { us
  *     <ion-option>Pepperoni</ion-option>
  *     <ion-option>Sausage</ion-option>
  *   </ion-select>
- * <ion-item>
+ * </ion-item>
  * ```
  *
  * ### Alert Buttons
@@ -51837,6 +52807,10 @@ var Select = (function () {
          */
         this.checked = false;
         /**
+         * @private
+         */
+        this.interface = '';
+        /**
          * @output {any} Any expression you want to evaluate when the selection has changed
          */
         this.change = new core_1.EventEmitter();
@@ -51870,8 +52844,9 @@ var Select = (function () {
     };
     Select.prototype._open = function () {
         var _this = this;
-        if (this._disabled)
+        if (this._disabled) {
             return;
+        }
         void 0;
         // the user may have assigned some options specifically for the alert
         var alertOptions = util_1.merge({}, this.alertOptions);
@@ -51879,6 +52854,7 @@ var Select = (function () {
         // and we create a new array for the alert's two buttons
         alertOptions.buttons = [{
                 text: this.cancelText,
+                role: 'cancel',
                 handler: function () {
                     _this.cancel.emit(null);
                 }
@@ -51887,36 +52863,62 @@ var Select = (function () {
         if (!alertOptions.title && this._item) {
             alertOptions.title = this._item.getLabelText();
         }
-        // user cannot provide inputs from alertOptions
-        // alert inputs must be created by ionic from ion-options
-        alertOptions.inputs = this._options.toArray().map(function (input) {
-            return {
-                type: (_this._multi ? 'checkbox' : 'radio'),
-                label: input.text,
-                value: input.value,
-                checked: input.checked
-            };
-        });
-        // create the alert instance from our built up alertOptions
-        var alert = alert_1.Alert.create(alertOptions);
-        if (this._multi) {
-            // use checkboxes
-            alert.setCssClass('select-alert multiple-select-alert');
+        var options = this._options.toArray();
+        if (this.interface === 'action-sheet' && options.length > 6) {
+            this.interface = null;
+        }
+        var overlay;
+        if (this.interface === 'action-sheet') {
+            if (this._multi) {
+                throw new Error('action-sheet interface cannot use multivalue selector');
+            }
+            alertOptions.buttons = alertOptions.buttons.concat(options.map(function (input) {
+                return {
+                    role: (input.checked ? 'selected' : ''),
+                    text: input.text,
+                    handler: function () {
+                        _this.onChange(input.value);
+                        _this.change.emit(input.value);
+                    }
+                };
+            }));
+            alertOptions.cssClass = 'select-action-sheet';
+            overlay = action_sheet_1.ActionSheet.create(alertOptions);
         }
         else {
-            // use radio buttons
-            alert.setCssClass('select-alert single-select-alert');
-        }
-        alert.addButton({
-            text: this.okText,
-            handler: function (selectedValues) {
-                _this.onChange(selectedValues);
-                _this.change.emit(selectedValues);
+            // default to use the alert interface
+            this.interface = 'alert';
+            // user cannot provide inputs from alertOptions
+            // alert inputs must be created by ionic from ion-options
+            alertOptions.inputs = this._options.toArray().map(function (input) {
+                return {
+                    type: (_this._multi ? 'checkbox' : 'radio'),
+                    label: input.text,
+                    value: input.value,
+                    checked: input.checked
+                };
+            });
+            // create the alert instance from our built up alertOptions
+            overlay = alert_1.Alert.create(alertOptions);
+            if (this._multi) {
+                // use checkboxes
+                overlay.setCssClass('select-alert multiple-select-alert');
             }
-        });
-        this._nav.present(alert, alertOptions);
+            else {
+                // use radio buttons
+                overlay.setCssClass('select-alert single-select-alert');
+            }
+            overlay.addButton({
+                text: this.okText,
+                handler: function (selectedValues) {
+                    _this.onChange(selectedValues);
+                    _this.change.emit(selectedValues);
+                }
+            });
+        }
+        this._nav.present(overlay, alertOptions);
         this._isOpen = true;
-        alert.onDismiss(function () {
+        overlay.onDismiss(function () {
             _this._isOpen = false;
         });
     };
@@ -52061,6 +53063,10 @@ var Select = (function () {
         __metadata('design:type', Object)
     ], Select.prototype, "checked", void 0);
     __decorate([
+        core_1.Input(), 
+        __metadata('design:type', String)
+    ], Select.prototype, "interface", void 0);
+    __decorate([
         core_1.Output(), 
         __metadata('design:type', core_1.EventEmitter)
     ], Select.prototype, "change", void 0);
@@ -52102,6 +53108,7 @@ var Select = (function () {
                 '</div>' +
                 '<button aria-haspopup="true" ' +
                 '[id]="id" ' +
+                'category="item-cover" ' +
                 '[attr.aria-labelledby]="_labelId" ' +
                 '[attr.aria-disabled]="_disabled" ' +
                 'class="item-cover">' +
@@ -52109,7 +53116,8 @@ var Select = (function () {
             host: {
                 '[class.select-disabled]': '_disabled'
             },
-            providers: [SELECT_VALUE_ACCESSOR]
+            providers: [SELECT_VALUE_ACCESSOR],
+            encapsulation: core_1.ViewEncapsulation.None,
         }),
         __param(3, core_1.Optional()),
         __param(4, core_1.Optional()), 
@@ -52119,7 +53127,7 @@ var Select = (function () {
 }());
 exports.Select = Select;
 
-},{"../../util/form":370,"../../util/util":373,"../alert/alert":276,"../item/item":294,"../nav/nav-controller":305,"../option/option":315,"angular2/common":18,"angular2/core":20}],325:[function(require,module,exports){
+},{"../../util/form":370,"../../util/util":373,"../action-sheet/action-sheet":275,"../alert/alert":276,"../item/item":294,"../nav/nav-controller":305,"../option/option":315,"angular2/common":18,"angular2/core":20}],324:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -52190,7 +53198,15 @@ exports.DisplayWhen = DisplayWhen;
  * @description
  * The `showWhen` attribute takes a string that represents a platform or screen orientation.
  * The element the attribute is added to will only be shown when that platform or screen orientation is active.
- * Complements the [hideWhen attribute](../HideWhen).
+ *
+ * Complements the [hideWhen attribute](../HideWhen). If the `showWhen` attribute is used on an
+ * element that also has the `hideWhen` attribute, the element will not show if `hideWhen` evaluates
+ * to `true` or `showWhen` evaluates to `false`. If the `hidden` attribute is also added, the element
+ * will not show if `hidden` evaluates to `true`.
+ *
+ * View the [Platform API docs](../../../platform/Platform) for more information on the different
+ * platforms you can use.
+ *
  * @usage
  * ```html
  * <div showWhen="android">
@@ -52215,27 +53231,18 @@ exports.DisplayWhen = DisplayWhen;
  * ```
  * @demo /docs/v2/demos/show-when/
  * @see {@link ../HideWhen HideWhen API Docs}
+ * @see {@link ../../../platform/Platform Platform API Docs}
  */
 var ShowWhen = (function (_super) {
     __extends(ShowWhen, _super);
     function ShowWhen(showWhen, platform, ngZone) {
         _super.call(this, showWhen, platform, ngZone);
     }
-    Object.defineProperty(ShowWhen.prototype, "hidden", {
-        /**
-         * @private
-         */
-        get: function () {
-            return !this.isMatch;
-        },
-        enumerable: true,
-        configurable: true
-    });
     ShowWhen = __decorate([
         core_1.Directive({
             selector: '[showWhen]',
             host: {
-                '[hidden]': 'hidden'
+                '[class.hidden-show-when]': '!isMatch'
             }
         }),
         __param(0, core_1.Attribute('showWhen')), 
@@ -52249,7 +53256,15 @@ exports.ShowWhen = ShowWhen;
  * @description
  * The `hideWhen` attribute takes a string that represents a plaform or screen orientation.
  * The element the attribute is added to will only be hidden when that platform or screen orientation is active.
- * Complements the [showWhen attribute](../ShowWhen).
+ *
+ * Complements the [showWhen attribute](../ShowWhen). If the `hideWhen` attribute is used on an
+ * element that also has the `showWhen` attribute, the element will not show if `hideWhen` evaluates
+ * to `true` or `showWhen` evaluates to `false`. If the `hidden` attribute is also added, the element
+ * will not show if `hidden` evaluates to `true`.
+ *
+ * View the [Platform API docs](../../../platform/Platform) for more information on the different
+ * platforms you can use.
+ *
  * @usage
  * ```html
  * <div hideWhen="android">
@@ -52275,27 +53290,18 @@ exports.ShowWhen = ShowWhen;
  *
  * @demo /docs/v2/demos/hide-when/
  * @see {@link ../ShowWhen ShowWhen API Docs}
- */
+ * @see {@link ../../../platform/Platform Platform API Docs}
+*/
 var HideWhen = (function (_super) {
     __extends(HideWhen, _super);
     function HideWhen(hideWhen, platform, ngZone) {
         _super.call(this, hideWhen, platform, ngZone);
     }
-    Object.defineProperty(HideWhen.prototype, "hidden", {
-        /**
-         * @private
-         */
-        get: function () {
-            return this.isMatch;
-        },
-        enumerable: true,
-        configurable: true
-    });
     HideWhen = __decorate([
         core_1.Directive({
             selector: '[hideWhen]',
             host: {
-                '[hidden]': 'hidden'
+                '[class.hidden-hide-when]': 'isMatch'
             }
         }),
         __param(0, core_1.Attribute('hideWhen')), 
@@ -52305,7 +53311,7 @@ var HideWhen = (function (_super) {
 }(DisplayWhen));
 exports.HideWhen = HideWhen;
 
-},{"../../platform/platform":353,"angular2/core":20}],326:[function(require,module,exports){
+},{"../../platform/platform":353,"angular2/core":20}],325:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -52336,38 +53342,159 @@ var swiper_widget_1 = require('./swiper-widget');
 /**
  * @name Slides
  * @description
- * Slides is a slide box implementation based on Swiper.js
+ * The Slides component is a multi-section container. Each section can be swiped
+ * or dragged between. It contains any number of [Slide](../Slide) components.
+ *
+ *
+ * ### Creating
+ * You should use a template to create slides and listen to slide events. The template
+ * should contain the slide container, an `<ion-slides>` element, and any number of
+ * [Slide](../Slide) components, written as `<ion-slide>`. Any configuration of the
+ * slides should be passed in the `options` property of the `<ion-slides>` element.
+ * You can listen to events such as the slide changing by placing the event on the
+ * `<ion-slides>` element. See [Usage](#usage) below for more information on
+ * creating slides.
+ *
+ *
+ * ### Configuring
+ * There are several configuration options that can be passed to Slides. These should
+ * be passed in the `options` property of the `<ion-slides>` element upon creation.
+ * You can allow the slides to loop around from the last to the first, set autoplay
+ * on the slides so it will automatically switch between them, and more.
+ *
+ * Properties to pass in options:
+ *
+ * | Property              | Type      | Default        | Description                                                                                |
+ * |-----------------------|-----------|----------------|--------------------------------------------------------------------------------------------|
+ * | autoplay              | `number`  | -              | Delay between transitions (in ms). If this parameter is not passed, autoplay is disabled.  |
+ * | direction             | `string`  | 'horizontal'   | Swipe direction: 'horizontal' or 'vertical'.                                               |
+ * | initialSlide          | `number`  | 0              | Index number of initial slide                                                              |
+ * | loop                  | `boolean` | false          | Whether to continuously loop from the last slide to the first slide.                       |
+ * | pager                 | `boolean` | false          | Show the pagination bullets.                                                               |
+ * | speed                 | `number`  | 300            | Duration of transition between slides (in ms).                                             |
+ *
+ * See [Usage](#usage) below for more information on configuring slides.
+ *
+ *
+ * ### Navigating
+ * After creating and configuring the slides, you can navigate between them
+ * by swiping or calling methods on the `Slides` instance. You can call `slideTo()` to
+ * navigate to a specific slide, or `slideNext()` to change to the slide that follows
+ * the active slide. All of the [methods](#instance-members) provided by the `Slides`
+ * instance are listed below. See [Usage](#usage) below for more information on
+ * navigating between slides.
+ *
+ *
+ * ### Limitations
+ * The Slides component wraps the [Swiper](http://www.idangero.us/swiper/) component
+ * built by iDangero.us. This means that all of the Swiper API isn't exposed on the
+ * Slides component. See the [`getSlider()`](#getSlider) method for information on
+ * getting the `Swiper` instance and using its methods directly.
+ *
  *
  * @usage
- * ```ts
- * @Page({
- *  template: `
- *     <ion-slides pager (change)="onSlideChanged($event)" (move)="onSlideMove($event)">
- *      <ion-slide>
- *        <h3>Thank you for choosing the Awesome App!</h3>
- *        <p>
- *          The number one app for everything awesome.
- *        </p>
- *      </ion-slide>
- *      <ion-slide>
- *        <h3>Using Awesome</h3>
- *         <div id="list">
- *           <h5>Just three steps:</h5>
- *           <ol>
- *             <li>Be awesome</li>
- *             <li>Stay awesome</li>
- *             <li>There is no step 3</li>
- *           </ol>
- *         </div>
- *      </ion-slide>
- *      <ion-slide>
- *        <h3>Any questions?</h3>
- *      </ion-slide>
- *    </ion-slides>
- *    `
- *})
  *
- *```
+ * You can add slides to a `@Page` using the following template:
+ *
+ * ```html
+ * <ion-slides>
+ *   <ion-slide>
+ *     <h1>Slide 1</h1>
+ *   </ion-slide>
+ *   <ion-slide>
+ *     <h1>Slide 2</h1>
+ *   </ion-slide>
+ *   <ion-slide>
+ *     <h1>Slide 3</h1>
+ *   </ion-slide>
+ * </ion-slides>
+ * ```
+ *
+ * To add [options](#configuring), we will define them in `mySlideOptions` in our class `MyPage`:
+ *
+ * ```ts
+ * import {Page, Slides} from 'ionic-angular';
+ *
+ * @Page({
+ *   templateUrl: 'my-page.html'
+ * })
+ * class MyPage {
+ *   mySlideOptions = {
+ *     initialSlide: 1,
+ *     loop: true
+ *   };
+ * }
+ * ```
+ *
+ * This is setting the second slide as the initial slide on load, since
+ * the `initialSlide` begins at `0`. We are also setting `loop` to true which
+ * allows us to swipe from the last slide to the first continuously. Then,
+ * we will pass `mySlideOptions` in the `options` property of the `<ion-slides>`
+ * element. We are using [property binding](https://angular.io/docs/ts/latest/guide/template-syntax.html#!#property-binding)
+ * on `options` because `mySlideOptions` is an expression:
+ *
+ * ```html
+ * <ion-slides [options]="mySlideOptions">
+ * ```
+ *
+ * To grab a reference to the Slides, we will add a [local template variable](https://angular.io/docs/ts/latest/guide/template-syntax.html#!#local-vars)
+ * to `<ion-slides>` called `mySlider`:
+ *
+ * ```html
+ * <ion-slides #mySlider [options]="mySlideOptions">
+ * ```
+ *
+ * Next, we can use `ViewChild` to assign the Slides instance to `slider`:
+ *
+ * ```ts
+ * import {ViewChild} from 'angular2/core';
+ *
+ * class MyPage {
+ *   @ViewChild('mySlider') slider: Slides;
+ *
+ *   ...
+ * }
+ * ```
+ *
+ * Now we can call any of the `Slider` [methods]((#instance-members)),
+ * for example we can use the Slider's `slideTo()` method in order to
+ * navigate to a specific slide on a button click. Below we call the
+ * `goToSlide()` method and it navigates to the 3rd slide:
+ *
+ * ```ts
+ * class MyPage {
+ *   ...
+ *
+ *   goToSlide() {
+ *     this.slider.slideTo(2, 500);
+ *   }
+ * }
+ * ```
+ *
+ * We can also add events to listen to on the `<ion-slides>` element.
+ * Let's add the `didChange` event and call a method when the slide changes:
+ *
+ * ```html
+ * <ion-slides #mySlider (didChange)="onSlideChanged()" [options]="mySlideOptions">
+ * ```
+ *
+ * In our class, we add the `onSlideChanged()` method which gets the active
+ * index and prints it:
+ *
+ * ```ts
+ * class MyPage {
+ *   ...
+ *
+ *   onSlideChanged() {
+ *     let currentIndex = this.slider.getActiveIndex();
+ *     console.log("Current index is", currentIndex);
+ *   }
+ * }
+ * ```
+ *
+ * For all of the methods you can call on the `Slider` instance, see the
+ * [Instance Members](#instance-members).
+ *
  * @demo /docs/v2/demos/slides/
  * @see {@link /docs/v2/components#slides Slides Component Docs}
  *
@@ -52384,28 +53511,34 @@ var swiper_widget_1 = require('./swiper-widget');
  */
 var Slides = (function (_super) {
     __extends(Slides, _super);
-    /**
-     * @private
-     * @param {ElementRef} elementRef  TODO
-     */
     function Slides(elementRef) {
         var _this = this;
         _super.call(this, elementRef);
         /**
-         * @output {any} expression to evaluate when a slide has been changed
-         */
-        this.change = new core_1.EventEmitter();
-        /**
-         * @output {any} expression to evaluate when a slide change starts
+         * @private Deprecated
          */
         this.slideChangeStart = new core_1.EventEmitter();
         /**
-         * @output {any} expression to evaluate when a slide moves
+         * @private Deprecated
+         */
+        this.change = new core_1.EventEmitter();
+        /**
+         * @output {any} Expression to evaluate when a slide change starts.
+         */
+        this.willChange = new core_1.EventEmitter();
+        /**
+         * @output {any} Expression to evaluate when a slide change ends.
+         */
+        this.didChange = new core_1.EventEmitter();
+        /**
+         * @output {any} Expression to evaluate when a slide moves.
          */
         this.move = new core_1.EventEmitter();
         this.rapidUpdate = util_2.debounce(function () {
             _this.update();
         }, 10);
+        this.id = ++slidesId;
+        this.slideId = 'slides-' + this.id;
     }
     /**
      * @private
@@ -52415,9 +53548,27 @@ var Slides = (function (_super) {
         if (!this.options) {
             this.options = {};
         }
-        this.showPager = util_2.isTrueProperty(this.pager);
+        if (util_2.isPresent(this.pager)) {
+            // beta.5 2016-04-18 deprecated warning
+            // Pager should be passed as an option
+            void 0;
+            // Remove this with the deprecation warning
+            this.showPager = util_2.isTrueProperty(this.pager);
+        }
+        if (util_2.isPresent(this.zoom)) {
+            // beta.5 2016-04-18 deprecated warning
+            // Zoom should be passed as an option
+            void 0;
+        }
+        // Deprecated 04-18 beta.5
+        void 0;
+        void 0;
+        if (util_2.isPresent(this.options.pager)) {
+            this.showPager = util_2.isTrueProperty(this.options.pager);
+        }
+        var paginationId = '.' + this.slideId + ' .swiper-pagination';
         var options = util_2.defaults({
-            pagination: '.swiper-pagination',
+            pagination: paginationId
         }, this.options);
         options.onTap = function (swiper, e) {
             _this.onTap(swiper, e);
@@ -52440,11 +53591,15 @@ var Slides = (function (_super) {
             return _this.options.onTransitionEnd && _this.options.onTransitionEnd(swiper, e);
         };
         options.onSlideChangeStart = function (swiper) {
+            // TODO deprecated 2016-04-18
             _this.slideChangeStart.emit(swiper);
+            _this.willChange.emit(swiper);
             return _this.options.onSlideChangeStart && _this.options.onSlideChangeStart(swiper);
         };
         options.onSlideChangeEnd = function (swiper) {
+            // TODO deprecated 2016-04-18
             _this.change.emit(swiper);
+            _this.didChange.emit(swiper);
             return _this.options.onSlideChangeEnd && _this.options.onSlideChangeEnd(swiper);
         };
         options.onLazyImageLoad = function (swiper, slide, img) {
@@ -52463,7 +53618,7 @@ var Slides = (function (_super) {
         });
         /*
         * TODO: Finish this
-        if (util.isTrueProperty(this.zoom)) {
+        if (isTrueProperty(this.zoom)) {
           this.enableZoom = true;
           setTimeout(() => {
             this.initZoom();
@@ -52740,61 +53895,99 @@ var Slides = (function (_super) {
         setTimeout(function () {
             _this.slider.update();
             // Don't allow pager to show with > 10 slides
-            if (_this.slider.slides.length > 10) {
+            if (_this.length() > 10) {
                 _this.showPager = false;
             }
         });
     };
     /**
-     * @private
+     * Transition to the specified slide.
+     *
+     * @param {number} index  The index number of the slide.
+     * @param {number} speed  Transition duration (in ms). Optional.
+     * @param {boolean} runCallbacks  Whether or not to emit the `willChange`/`didChange` events. Optional. Default true.
      */
-    Slides.prototype.next = function () {
-        this.slider.slideNext();
+    Slides.prototype.slideTo = function (index, speed, runCallbacks) {
+        this.slider.slideTo(index, speed, runCallbacks);
     };
     /**
-     * @private
+     * Transition to the next slide.
+     *
+     * @param {number} speed  Transition duration (in ms). Optional.
+     * @param {boolean} runCallbacks  Whether or not to emit the `willChange`/`didChange` events. Optional. Default true.
      */
-    Slides.prototype.prev = function () {
-        this.slider.slidePrev();
+    Slides.prototype.slideNext = function (speed, runCallbacks) {
+        this.slider.slideNext(runCallbacks, speed);
     };
     /**
-     * @private
+     * Transition to the previous slide.
+     *
+     * @param {number} speed  Transition duration (in ms). Optional.
+     * @param {boolean} runCallbacks  Whether or not to emit the `willChange`/`didChange` events. Optional. Default true.
      */
-    Slides.prototype.getIndex = function () {
+    Slides.prototype.slidePrev = function (speed, runCallbacks) {
+        this.slider.slidePrev(runCallbacks, speed);
+    };
+    /**
+     * Get the index of the active slide.
+     *
+     * @returns {number} The index number of the current slide.
+     */
+    Slides.prototype.getActiveIndex = function () {
         return this.slider.activeIndex;
     };
     /**
-     * @private
+     * Get the index of the previous slide.
+     *
+     * @returns {number} The index number of the previous slide.
      */
-    Slides.prototype.getNumSlides = function () {
+    Slides.prototype.getPreviousIndex = function () {
+        return this.slider.previousIndex;
+    };
+    /**
+     * Get the total number of slides.
+     *
+     * @returns {number} The total number of slides.
+     */
+    Slides.prototype.length = function () {
         return this.slider.slides.length;
     };
     /**
-     * @private
+     * Get whether or not the current slide is the last slide.
+     *
+     * @returns {boolean} If the slide is the last slide or not.
      */
-    Slides.prototype.isAtEnd = function () {
+    Slides.prototype.isEnd = function () {
         return this.slider.isEnd;
     };
     /**
-     * @private
+     * Get whether or not the current slide is the first slide.
+     *
+     * @returns {boolean} If the slide is the first slide or not.
      */
-    Slides.prototype.isAtBeginning = function () {
+    Slides.prototype.isBeginning = function () {
         return this.slider.isBeginning;
     };
     /**
-     * @private
+     * Get the `Swiper` instance.
+     *
+     * The Slides component wraps the `Swiper` component built by iDangero.us. See the
+     * [Swiper API Docs](http://idangero.us/swiper/api/) for information on using
+     * the `Swiper` instance directly.
+     *
+     * @returns {Swiper}
      */
-    Slides.prototype.getSliderWidget = function () {
+    Slides.prototype.getSlider = function () {
         return this.slider;
     };
     __decorate([
         core_1.Input(), 
         __metadata('design:type', Object)
-    ], Slides.prototype, "pager", void 0);
+    ], Slides.prototype, "options", void 0);
     __decorate([
         core_1.Input(), 
         __metadata('design:type', Object)
-    ], Slides.prototype, "options", void 0);
+    ], Slides.prototype, "pager", void 0);
     __decorate([
         core_1.Input(), 
         __metadata('design:type', Object)
@@ -52810,11 +54003,19 @@ var Slides = (function (_super) {
     __decorate([
         core_1.Output(), 
         __metadata('design:type', core_1.EventEmitter)
+    ], Slides.prototype, "slideChangeStart", void 0);
+    __decorate([
+        core_1.Output(), 
+        __metadata('design:type', core_1.EventEmitter)
     ], Slides.prototype, "change", void 0);
     __decorate([
         core_1.Output(), 
         __metadata('design:type', core_1.EventEmitter)
-    ], Slides.prototype, "slideChangeStart", void 0);
+    ], Slides.prototype, "willChange", void 0);
+    __decorate([
+        core_1.Output(), 
+        __metadata('design:type', core_1.EventEmitter)
+    ], Slides.prototype, "didChange", void 0);
     __decorate([
         core_1.Output(), 
         __metadata('design:type', core_1.EventEmitter)
@@ -52828,7 +54029,12 @@ var Slides = (function (_super) {
                 '</div>' +
                 '<div [class.hide]="!showPager" class="swiper-pagination"></div>' +
                 '</div>',
-            directives: [common_1.NgClass]
+            directives: [common_1.NgClass],
+            host: {
+                '[class]': 'slideId'
+            },
+            changeDetection: core_1.ChangeDetectionStrategy.OnPush,
+            encapsulation: core_1.ViewEncapsulation.None,
         }), 
         __metadata('design:paramtypes', [core_1.ElementRef])
     ], Slides);
@@ -52838,7 +54044,11 @@ exports.Slides = Slides;
 /**
  * @name Slide
  * @description
- * `ion-slide` is a child component of `ion-slides` and is where all your individule slide content will be rendered too.
+ * The Slide component is a child component of [Slides](../Slides). The template
+ * should be written as `ion-slide`. Any slide content should be written
+ * in this component and it should be used in conjunction with [Slides](../Slides).
+ *
+ * See the [Slides API Docs](../Slides) for more usage information.
  *
  * @demo /docs/v2/demos/slides/
  * @see {@link /docs/v2/api/components/slides/Slides/ Slides API Docs}
@@ -52856,7 +54066,9 @@ var Slide = (function () {
     Slide = __decorate([
         core_1.Component({
             selector: 'ion-slide',
-            template: '<div class="slide-zoom"><ng-content></ng-content></div>'
+            template: '<div class="slide-zoom"><ng-content></ng-content></div>',
+            changeDetection: core_1.ChangeDetectionStrategy.OnPush,
+            encapsulation: core_1.ViewEncapsulation.None,
         }),
         __param(1, core_1.Host()), 
         __metadata('design:paramtypes', [core_1.ElementRef, Slides])
@@ -52882,8 +54094,9 @@ var SlideLazy = (function () {
     return SlideLazy;
 }());
 exports.SlideLazy = SlideLazy;
+var slidesId = -1;
 
-},{"../../animations/animation":272,"../../gestures/gesture":348,"../../util":365,"../../util/dom":367,"../../util/util":373,"../ion":291,"./swiper-widget":327,"angular2/common":18,"angular2/core":20}],327:[function(require,module,exports){
+},{"../../animations/animation":272,"../../gestures/gesture":348,"../../util":365,"../../util/dom":367,"../../util/util":373,"../ion":291,"./swiper-widget":326,"angular2/common":18,"angular2/core":20}],326:[function(require,module,exports){
 /**
  * Swiper 3.1.2
  * Most modern mobile touch slider and framework with hardware accelerated transitions
@@ -56839,7 +58052,7 @@ function Swiper(container, params) {
       }
   }
 
-},{}],328:[function(require,module,exports){
+},{}],327:[function(require,module,exports){
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -57039,7 +58252,9 @@ var Spinner = (function () {
             host: {
                 '[class]': '_applied',
                 '[class.spinner-paused]': 'paused'
-            }
+            },
+            changeDetection: core_1.ChangeDetectionStrategy.OnPush,
+            encapsulation: core_1.ViewEncapsulation.None,
         }), 
         __metadata('design:paramtypes', [config_1.Config])
     ], Spinner);
@@ -57128,7 +58343,7 @@ var SPINNERS = {
     }
 };
 
-},{"../../config/config":342,"angular2/common":18,"angular2/core":20}],329:[function(require,module,exports){
+},{"../../config/config":342,"angular2/common":18,"angular2/core":20}],328:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -57206,7 +58421,7 @@ var TabButton = (function (_super) {
 }(ion_1.Ion));
 exports.TabButton = TabButton;
 
-},{"../../config/config":342,"../ion":291,"./tab":331,"angular2/core":20}],330:[function(require,module,exports){
+},{"../../config/config":342,"../ion":291,"./tab":330,"angular2/core":20}],329:[function(require,module,exports){
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -57250,7 +58465,7 @@ var TabHighlight = (function () {
 }());
 exports.TabHighlight = TabHighlight;
 
-},{"../../util/dom":367,"angular2/core":20}],331:[function(require,module,exports){
+},{"../../util/dom":367,"angular2/core":20}],330:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -57273,27 +58488,26 @@ var core_1 = require('angular2/core');
 var core_2 = require('angular2/core');
 var app_1 = require('../app/app');
 var config_1 = require('../../config/config');
+var util_1 = require('../../util/util');
 var keyboard_1 = require('../../util/keyboard');
 var nav_controller_1 = require('../nav/nav-controller');
 var tabs_1 = require('./tabs');
 /**
  * @name Tab
  * @description
- * _For basic Tabs usage, see the [Tabs section](../../../../components/#tabs)
- * of the Component docs._
+ * The Tab component, written `<ion-tab>`, is styled based on the mode and should
+ * be used in conjunction with the [Tabs](../Tabs/) component.
  *
- * Tab components are basic navigation controllers used with Tabs.  Much like
- * Nav, they are a subclass of NavController and can be used to navigate
- * to pages in and manipulate the navigation stack of a particular tab.
+ * Each tab has a separate navigation controller. For more information on using
+ * navigation controllers take a look at the [NavController API Docs](../../nav/NavController/).
  *
- * For more information on using navigation controllers like Tab or [Nav](../../nav/Nav/),
- * take a look at the [NavController API reference](../NavController/).
- *
- * See the [Tabs API reference](../Tabs/) for more details on configuring Tabs
- * and the TabBar.
+ * See the [Tabs API Docs](../Tabs/) for more details on configuring Tabs.
  *
  * @usage
- * For most cases, you can give tab a `[root]` property along with the component you want to load.
+ *
+ * To add a basic tab, you can use the following markup where the `root` property
+ * is the page you want to load for that tab, `tabTitle` is the optional text to
+ * display on the tab, and `tabIcon` is the optional [icon](../../icon/Icon/).
  *
  * ```html
  * <ion-tabs>
@@ -57301,20 +58515,61 @@ var tabs_1 = require('./tabs');
  * </ion-tabs>
  * ```
  *
+ * Then, in your class you can set `chatRoot` to an imported class:
+ *
  * ```ts
- * import {Chat} from '../chat/chat';
+ * import {ChatPage} from '../chat/chat';
+ *
  * export class Tabs {
- *    constructor(){
- *      // here we'll set the property of chatRoot to
- *      // the imported class of Chat
- *      this.chatRoot = Chat
- *    }
+ *   // here we'll set the property of chatRoot to
+ *   // the imported class of ChatPage
+ *   chatRoot = ChatPage;
+ *
+ *   constructor() {
+ *
+ *   }
  * }
  * ```
  *
- * In other cases, you may not want to navigate to a new component, but just
- * call a method. You can use the `(select)` event to call a method on your
- * class. Below is an example of presenting a modal from one of the tabs.
+ * You can also pass some parameters to the root page of the tab through
+ * `rootParams`. Below we pass `chatParams` to the Chat tab:
+ *
+ * ```html
+ * <ion-tabs>
+ *  <ion-tab [root]="chatRoot" [rootParams]="chatParams" tabTitle="Chat" tabIcon="chat"><ion-tab>
+ * </ion-tabs>
+ * ```
+ *
+ * ```ts
+ * export class Tabs {
+ *   chatRoot = ChatPage;
+ *
+ *   // set some user information on chatParams
+ *   chatParams = {
+ *     user1: "admin",
+ *     user2: "ionic"
+ *   };
+ *
+ *   constructor() {
+ *
+ *   }
+ * }
+ * ```
+ *
+ * And in `ChatPage` you can get the data from `NavParams`:
+ *
+ * ```ts
+ * export class ChatPage {
+ *   constructor(navParams: NavParams) {
+ *     console.log("Passed params", navParams.data);
+ *   }
+ * }
+ * ```
+ *
+ * Sometimes you may want to call a method instead of navigating to a new
+ * page. You can use the `(select)` event to call a method on your class when
+ * the tab is selected. Below is an example of presenting a modal from one of
+ * the tabs.
  *
  * ```html
  * <ion-tabs preloadTabs="false">
@@ -57324,9 +58579,10 @@ var tabs_1 = require('./tabs');
  *
  * ```ts
  * export class Tabs {
- *   constructor(nav: NavController){
+ *   constructor(nav: NavController) {
  *     this.nav = nav;
  *   }
+ *
  *   chat() {
  *     let modal = Modal.create(ChatPage);
  *     this.nav.present(modal);
@@ -57335,14 +58591,20 @@ var tabs_1 = require('./tabs');
  * ```
  *
  *
- *
  * @demo /docs/v2/demos/tabs/
+ * @see {@link /docs/v2/components#tabs Tabs Component Docs}
+ * @see {@link ../../tabs/Tabs Tabs API Docs}
+ * @see {@link ../../nav/Nav Nav API Docs}
+ * @see {@link ../../nav/NavController NavController API Docs}
  */
 var Tab = (function (_super) {
     __extends(Tab, _super);
-    function Tab(parentTabs, app, config, keyboard, elementRef, compiler, viewManager, zone, renderer) {
+    function Tab(parentTabs, app, config, keyboard, elementRef, compiler, viewManager, zone, renderer, _cd) {
         // A Tab is a NavController for its child pages
         _super.call(this, parentTabs, app, config, keyboard, elementRef, 'contents', compiler, viewManager, zone, renderer);
+        this._cd = _cd;
+        this._isEnabled = true;
+        this._isShown = true;
         /**
          * @output {Tab} Method to call when the current tab is selected
          */
@@ -57351,6 +58613,36 @@ var Tab = (function (_super) {
         this._panelId = 'tabpanel-' + this.id;
         this._btnId = 'tab-' + this.id;
     }
+    Object.defineProperty(Tab.prototype, "enabled", {
+        /**
+         * @input {boolean} If the tab is enabled or not. If the tab
+         * is not enabled then the tab button will still show, however,
+         * the button will appear grayed out and will not be clickable.
+         * Defaults to `true`.
+         */
+        get: function () {
+            return this._isEnabled;
+        },
+        set: function (val) {
+            this._isEnabled = util_1.isTrueProperty(val);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Tab.prototype, "show", {
+        /**
+         * @input {boolean} If the tab button is visible within the
+         * tabbar or not. Defaults to `true`.
+         */
+        get: function () {
+            return this._isShown;
+        },
+        set: function (val) {
+            this._isShown = util_1.isTrueProperty(val);
+        },
+        enumerable: true,
+        configurable: true
+    });
     /**
      * @private
      */
@@ -57414,6 +58706,14 @@ var Tab = (function (_super) {
      */
     Tab.prototype.setSelected = function (isSelected) {
         this.isSelected = isSelected;
+        if (isSelected) {
+            // this is the selected tab, detect changes
+            this._cd.reattach();
+        }
+        else {
+            // this tab is not selected, do not detect changes
+            this._cd.detach();
+        }
         this.hideNavbars(!isSelected);
     };
     /**
@@ -57467,6 +58767,14 @@ var Tab = (function (_super) {
         __metadata('design:type', String)
     ], Tab.prototype, "tabBadgeStyle", void 0);
     __decorate([
+        core_2.Input(), 
+        __metadata('design:type', Boolean)
+    ], Tab.prototype, "enabled", null);
+    __decorate([
+        core_2.Input(), 
+        __metadata('design:type', Boolean)
+    ], Tab.prototype, "show", null);
+    __decorate([
         core_2.Output(), 
         __metadata('design:type', core_2.EventEmitter)
     ], Tab.prototype, "select", void 0);
@@ -57479,16 +58787,17 @@ var Tab = (function (_super) {
                 '[attr.aria-labelledby]': '_btnId',
                 'role': 'tabpanel'
             },
-            template: '<div #contents></div>'
+            template: '<div #contents></div>',
+            encapsulation: core_1.ViewEncapsulation.None,
         }),
         __param(0, core_1.Inject(core_1.forwardRef(function () { return tabs_1.Tabs; }))), 
-        __metadata('design:paramtypes', [tabs_1.Tabs, app_1.IonicApp, config_1.Config, keyboard_1.Keyboard, core_1.ElementRef, core_1.Compiler, core_1.AppViewManager, core_1.NgZone, core_1.Renderer])
+        __metadata('design:paramtypes', [tabs_1.Tabs, app_1.IonicApp, config_1.Config, keyboard_1.Keyboard, core_1.ElementRef, core_1.Compiler, core_1.AppViewManager, core_1.NgZone, core_1.Renderer, core_1.ChangeDetectorRef])
     ], Tab);
     return Tab;
 }(nav_controller_1.NavController));
 exports.Tab = Tab;
 
-},{"../../config/config":342,"../../util/keyboard":371,"../app/app":277,"../nav/nav-controller":305,"./tabs":332,"angular2/core":20}],332:[function(require,module,exports){
+},{"../../config/config":342,"../../util/keyboard":371,"../../util/util":373,"../app/app":277,"../nav/nav-controller":305,"./tabs":331,"angular2/core":20}],331:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -57522,29 +58831,123 @@ var util_1 = require('../../util/util');
 /**
  * @name Tabs
  * @description
- * _For basic Tabs usage, see the [Tabs section](../../../../components/#tabs)
- * of the Component docs._
+ * Tabs make it easy to navigate between different pages or functional
+ * aspects of an app. The Tabs component, written as `<ion-tabs>`, is
+ * a container of individual [Tab](../Tab/) components.
  *
- * The Tabs component is a container with a TabBar and any number of
- * individual Tab components. On iOS, the TabBar is placed on the bottom of
- * the screen, while on Android it is at the top.
+ * ### Placement
+ *
+ * The position of the tabs relative to the content varies based on
+ * the mode. By default, the tabs are placed at the bottom of the screen
+ * for `ios` mode, and at the top for the `md` and `wp` modes. You can
+ * configure the position using the `tabbarPlacement` property on the
+ * `<ion-tabs>` element, or in your app's [config](../../config/Config/).
+ * See the [Input Properties](#input-properties) below for the available
+ * values of `tabbarPlacement`.
+ *
+ * ### Layout
+ *
+ * The layout for all of the tabs can be defined using the `tabbarLayout`
+ * property. If the individual tab has a title and icon, the icons will
+ * show on top of the title by default. All tabs can be changed by setting
+ * the value of `tabbarLayout` on the `<ion-tabs>` element, or in your
+ * app's [config](../../config/Config/). For example, this is useful if
+ * you want to show tabs with a title only on Android, but show icons
+ * and a title for iOS. See the [Input Properties](#input-properties)
+ * below for the available values of `tabbarLayout`.
+ *
+ * ### Selecting a Tab
+ *
+ * There are different ways you can select a specific tab from the tabs
+ * component. You can use the `selectedIndex` property to set the index
+ * on the `<ion-tabs>` element, or you can call `select()` from the `Tabs`
+ * instance after creation. See [usage](#usage) below for more information.
  *
  * @usage
+ *
+ * You can add a basic tabs template to a `@Page` using the following
+ * template:
+ *
  * ```html
  * <ion-tabs>
- *   <ion-tab [root]="tabRoot"></ion-tab>
+ *   <ion-tab [root]="tab1Root"></ion-tab>
+ *   <ion-tab [root]="tab2Root"></ion-tab>
+ *   <ion-tab [root]="tab3Root"></ion-tab>
  * </ion-tabs>
  * ```
+ *
+ * Where `tab1Root`, `tab2Root`, and `tab3Root` are each a page:
+ *
+ *```ts
+ * @Page({
+ *   templateUrl: 'build/pages/tabs/tabs.html'
+ * })
+ * export class TabsPage {
+ *   // this tells the tabs component which Pages
+ *   // should be each tab's root Page
+ *   tab1Root = Page1;
+ *   tab2Root = Page2;
+ *   tab3Root = Page3;
+ *
+ *   constructor() {
+ *
+ *   }
+ * }
+ *```
+ *
+ * By default, the first tab will be selected upon navigation to the
+ * Tabs page. We can change the selected tab by using `selectedIndex`
+ * on the `<ion-tabs>` element:
+ *
+ * ```html
+ * <ion-tabs selectedIndex="2">
+ *   <ion-tab [root]="tab1Root"></ion-tab>
+ *   <ion-tab [root]="tab2Root"></ion-tab>
+ *   <ion-tab [root]="tab3Root"></ion-tab>
+ * </ion-tabs>
+ * ```
+ *
+ * Since the index starts at `0`, this will select the 3rd tab which has
+ * root set to `tab3Root`. If you wanted to change it dynamically from
+ * your class, you could use [property binding](https://angular.io/docs/ts/latest/guide/template-syntax.html#!#property-binding).
+ *
+ * Alternatively, you can grab the `Tabs` instance and call the `select()`
+ * method. This requires the `<ion-tabs>` element to have an `id`. For
+ * example, set the value of `id` to `myTabs`:
+ *
+ * ```html
+ * <ion-tabs id="myTabs">
+ *   <ion-tab [root]="tab1Root"></ion-tab>
+ *   <ion-tab [root]="tab2Root"></ion-tab>
+ *   <ion-tab [root]="tab3Root"></ion-tab>
+ * </ion-tabs>
+ * ```
+ *
+ * Then in your class you can grab the `Tabs` instance and call `select()`,
+ * passing the index of the tab as the argument. In the following code `app` is
+ * of type [`IonicApp`](../../app/IonicApp/):
+ *
+ *```ts
+ * constructor(app: IonicApp) {
+ *   this.app = app;
+ * }
+ *
+ * onPageDidEnter() {
+ *   let tabs = this.app.getComponent('myTabs');
+ *   tabs.select(2);
+ * }
+ *```
  *
  * @demo /docs/v2/demos/tabs/
  *
  * @see {@link /docs/v2/components#tabs Tabs Component Docs}
  * @see {@link ../Tab Tab API Docs}
+ * @see {@link ../../config/Config Config API Docs}
  *
  */
 var Tabs = (function (_super) {
     __extends(Tabs, _super);
-    function Tabs(viewCtrl, parent, _app, _config, _elementRef, _platform, _renderer) {
+    function Tabs(parent, viewCtrl, _app, _config, _elementRef, _platform, _renderer) {
         var _this = this;
         _super.call(this, _elementRef);
         this._app = _app;
@@ -57564,6 +58967,15 @@ var Tabs = (function (_super) {
         this.id = ++tabIds;
         this.subPages = _config.getBoolean('tabSubPages');
         this._useHighlight = _config.getBoolean('tabbarHighlight');
+        this._sbPadding = _config.getBoolean('statusbarPadding', false);
+        if (parent) {
+            // this Tabs has a parent Nav
+            parent.registerChildNav(this);
+        }
+        else if (this._app) {
+            // this is the root navcontroller for the entire app
+            this._app.setRootNav(this);
+        }
         // Tabs may also be an actual ViewController which was navigated to
         // if Tabs is static and not navigated to within a NavController
         // then skip this and don't treat it as it's own ViewController
@@ -57582,10 +58994,6 @@ var Tabs = (function (_super) {
         var _this = this;
         this._setConfig('tabbarPlacement', 'bottom');
         this._setConfig('tabbarLayout', 'icon-top');
-        this._setConfig('tabbarIcons', 'top');
-        if (this.tabbarIcons) {
-            void 0;
-        }
         if (this._useHighlight) {
             this._platform.onResize(function () {
                 _this._highlight.select(_this.getSelected());
@@ -57602,8 +59010,27 @@ var Tabs = (function (_super) {
      */
     Tabs.prototype.ngAfterContentInit = function () {
         var _this = this;
-        var selectedIndex = this.selectedIndex ? parseInt(this.selectedIndex, 10) : 0;
         var preloadTabs = (util_1.isBlank(this.preloadTabs) ? this._config.getBoolean('preloadTabs') : util_1.isTrueProperty(this.preloadTabs));
+        // get the selected index
+        var selectedIndex = this.selectedIndex ? parseInt(this.selectedIndex, 10) : 0;
+        // ensure the selectedIndex isn't a hidden or disabled tab
+        // also find the first available index incase we need it later
+        var availableIndex = -1;
+        this._tabs.forEach(function (tab, index) {
+            if (tab.enabled && tab.show && availableIndex < 0) {
+                // we know this tab index is safe to show
+                availableIndex = index;
+            }
+            if (index === selectedIndex && (!tab.enabled || !tab.show)) {
+                // the selectedIndex is not safe to show
+                selectedIndex = -1;
+            }
+        });
+        if (selectedIndex < 0) {
+            // the selected index wasn't safe to show
+            // instead use an available index found to be safe to show
+            selectedIndex = availableIndex;
+        }
         this._tabs.forEach(function (tab, index) {
             if (index === selectedIndex) {
                 _this.select(tab);
@@ -57702,6 +59129,12 @@ var Tabs = (function (_super) {
     /**
      * @private
      */
+    Tabs.prototype.getActiveChildNav = function () {
+        return this.getSelected();
+    };
+    /**
+     * @private
+     */
     Tabs.prototype.getIndex = function (tab) {
         return this._tabs.indexOf(tab);
     };
@@ -57761,10 +59194,6 @@ var Tabs = (function (_super) {
     __decorate([
         core_1.Input(), 
         __metadata('design:type', String)
-    ], Tabs.prototype, "tabbarIcons", void 0);
-    __decorate([
-        core_1.Input(), 
-        __metadata('design:type', String)
     ], Tabs.prototype, "tabbarLayout", void 0);
     __decorate([
         core_1.Input(), 
@@ -57785,12 +59214,12 @@ var Tabs = (function (_super) {
     Tabs = __decorate([
         core_1.Component({
             selector: 'ion-tabs',
-            template: '<ion-navbar-section>' +
+            template: '<ion-navbar-section [class.statusbar-padding]="_sbPadding">' +
                 '<template navbar-anchor></template>' +
                 '</ion-navbar-section>' +
                 '<ion-tabbar-section>' +
                 '<tabbar role="tablist">' +
-                '<a *ngFor="#t of _tabs" [tab]="t" class="tab-button" role="tab">' +
+                '<a *ngFor="#t of _tabs" [tab]="t" class="tab-button" [class.tab-disabled]="!t.enabled" [class.tab-hidden]="!t.show" role="tab">' +
                 '<ion-icon *ngIf="t.tabIcon" [name]="t.tabIcon" [isActive]="t.isSelected" class="tab-button-icon"></ion-icon>' +
                 '<span *ngIf="t.tabTitle" class="tab-button-text">{{t.tabTitle}}</span>' +
                 '<ion-badge *ngIf="t.tabBadge" class="tab-badge" [ngClass]="\'badge-\' + t.tabBadgeStyle">{{t.tabBadge}}</ion-badge>' +
@@ -57809,11 +59238,12 @@ var Tabs = (function (_super) {
                 tab_button_1.TabButton,
                 tab_highlight_1.TabHighlight,
                 core_1.forwardRef(function () { return TabNavBarAnchor; })
-            ]
+            ],
+            encapsulation: core_1.ViewEncapsulation.None,
         }),
         __param(0, core_1.Optional()),
         __param(1, core_1.Optional()), 
-        __metadata('design:paramtypes', [view_controller_1.ViewController, nav_controller_1.NavController, app_1.IonicApp, config_1.Config, core_1.ElementRef, platform_1.Platform, core_1.Renderer])
+        __metadata('design:paramtypes', [nav_controller_1.NavController, view_controller_1.ViewController, app_1.IonicApp, config_1.Config, core_1.ElementRef, platform_1.Platform, core_1.Renderer])
     ], Tabs);
     return Tabs;
 }(ion_1.Ion));
@@ -57834,7 +59264,7 @@ var TabNavBarAnchor = (function () {
     return TabNavBarAnchor;
 }());
 
-},{"../../config/config":342,"../../platform/platform":353,"../../util/util":373,"../app/app":277,"../icon/icon":284,"../ion":291,"../nav/nav-controller":305,"../nav/view-controller":313,"./tab-button":329,"./tab-highlight":330,"angular2/common":18,"angular2/core":20}],333:[function(require,module,exports){
+},{"../../config/config":342,"../../platform/platform":353,"../../util/util":373,"../app/app":277,"../icon/icon":284,"../ion":291,"../nav/nav-controller":305,"../nav/view-controller":313,"./tab-button":328,"./tab-highlight":329,"angular2/common":18,"angular2/core":20}],332:[function(require,module,exports){
 "use strict";
 var dom_1 = require('../../util/dom');
 var Activator = (function () {
@@ -57922,7 +59352,7 @@ var Activator = (function () {
 exports.Activator = Activator;
 var CLEAR_STATE_DEFERS = 5;
 
-},{"../../util/dom":367}],334:[function(require,module,exports){
+},{"../../util/dom":367}],333:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -58031,7 +59461,7 @@ var RippleActivator = (function (_super) {
 exports.RippleActivator = RippleActivator;
 var TOUCH_DOWN_ACCEL = 300;
 
-},{"../../util/dom":367,"./activator":333}],335:[function(require,module,exports){
+},{"../../util/dom":367,"./activator":332}],334:[function(require,module,exports){
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -58227,7 +59657,288 @@ var POINTER_TOLERANCE = 4;
 var POINTER_MOVE_UNTIL_CANCEL = 10;
 var DISABLE_NATIVE_CLICK_AMOUNT = 2500;
 
-},{"../../config/config":342,"../../util/dom":367,"../app/app":277,"./activator":333,"./ripple":334,"angular2/core":20}],336:[function(require,module,exports){
+},{"../../config/config":342,"../../util/dom":367,"../app/app":277,"./activator":332,"./ripple":333,"angular2/core":20}],335:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var core_1 = require('angular2/core');
+var common_1 = require('angular2/common');
+var button_1 = require('../button/button');
+var icon_1 = require('../icon/icon');
+var animation_1 = require('../../animations/animation');
+var transition_1 = require('../../transitions/transition');
+var config_1 = require('../../config/config');
+var util_1 = require('../../util/util');
+var nav_params_1 = require('../nav/nav-params');
+var nav_controller_1 = require('../nav/nav-controller');
+var view_controller_1 = require('../nav/view-controller');
+/**
+ * @name Toast
+ * @description
+ * A Toast is a subtle notification that appears at the bottom of the
+ * screen. It can be used to provide feedback about an operation or to
+ * display a system message. The toast appears on top of the app's content,
+ * and can be dismissed by the app to resume user interaction with
+ * the app. It includes a backdrop, which can optionally be clicked to
+ * dismiss the toast.
+ *
+ * ### Creating
+ * All of the toast options should be passed in the first argument of
+ * the create method: `Toast.create(opts)`. The message to display should be
+ * passed in the `message` property. The `showCloseButton` option can be set to
+ * true in order to display a close button on the toast. See the [create](#create)
+ * method below for all available options.
+ *
+ * ### Dismissing
+ * The toast can be dismissed automatically after a specific amount of time
+ * by passing the number of milliseconds to display it in the `duration` of
+ * the toast options. It can also be dismissed by clicking on the backdrop,
+ * unless `enableBackdropDismiss` is set to `false` upon creation. If `showCloseButton`
+ * is set to true, then the close button will dismiss the toast. To dismiss
+ * the toast after creation, call the `dismiss()` method on the Toast instance.
+ * The `onDismiss` function can be called to perform an action after the toast
+ * is dismissed.
+ *
+ * @usage
+ * ```ts
+ * constructor(nav: NavController) {
+ *   this.nav = nav;
+ * }
+ *
+ * presentToast() {
+ *   let toast = Toast.create({
+ *     message: 'User was added successfully',
+ *     duration: 3000
+ *   });
+ *
+ *   toast.onDismiss(() => {
+ *     console.log('Dismissed toast');
+ *   });
+ *
+ *   this.nav.present(toast);
+ * }
+ * ```
+ *
+ * @demo /docs/v2/demos/toast/
+ */
+var Toast = (function (_super) {
+    __extends(Toast, _super);
+    function Toast(opts) {
+        if (opts === void 0) { opts = {}; }
+        opts.enableBackdropDismiss = util_1.isPresent(opts.enableBackdropDismiss) ? !!opts.enableBackdropDismiss : true;
+        opts.dismissOnPageChange = util_1.isPresent(opts.dismissOnPageChange) ? !!opts.dismissOnPageChange : false;
+        _super.call(this, ToastCmp, opts);
+        this.viewType = 'toast';
+        this.isOverlay = true;
+        this.usePortal = true;
+        // by default, toasts should not fire lifecycle events of other views
+        // for example, when an toast enters, the current active view should
+        // not fire its lifecycle events because it's not conceptually leaving
+        this.fireOtherLifecycles = false;
+    }
+    /**
+    * @private
+    */
+    Toast.prototype.getTransitionName = function (direction) {
+        var key = 'toast' + (direction === 'back' ? 'Leave' : 'Enter');
+        return this._nav && this._nav.config.get(key);
+    };
+    /**
+     * @param {string} message  Toast message content
+     */
+    Toast.prototype.setMessage = function (message) {
+        this.data.message = message;
+    };
+    /**
+     *
+     *  Toast options
+     *
+     *  | Property              | Type      | Default         | Description                                                                                                   |
+     *  |-----------------------|-----------|-----------------|---------------------------------------------------------------------------------------------------------------|
+     *  | message               | `string`  | -               | The message for the toast. Long strings will wrap and the toast container will expand.                        |
+     *  | duration              | `number`  | -               | How many milliseconds to wait before hiding the toast. By default, it will show until `dismiss()` is called.  |
+     *  | cssClass              | `string`  | -               | Any additional class for custom styles.                                                                       |
+     *  | showCloseButton       | `boolean` | false           | Whether or not to show a button to close the toast.                                                           |
+     *  | closeButtonText       | `string`  | "Close"         | Text to display in the close button.                                                                          |
+     *  | enableBackdropDismiss | `boolean` | true            | Whether the toast should be dismissed by tapping the backdrop.                                                |
+     *  | dismissOnPageChange   | `boolean` | false           | Whether to dismiss the toast when navigating to a new page.                                                   |
+     *
+     * @param {object} opts Toast options. See the above table for available options.
+     */
+    Toast.create = function (opts) {
+        if (opts === void 0) { opts = {}; }
+        return new Toast(opts);
+    };
+    return Toast;
+}(view_controller_1.ViewController));
+exports.Toast = Toast;
+/**
+* @private
+*/
+var ToastCmp = (function () {
+    function ToastCmp(_nav, _viewCtrl, _config, _elementRef, params, renderer) {
+        this._nav = _nav;
+        this._viewCtrl = _viewCtrl;
+        this._config = _config;
+        this._elementRef = _elementRef;
+        this.dismissTimeout = undefined;
+        this.d = params.data;
+        this.created = Date.now();
+        if (this.d.cssClass) {
+            renderer.setElementClass(_elementRef.nativeElement, this.d.cssClass, true);
+        }
+        this.id = (++toastIds);
+        if (this.d.message) {
+            this.hdrId = 'toast-hdr-' + this.id;
+        }
+    }
+    ToastCmp.prototype.onPageDidEnter = function () {
+        var _this = this;
+        var activeElement = document.activeElement;
+        if (activeElement) {
+            activeElement.blur();
+        }
+        var focusableEle = this._elementRef.nativeElement.querySelector('button');
+        if (focusableEle) {
+            focusableEle.focus();
+        }
+        // if there's a `duration` set, automatically dismiss.
+        if (this.d.duration) {
+            this.dismissTimeout =
+                setTimeout(function () {
+                    _this.dismiss('backdrop');
+                }, this.d.duration);
+        }
+    };
+    ToastCmp.prototype.bdClick = function () {
+        if (this.isEnabled() && this.d.enableBackdropDismiss) {
+            this.dismiss('backdrop');
+        }
+    };
+    ToastCmp.prototype.cbClick = function () {
+        if (this.isEnabled()) {
+            this.dismiss('close');
+        }
+    };
+    ToastCmp.prototype.dismiss = function (role) {
+        clearTimeout(this.dismissTimeout);
+        this.dismissTimeout = undefined;
+        return this._viewCtrl.dismiss(null, role);
+    };
+    ToastCmp.prototype.isEnabled = function () {
+        var tm = this._config.getNumber('overlayCreatedDiff', 750);
+        return (this.created + tm < Date.now());
+    };
+    ToastCmp = __decorate([
+        core_1.Component({
+            selector: 'ion-toast',
+            template: "\n    <div (click)=\"bdClick()\" tappable disable-activated class=\"backdrop\" role=\"presentation\"></div>\n    <div class=\"toast-wrapper\">\n      <div class=\"toast-container\">\n        <div class=\"toast-message\" id=\"{{hdrId}}\" *ngIf=\"d.message\">{{d.message}}</div>\n        <button clear class=\"toast-button\" *ngIf=\"d.showCloseButton\" (click)=\"cbClick()\">\n          {{ d.closeButtonText || 'Close' }}\n          <ion-button-effect></ion-button-effect>\n         </button>\n      </div>\n    </div>\n  ",
+            host: {
+                'role': 'dialog',
+                '[attr.aria-labelledby]': 'hdrId',
+                '[attr.aria-describedby]': 'descId'
+            },
+            directives: [common_1.NgIf, icon_1.Icon, button_1.Button]
+        }), 
+        __metadata('design:paramtypes', [nav_controller_1.NavController, view_controller_1.ViewController, config_1.Config, core_1.ElementRef, nav_params_1.NavParams, core_1.Renderer])
+    ], ToastCmp);
+    return ToastCmp;
+}());
+var ToastSlideIn = (function (_super) {
+    __extends(ToastSlideIn, _super);
+    function ToastSlideIn(enteringView, leavingView, opts) {
+        _super.call(this, opts);
+        var ele = enteringView.pageRef().nativeElement;
+        var wrapper = new animation_1.Animation(ele.querySelector('.toast-wrapper'));
+        wrapper.fromTo('translateY', '120%', '0%');
+        this.easing('cubic-bezier(.36,.66,.04,1)').duration(400).add(wrapper);
+    }
+    return ToastSlideIn;
+}(transition_1.Transition));
+var ToastSlideOut = (function (_super) {
+    __extends(ToastSlideOut, _super);
+    function ToastSlideOut(enteringView, leavingView, opts) {
+        _super.call(this, opts);
+        var ele = leavingView.pageRef().nativeElement;
+        var wrapper = new animation_1.Animation(ele.querySelector('.toast-wrapper'));
+        wrapper.fromTo('translateY', '0%', '120%');
+        this.easing('cubic-bezier(.36,.66,.04,1)').duration(300).add(wrapper);
+    }
+    return ToastSlideOut;
+}(transition_1.Transition));
+var ToastMdSlideIn = (function (_super) {
+    __extends(ToastMdSlideIn, _super);
+    function ToastMdSlideIn(enteringView, leavingView, opts) {
+        _super.call(this, opts);
+        var ele = enteringView.pageRef().nativeElement;
+        var backdrop = new animation_1.Animation(ele.querySelector('.backdrop'));
+        var wrapper = new animation_1.Animation(ele.querySelector('.toast-wrapper'));
+        backdrop.fromTo('opacity', 0, 0);
+        wrapper.fromTo('translateY', '120%', '0%');
+        this.easing('cubic-bezier(.36,.66,.04,1)').duration(400).add(backdrop).add(wrapper);
+    }
+    return ToastMdSlideIn;
+}(transition_1.Transition));
+var ToastMdSlideOut = (function (_super) {
+    __extends(ToastMdSlideOut, _super);
+    function ToastMdSlideOut(enteringView, leavingView, opts) {
+        _super.call(this, opts);
+        var ele = leavingView.pageRef().nativeElement;
+        var wrapper = new animation_1.Animation(ele.querySelector('.toast-wrapper'));
+        var backdrop = new animation_1.Animation(ele.querySelector('.backdrop'));
+        wrapper.fromTo('translateY', '0%', '120%');
+        backdrop.fromTo('opacity', 0, 0);
+        this.easing('cubic-bezier(.36,.66,.04,1)').duration(450).add(backdrop).add(wrapper);
+    }
+    return ToastMdSlideOut;
+}(transition_1.Transition));
+var ToastWpPopIn = (function (_super) {
+    __extends(ToastWpPopIn, _super);
+    function ToastWpPopIn(enteringView, leavingView, opts) {
+        _super.call(this, opts);
+        var ele = enteringView.pageRef().nativeElement;
+        var backdrop = new animation_1.Animation(ele.querySelector('.backdrop'));
+        var wrapper = new animation_1.Animation(ele.querySelector('.toast-wrapper'));
+        wrapper.fromTo('opacity', '0.01', '1').fromTo('scale', '1.3', '1');
+        backdrop.fromTo('opacity', 0, 0);
+        this.easing('cubic-bezier(0,0 0.05,1)').duration(200).add(backdrop).add(wrapper);
+    }
+    return ToastWpPopIn;
+}(transition_1.Transition));
+var ToastWpPopOut = (function (_super) {
+    __extends(ToastWpPopOut, _super);
+    function ToastWpPopOut(enteringView, leavingView, opts) {
+        _super.call(this, opts);
+        var ele = leavingView.pageRef().nativeElement;
+        var backdrop = new animation_1.Animation(ele.querySelector('.backdrop'));
+        var wrapper = new animation_1.Animation(ele.querySelector('.toast-wrapper'));
+        wrapper.fromTo('opacity', '1', '0').fromTo('scale', '1', '1.3');
+        backdrop.fromTo('opacity', 0, 0);
+        this.easing('ease-out').duration(150).add(backdrop).add(wrapper);
+    }
+    return ToastWpPopOut;
+}(transition_1.Transition));
+transition_1.Transition.register('toast-slide-in', ToastSlideIn);
+transition_1.Transition.register('toast-slide-out', ToastSlideOut);
+transition_1.Transition.register('toast-md-slide-in', ToastMdSlideIn);
+transition_1.Transition.register('toast-md-slide-out', ToastMdSlideOut);
+transition_1.Transition.register('toast-wp-slide-out', ToastWpPopOut);
+transition_1.Transition.register('toast-wp-slide-in', ToastWpPopIn);
+var toastIds = -1;
+
+},{"../../animations/animation":272,"../../config/config":342,"../../transitions/transition":362,"../../util/util":373,"../button/button":281,"../icon/icon":284,"../nav/nav-controller":305,"../nav/nav-params":306,"../nav/view-controller":313,"angular2/common":18,"angular2/core":20}],336:[function(require,module,exports){
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -58469,6 +60180,8 @@ var Toggle = (function () {
                 '<div class="toggle-inner"></div>' +
                 '</div>' +
                 '<button role="checkbox" ' +
+                'type="button" ' +
+                'category="item-cover" ' +
                 '[id]="id" ' +
                 '[attr.aria-checked]="_checked" ' +
                 '[attr.aria-labelledby]="_labelId" ' +
@@ -58485,7 +60198,8 @@ var Toggle = (function () {
             host: {
                 '[class.toggle-disabled]': '_disabled'
             },
-            providers: [TOGGLE_VALUE_ACCESSOR]
+            providers: [TOGGLE_VALUE_ACCESSOR],
+            encapsulation: core_1.ViewEncapsulation.None,
         }),
         __param(3, core_1.Optional()), 
         __metadata('design:paramtypes', [form_1.Form, core_1.ElementRef, core_1.Renderer, item_1.Item])
@@ -58514,9 +60228,10 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 var core_1 = require('angular2/core');
+var button_1 = require('../button/button');
+var config_1 = require('../../config/config');
 var ion_1 = require('../ion');
 var navbar_1 = require('../navbar/navbar');
-var button_1 = require('../button/button');
 /**
  * @private
  */
@@ -58604,8 +60319,9 @@ exports.ToolbarBase = ToolbarBase;
  */
 var Toolbar = (function (_super) {
     __extends(Toolbar, _super);
-    function Toolbar(elementRef) {
+    function Toolbar(elementRef, config) {
         _super.call(this, elementRef);
+        this._sbPadding = config.getBoolean('statusbarPadding', false);
     }
     Toolbar = __decorate([
         core_1.Component({
@@ -58618,10 +60334,12 @@ var Toolbar = (function (_super) {
                 '<ng-content></ng-content>' +
                 '</div>',
             host: {
-                'class': 'toolbar'
-            }
+                'class': 'toolbar',
+                '[class.statusbar-padding]': '_sbPadding'
+            },
+            changeDetection: core_1.ChangeDetectionStrategy.OnPush,
         }), 
-        __metadata('design:paramtypes', [core_1.ElementRef])
+        __metadata('design:paramtypes', [core_1.ElementRef, config_1.Config])
     ], Toolbar);
     return Toolbar;
 }(ToolbarBase));
@@ -58664,7 +60382,9 @@ var ToolbarTitle = (function (_super) {
             selector: 'ion-title',
             template: '<div class="toolbar-title">' +
                 '<ng-content></ng-content>' +
-                '</div>'
+                '</div>',
+            changeDetection: core_1.ChangeDetectionStrategy.OnPush,
+            encapsulation: core_1.ViewEncapsulation.None,
         }),
         __param(1, core_1.Optional()),
         __param(2, core_1.Optional()),
@@ -58724,7 +60444,7 @@ var ToolbarItem = (function () {
 }());
 exports.ToolbarItem = ToolbarItem;
 
-},{"../button/button":281,"../ion":291,"../navbar/navbar":314,"angular2/core":20}],338:[function(require,module,exports){
+},{"../../config/config":342,"../button/button":281,"../ion":291,"../navbar/navbar":314,"angular2/core":20}],338:[function(require,module,exports){
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -58849,7 +60569,7 @@ var img_1 = require('../img/img');
  *
  *   <ion-item-divider *virtualHeader="#header">
  *     Header: {{ header }}
- *   </ion-item>
+ *   </ion-item-divider>
  *
  *   <ion-item *virtualItem="#item">
  *     Item: {{ item }}
@@ -59108,6 +60828,7 @@ var VirtualScroll = (function () {
             if (!this._itmTmp) {
                 throw 'virtualItem required within virtualScroll';
             }
+            this._init = true;
             this.update(true);
             this._platform.onResize(function () {
                 void 0;
@@ -59161,8 +60882,6 @@ var VirtualScroll = (function () {
         }
         // ******** DOM READ ****************
         readDimensions(function () {
-            // we were able to read good DOM dimension data, let's do this!
-            self._init = true;
             virtual_util_1.processRecords(self._data.renderHeight, self._records, self._cells, self._hdrFn, self._ftrFn, self._data);
             // ******** DOM WRITE ****************
             self.renderVirtual();
@@ -59939,15 +61658,13 @@ function ionicProviders(args) {
     platform.setUrl(window.location.href);
     platform.setUserAgent(window.navigator.userAgent);
     platform.setNavigatorPlatform(window.navigator.platform);
-    platform.load();
+    platform.load(config);
     config.setPlatform(platform);
     var clickBlock = new click_block_1.ClickBlock();
     var events = new events_1.Events();
     var featureDetect = new feature_detect_1.FeatureDetect();
     setupDom(window, document, config, platform, clickBlock, featureDetect);
     bindEvents(window, document, platform, events);
-    // prepare the ready promise to fire....when ready
-    platform.prepareReady(config);
     return [
         app_1.IonicApp,
         core_1.provide(click_block_1.ClickBlock, { useValue: clickBlock }),
@@ -59967,6 +61684,19 @@ function ionicProviders(args) {
     ];
 }
 exports.ionicProviders = ionicProviders;
+/**
+ * @private
+ */
+function postBootstrap(appRef, prodMode) {
+    appRef.injector.get(tap_click_1.TapClick);
+    var app = appRef.injector.get(app_1.IonicApp);
+    var platform = appRef.injector.get(platform_1.Platform);
+    platform.setZone(appRef.injector.get(core_1.NgZone));
+    platform.prepareReady();
+    app.setProd(prodMode);
+    app.setAppInjector(appRef.injector);
+}
+exports.postBootstrap = postBootstrap;
 function setupDom(window, document, config, platform, clickBlock, featureDetect) {
     var bodyEle = document.body;
     var mode = config.get('mode');
@@ -60043,7 +61773,7 @@ function bindEvents(window, document, platform, events) {
     }, 2000);
 }
 
-},{"../components/app/app":277,"../components/menu/menu-controller":299,"../components/nav/nav-registry":309,"../components/tap-click/tap-click":335,"../platform/platform":353,"../translation/translate":363,"../util/click-block":366,"../util/dom":367,"../util/events":368,"../util/feature-detect":369,"../util/form":370,"../util/keyboard":371,"../util/scroll-view":372,"./config":342,"angular2/core":20,"angular2/http":21,"angular2/router":25}],342:[function(require,module,exports){
+},{"../components/app/app":277,"../components/menu/menu-controller":299,"../components/nav/nav-registry":309,"../components/tap-click/tap-click":334,"../platform/platform":353,"../translation/translate":363,"../util/click-block":366,"../util/dom":367,"../util/events":368,"../util/feature-detect":369,"../util/form":370,"../util/keyboard":371,"../util/scroll-view":372,"./config":342,"angular2/core":20,"angular2/http":21,"angular2/router":25}],342:[function(require,module,exports){
 /**
 * @ngdoc service
 * @name Config
@@ -60374,7 +62104,6 @@ var modeConfigs = {};
 },{"../platform/platform":353,"../util/util":373}],343:[function(require,module,exports){
 "use strict";
 var common_1 = require('angular2/common');
-var overlay_1 = require('../components/overlay/overlay');
 var menu_1 = require('../components/menu/menu');
 var menu_toggle_1 = require('../components/menu/menu-toggle');
 var menu_close_1 = require('../components/menu/menu-close');
@@ -60417,86 +62146,109 @@ var id_1 = require('../components/app/id');
 var show_hide_when_1 = require('../components/show-hide-when/show-hide-when');
 /**
  * @name IONIC_DIRECTIVES
- * @private
  * @description
- * The core Ionic directives as well as Angular's CORE_DIRECTIVES and
- * FORM_DIRECTIVES.  Automatically available in every [@Page](../Page/) template.
+ * The core Ionic directives as well as Angular's `CORE_DIRECTIVES` and `FORM_DIRECTIVES` are
+ * avaialbe automatically when you bootstrap your app with the `@App` decorator. This means
+ * if you are using custom components you no longer need to import `IONIC_DIRECTIVES` as they
+ * are part of the `@App`s default directives.
  *
- * **Angular**
+ * If you would like to **not** have them included by default, you would need to bootstrap
+ * the app differently.
+ *
+ * Instead of starting your app like so:
+ *
+ * ```typescript
+ * @App({
+ *  template: "<ion-nav></ion-nav>"
+ * })
+ *
+ * export class MyApp{
+ *
+ * }
+ * ```
+ *
+ * We would use Angulars default way of bootstrap an app, import `IONIC_DIRECTIVES` and `ionicProviders`, then
+ * declare `ionicProviders` as a dependencey.
+ *
+ * ```typescript
+ *  import {IONIC_DIRECTIVES, ionicProviders} from 'ionic-angular';
+ *  import {bootstrap} from 'angular2/platform/browser';
+ *
+ *  @Component({
+ *      //default selector, and theme.
+ *      directives: [IONIC_DIRECTIVES]
+ *  })
+ *  class App {}
+ *
+ *  bootstrap(App,ionicProviders())
+ * ```
+ *
+ *
+ *
+ * #### Angular
  * - CORE_DIRECTIVES
  * - FORM_DIRECTIVES
  *
- * **Content**
- * -  Menu
- * -  MenuToggle
- * -  MenuClose
- *
- * -  Button
- * -  Blur
- * -  Content
- * -  Scroll
- * -  InfiniteScroll
- * -  InfiniteScrollContent
- * -  Refresher
- * -  RefresherContent
- *
- * **Lists**
- * -  List
- * -  ListHeader
- * -  Item
- * -  ItemSliding
- * -  VirtualScroll
- * -  VirtualFor
- *
- * **Slides**
- * -  Slides
- * -  Slide
- * -  SlideLazy
- *
- * **Tabs**
- * -  Tabs
- * -  Tab
- *
- * **Toolbar**
- * -  Toolbar
- * -  ToolbarTitle
- * -  ToolbarItem
- *
- * **Media**
- * -  Icon
- * -  Spinner
- *
- * **Forms**
- * -  Searchbar
- * -  Segment
- * -  SegmentButton
- * -  Checkbox
- * -  RadioGroup
- * -  RadioButton
- * -  Select
- * -  Option
- * -  Toggle
- * -  TextInput
- * -  Label
- *
- * **Nav**
- * -  Nav
- * -  NavbarTemplate
- * -  Navbar
- * -  NavPush
- * -  NavPop
- * -  NavRouter
- * -  IdRef
- *
- * -  ShowWhen
- * -  HideWhen
+ * #### Ionic
+ * - Menu
+ * - MenuToggle
+ * - MenuClose
+ * - Badge
+ * - Button
+ * - Blur
+ * - Content
+ * - Scroll
+ * - InfiniteScroll
+ * - InfiniteScrollContent
+ * - Refresher
+ * - RefresherContent
+ * - Img
+ * - List
+ * - ListHeader
+ * - Item
+ * - ItemSliding
+ * - VirtualScroll
+ * - VirtualItem
+ * - VirtualHeader
+ * - VirtualFooter
+ * - Slides
+ * - Slide
+ * - SlideLazy
+ * - Tabs
+ * - Tab
+ * - Toolbar
+ * - ToolbarTitle
+ * - ToolbarItem
+ * - Icon
+ * - Spinner
+ * - Searchbar
+ * - SearchbarInput
+ * - Segment
+ * - SegmentButton
+ * - Checkbox
+ * - RadioGroup
+ * - RadioButton
+ * - Select
+ * - Option
+ * - Toggle
+ * - TextArea
+ * - TextInput
+ * - Label
+ * - Nav
+ * - NavbarTemplate
+ * - Navbar
+ * - NavPush
+ * - NavPop
+ * - NavRouter
+ * - IdRef
+ * - ShowWhen
+ * - HideWhen
  */
 exports.IONIC_DIRECTIVES = [
     // Angular
     common_1.CORE_DIRECTIVES,
     common_1.FORM_DIRECTIVES,
     // Content
-    overlay_1.OverlayNav,
     menu_1.Menu,
     menu_toggle_1.MenuToggle,
     menu_close_1.MenuClose,
@@ -60559,7 +62311,7 @@ exports.IONIC_DIRECTIVES = [
     show_hide_when_1.HideWhen
 ];
 
-},{"../components/app/id":278,"../components/badge/badge":279,"../components/blur/blur":280,"../components/button/button":281,"../components/checkbox/checkbox":282,"../components/content/content":283,"../components/icon/icon":284,"../components/img/img":285,"../components/infinite-scroll/infinite-scroll":287,"../components/infinite-scroll/infinite-scroll-content":286,"../components/input/input":289,"../components/item/item":294,"../components/item/item-sliding":293,"../components/label/label":295,"../components/list/list":296,"../components/menu/menu":303,"../components/menu/menu-close":298,"../components/menu/menu-toggle":301,"../components/nav/nav":311,"../components/nav/nav-push":308,"../components/nav/nav-router":310,"../components/navbar/navbar":314,"../components/option/option":315,"../components/overlay/overlay":316,"../components/radio/radio-button":317,"../components/radio/radio-group":318,"../components/refresher/refresher":320,"../components/refresher/refresher-content":319,"../components/scroll/scroll":321,"../components/searchbar/searchbar":322,"../components/segment/segment":323,"../components/select/select":324,"../components/show-hide-when/show-hide-when":325,"../components/slides/slides":326,"../components/spinner/spinner":328,"../components/tabs/tab":331,"../components/tabs/tabs":332,"../components/toggle/toggle":336,"../components/toolbar/toolbar":337,"../components/virtual-scroll/virtual-item":338,"../components/virtual-scroll/virtual-scroll":339,"angular2/common":18}],344:[function(require,module,exports){
+},{"../components/app/id":278,"../components/badge/badge":279,"../components/blur/blur":280,"../components/button/button":281,"../components/checkbox/checkbox":282,"../components/content/content":283,"../components/icon/icon":284,"../components/img/img":285,"../components/infinite-scroll/infinite-scroll":287,"../components/infinite-scroll/infinite-scroll-content":286,"../components/input/input":289,"../components/item/item":294,"../components/item/item-sliding":293,"../components/label/label":295,"../components/list/list":296,"../components/menu/menu":303,"../components/menu/menu-close":298,"../components/menu/menu-toggle":301,"../components/nav/nav":311,"../components/nav/nav-push":308,"../components/nav/nav-router":310,"../components/navbar/navbar":314,"../components/option/option":315,"../components/radio/radio-button":316,"../components/radio/radio-group":317,"../components/refresher/refresher":319,"../components/refresher/refresher-content":318,"../components/scroll/scroll":320,"../components/searchbar/searchbar":321,"../components/segment/segment":322,"../components/select/select":323,"../components/show-hide-when/show-hide-when":324,"../components/slides/slides":325,"../components/spinner/spinner":327,"../components/tabs/tab":330,"../components/tabs/tabs":331,"../components/toggle/toggle":336,"../components/toolbar/toolbar":337,"../components/virtual-scroll/virtual-item":338,"../components/virtual-scroll/virtual-scroll":339,"angular2/common":18}],344:[function(require,module,exports){
 "use strict";
 var config_1 = require('./config');
 // iOS Mode Settings
@@ -60567,6 +62319,8 @@ config_1.Config.setModeConfig('ios', {
     activator: 'highlight',
     actionSheetEnter: 'action-sheet-slide-in',
     actionSheetLeave: 'action-sheet-slide-out',
+    toastEnter: 'toast-slide-in',
+    toastLeave: 'toast-slide-out',
     alertEnter: 'alert-pop-in',
     alertLeave: 'alert-pop-out',
     backButtonText: 'Back',
@@ -60587,6 +62341,8 @@ config_1.Config.setModeConfig('md', {
     activator: 'ripple',
     actionSheetEnter: 'action-sheet-md-slide-in',
     actionSheetLeave: 'action-sheet-md-slide-out',
+    toastEnter: 'toast-md-slide-in',
+    toastLeave: 'toast-md-slide-out',
     alertEnter: 'alert-md-pop-in',
     alertLeave: 'alert-md-pop-out',
     backButtonText: '',
@@ -60609,6 +62365,8 @@ config_1.Config.setModeConfig('wp', {
     activator: 'highlight',
     actionSheetEnter: 'action-sheet-wp-slide-in',
     actionSheetLeave: 'action-sheet-wp-slide-out',
+    toastEnter: 'toast-wp-slide-in',
+    toastLeave: 'toast-wp-slide-out',
     alertEnter: 'alert-wp-pop-in',
     alertLeave: 'alert-wp-pop-out',
     backButtonText: '',
@@ -60630,8 +62388,6 @@ config_1.Config.setModeConfig('wp', {
 "use strict";
 var core_1 = require('angular2/core');
 var browser_1 = require('angular2/platform/browser');
-var app_1 = require('../components/app/app');
-var tap_click_1 = require('../components/tap-click/tap-click');
 var bootstrap_1 = require('../config/bootstrap');
 var directives_1 = require('../config/directives');
 var _reflect = Reflect;
@@ -60642,7 +62398,11 @@ var _reflect = Reflect;
 * number of arguments that act as global config variables for the app.
 * `@App` is similar to Angular's `@Component` in which it can accept a `template`
 * property that has an inline template, or a `templateUrl` property that points
-* to an external html template.
+* to an external html template. The `@App` decorator runs the Angular bootstrapping
+* process automatically, however you can bootstrap your app separately if you prefer.
+* Additionally, `@App` will automatically bootstrap with all of Ionic's
+* core components, meaning they won't all have to be individually imported and added
+* to each component's `directives` property.
 *
 * @usage
 * ```ts
@@ -60671,8 +62431,6 @@ function App(args) {
         // get current annotations
         var annotations = _reflect.getMetadata('annotations', cls) || [];
         args.selector = 'ion-app';
-        // auto add Ionic directives
-        args.directives = args.directives ? args.directives.concat(directives_1.IONIC_DIRECTIVES) : directives_1.IONIC_DIRECTIVES;
         // if no template was provided, default so it has a root <ion-nav>
         if (!args.templateUrl && !args.template) {
             args.template = '<ion-nav></ion-nav>';
@@ -60683,35 +62441,39 @@ function App(args) {
         _reflect.defineMetadata('annotations', annotations, cls);
         // define array of bootstrap providers
         var providers = bootstrap_1.ionicProviders(args).concat(args.providers || []);
+        // auto add Ionic directives
+        var directives = args.directives ? args.directives.concat(directives_1.IONIC_DIRECTIVES) : directives_1.IONIC_DIRECTIVES;
+        // automatically provide all of Ionic's directives to every component
+        providers.push(core_1.provide(core_1.PLATFORM_DIRECTIVES, { useValue: [directives], multi: true }));
         if (args.prodMode) {
             core_1.enableProdMode();
         }
         browser_1.bootstrap(cls, providers).then(function (appRef) {
-            appRef.injector.get(tap_click_1.TapClick);
-            var app = appRef.injector.get(app_1.IonicApp);
-            app.setProd(args.prodMode);
+            bootstrap_1.postBootstrap(appRef, args.prodMode);
         });
         return cls;
     };
 }
 exports.App = App;
 
-},{"../components/app/app":277,"../components/tap-click/tap-click":335,"../config/bootstrap":341,"../config/directives":343,"angular2/core":20,"angular2/platform/browser":23}],346:[function(require,module,exports){
+},{"../config/bootstrap":341,"../config/directives":343,"angular2/core":20,"angular2/platform/browser":23}],346:[function(require,module,exports){
 "use strict";
 var core_1 = require('angular2/core');
-var directives_1 = require('../config/directives');
 var _reflect = Reflect;
 /**
  * @name Page
  * @description
  *
  * The Page decorator indicates that the decorated class is an Ionic
- * navigation component, meaning it can be navigated to using a NavController.
+ * navigation component, meaning it can be navigated to using a
+ * [NavController](../../nav/NavController).
  *
- * Pages have all `IONIC_DIRECTIVES`, which include all Ionic components and directives,
- * as well as Angular's [CORE_DIRECTIVES](https://angular.io/docs/js/latest/api/core/CORE_DIRECTIVES-const.html)
- * and [FORM_DIRECTIVES](https://angular.io/docs/js/latest/api/core/FORM_DIRECTIVES-const.html),
- * already provided to them, so you only need to supply custom components and directives to your pages:
+ * Since the app has already been bootstrapped with Ionic's core directives, it
+ * is not needed to include `IONIC_DIRECTIVES` in the directives property. Additionally,
+ * Angular's [CORE_DIRECTIVES](https://angular.io/docs/ts/latest/api/common/CORE_DIRECTIVES-let.html)
+ * and [FORM_DIRECTIVES](https://angular.io/docs/ts/latest/api/common/FORM_DIRECTIVES-let.html),
+ * are also already provided, so you only need to supply any custom components and directives
+ * to your pages:
  *
  * @usage
  *
@@ -60726,53 +62488,15 @@ var _reflect = Reflect;
  * class MyPage {}
  * ```
  *
- * Here [Content](../../../components/content/Content/) will load because
- * it is in `IONIC_DIRECTIVES`, so there is no need to add a `directives` array.
- *
- *
- * Say you built a custom component that uses the already existing Ionic component.
- * In this case, you would add `IONIC_DIRECTIVES` to your directives array.
- *
- * ```ts
- * import {IONIC_DIRECTIVES} from 'ionic-angular';
- * @Component({
- *   selector: 'my-component'
- *   template: `<div class="my-style">
- *   						  <ion-checkbox></ion-checkbox>
- *   						</div>`,
- *   directives: [IONIC_DIRECTIVES]
- * })
- * class MyCustomCheckbox {}
- *```
-
- * Alternatively, you could:
- *
- * ```ts
- * import {Checkbox, Icon} from 'ionic-angular'
- * ```
- *
- * along with any other components and add them individually:
- *
- * ```
- * @Component({
- *   ...
- *   directives: [Checkbox, Icon]
- * })
- * ```
- *
- * However, using IONIC_DIRECTIVES will always *Just Work* with no
- * performance overhead, so there is really no reason to not always use it.
- *
- * Pages have their content automatically wrapped in `<ion-view>`, so although
+ * Pages have their content automatically wrapped in `<ion-page>`, so although
  * you may see these tags if you inspect your markup, you don't need to include
  * them in your templates.
  *
- * For more information on how pages are created, see the [NavController API reference](../../components/nav/NavController/#creating_pages)
+ * For more information on how pages are created, see the [NavController API Docs](../../components/nav/NavController/#creating_pages)
  */
 function Page(config) {
     return function (cls) {
         config.selector = 'ion-page';
-        config.directives = config.directives ? config.directives.concat(directives_1.IONIC_DIRECTIVES) : directives_1.IONIC_DIRECTIVES;
         config.host = config.host || {};
         config.host['[hidden]'] = '_hidden';
         config.host['[class.tab-subpage]'] = '_tabSubPage';
@@ -60784,7 +62508,7 @@ function Page(config) {
 }
 exports.Page = Page;
 
-},{"../config/directives":343,"angular2/core":20}],347:[function(require,module,exports){
+},{"angular2/core":20}],347:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -63205,15 +64929,19 @@ require('./transitions/transition-wp');
 
 },{"./animations/animation":272,"./animations/builtins":273,"./components":274,"./config/bootstrap":341,"./config/config":342,"./config/directives":343,"./config/modes":344,"./decorators/app":345,"./decorators/page":346,"./platform/platform":353,"./platform/registry":354,"./platform/storage":355,"./transitions/transition":362,"./transitions/transition-ios":359,"./transitions/transition-md":360,"./transitions/transition-wp":361,"./translation/translate":363,"./translation/translate_pipe":364,"./util/click-block":366,"./util/events":368,"./util/form":370,"./util/keyboard":371}],353:[function(require,module,exports){
 "use strict";
+var core_1 = require('angular2/core');
 var util_1 = require('../util/util');
 var dom_1 = require('../util/dom');
 /**
  * @name Platform
  * @description
- * Platform returns the availble information about your current platform.
- * Platforms in Ionic 2 are much more complex then in V1, returns not just a single platform,
- * but a hierarchy of information, such as a devices OS, phone vs tablet, or mobile vs browser.
- * With this information you can completely custimize your app to fit any device and platform.
+ * The Platform service can be used to get information about your current device.
+ * You can get all of the platforms associated with the device using the [platforms](#platforms)
+ * method, including whether the app is being viewed from a tablet, if it's
+ * on a mobile device or browser, and the exact platform (ios, android, etc).
+ * You can also get the orientation of the device, if it uses right-to-left
+ * language direction, and much much more. With this information you can completely
+ * customize your app to fit any device.
  *
  * @usage
  * ```ts
@@ -63221,9 +64949,9 @@ var dom_1 = require('../util/dom');
  *
  * @Page({...})
  * export MyPage {
- *    constructor(platform: Platform){
- *      this.platform = platform;
- *    }
+ *   constructor(platform: Platform) {
+ *     this.platform = platform;
+ *   }
  * }
  * ```
  * @demo /docs/v2/demos/platform/
@@ -63234,13 +64962,32 @@ var Platform = (function () {
         if (platforms === void 0) { platforms = []; }
         this._versions = {};
         this._onResizes = [];
+        // Events meant to be triggered by the engine
+        // **********************************************
+        /**
+        * @private
+        */
+        this.backButton = new core_1.EventEmitter();
+        /**
+        * @private
+        */
+        this.pause = new core_1.EventEmitter();
+        /**
+        * @private
+        */
+        this.resume = new core_1.EventEmitter();
         this._platforms = platforms;
         this._readyPromise = new Promise(function (res) { _this._readyResolve = res; });
     }
+    /**
+     * @private
+     */
+    Platform.prototype.setZone = function (zone) {
+        this._zone = zone;
+    };
     // Methods
     // **********************************************
     /**
-     * @param {string} platformName
      * @returns {boolean} returns true/false based on platform.
      * @description
      * Depending on the platform the user is on, `is(platformName)` will
@@ -63249,36 +64996,39 @@ var Platform = (function () {
      * an iPad would return `true` for the platform names: `mobile`,
      * `ios`, `ipad`, and `tablet`. Additionally, if the app was running
      * from Cordova then `cordova` would be true, and if it was running
-     * from a web browser on the iPad then then `mobileweb` would also
-     * be `true`.
-     *
-     * Possible built-in platform names:
-     *
-     * - `android`
-     * - `cordova`
-     * - `core`
-     * - `ios`
-     * - `ipad`
-     * - `iphone`
-     * - `mobile`
-     * - `mobileweb`
-     * - `phablet`
-     * - `tablet`
-     * - `windows`
+     * from a web browser on the iPad then `mobileweb` would be `true`.
      *
      * ```
      * import {Platform} from 'ionic-angular';
      *
      * @Page({...})
      * export MyPage {
-     *    constructor(platform: Platform) {
-     *      if (platform.is('ios')) {
-     *        // what ever you need to do
-     *        // if the platform is ios
-     *      }
-     *    }
+     *   constructor(platform: Platform) {
+     *     this.platform = platform;
+     *
+     *     if (this.platform.is('ios')) {
+     *       // This will only print when on ios
+     *       console.log("I'm an ios device!");
+     *     }
+     *   }
      * }
      * ```
+     *
+     * | Platform Name   | Description                        |
+     * |-----------------|------------------------------------|
+     * | android         | on a device running Android.       |
+     * | cordova         | on a device running Cordova.       |
+     * | core            | on a desktop device.               |
+     * | ios             | on a device running iOS.           |
+     * | ipad            | on an iPad device.                 |
+     * | iphone          | on an iPhone device.               |
+     * | mobile          | on a mobile device.                |
+     * | mobileweb       | in a browser on a mobile device.   |
+     * | phablet         | on a phablet device.               |
+     * | tablet          | on a tablet device.                |
+     * | windows         | on a device running Windows.       |
+     *
+     * @param {string} platformName
      */
     Platform.prototype.is = function (platformName) {
         return (this._platforms.indexOf(platformName) > -1);
@@ -63288,17 +65038,19 @@ var Platform = (function () {
      * @description
      * Depending on what device you are on, `platforms` can return multiple values.
      * Each possible value is a hierarchy of platforms. For example, on an iPhone,
-     * it would return mobile, ios, and iphone.
+     * it would return `mobile`, `ios`, and `iphone`.
      *
      * ```
      * import {Platform} from 'ionic-angular';
+     *
+     * @Page({...})
      * export MyPage {
-     *    constructor(platform: Platform) {
-     *      this.platform = platform;
-     *      console.log(this.platform.platforms());
-     *      // This will return an array of all the availble platforms
-     *      // From if your on mobile, to mobile os, and device name
-     *    }
+     *   constructor(platform: Platform) {
+     *     this.platform = platform;
+     *
+     *     // This will print an array of the current platforms
+     *     console.log(this.platform.platforms());
+     *   }
      * }
      * ```
      */
@@ -63308,29 +65060,26 @@ var Platform = (function () {
         return this._platforms;
     };
     /**
-     * Returns an object containing information about the paltform
+     * Returns an object containing version information about all of the platforms.
      *
      * ```
      * import {Platform} from 'ionic-angular';
      *
      * @Page({...})
      * export MyPage {
-     *    constructor(platform: Platform) {
-     *      this.platform = platform;
-     *      console.log(this.platform.versions());
-     *    }
+     *   constructor(platform: Platform) {
+     *     this.platform = platform;
+     *
+     *     // This will print an object containing
+     *     // all of the platforms and their versions
+     *     console.log(platform.versions());
+     *   }
      * }
      * ```
-  
-     * @param {string} [platformName] optional platformName
-     * @returns {object} An object with various platform info
      *
+     * @returns {object} An object containing all of the platforms and their versions.
      */
-    Platform.prototype.versions = function (platformName) {
-        if (arguments.length) {
-            // get a specific platform's version
-            return this._versions[platformName];
-        }
+    Platform.prototype.versions = function () {
         // get all the platforms that have a valid parsed version
         return this._versions;
     };
@@ -63346,44 +65095,50 @@ var Platform = (function () {
         return {};
     };
     /**
-     * Returns a promise when the platform is ready and native functionality can be called
+     * Returns a promise when the platform is ready and native functionality
+     * can be called. If the app is running from within a web browser, then
+     * the promise will resolve when the DOM is ready. When the app is running
+     * from an application engine such as Cordova, then the promise
+     * will resolve when Cordova triggers the `deviceready` event.
      *
      * ```
      * import {Platform} from 'ionic-angular';
      *
      * @Page({...})
      * export MyPage {
-     *    constructor(platform: Platform) {
-     *      this.platform = platform;
-     *      this.platform.ready().then(() => {
-     *        console.log('Platform ready');
-     *        // The platform is now ready, execute any native code you want
-     *       });
-     *    }
+     *   constructor(platform: Platform) {
+     *     platform.ready().then(() => {
+     *       console.log('Platform ready');
+     *       // The platform is now ready, execute any native code you want
+     *     });
+     *   }
      * }
      * ```
-     * @returns {promise} Returns a promsie when device ready has fired
+     * @returns {promise}
      */
     Platform.prototype.ready = function () {
+        // this is the default if it's not replaced by the engine
+        // if there was no custom ready method from the engine
+        // then use the default DOM ready
         return this._readyPromise;
     };
     /**
      * @private
      */
-    Platform.prototype.prepareReady = function (config) {
-        var self = this;
-        function resolve() {
-            self._readyResolve(config);
-        }
-        if (this._engineReady) {
-            // the engine provide a ready promise, use this instead
-            this._engineReady(resolve);
-        }
-        else {
-            // there is no custom ready method from the engine
-            // use the default dom ready
-            dom_1.ready(resolve);
-        }
+    Platform.prototype.triggerReady = function () {
+        var _this = this;
+        this._zone.run(function () {
+            _this._readyResolve();
+        });
+    };
+    /**
+     * @private
+     */
+    Platform.prototype.prepareReady = function () {
+        // this is the default prepareReady if it's not replaced by the engine
+        // if there was no custom ready method from the engine
+        // then use the default DOM ready
+        dom_1.ready(this.triggerReady.bind(this));
     };
     /**
     * Set the app's language direction, which will update the `dir` attribute
@@ -63448,31 +65203,11 @@ var Platform = (function () {
     // Methods meant to be overridden by the engine
     // **********************************************
     // Provided NOOP methods so they do not error when
-    // called by engines (the browser) doesn't provide them
-    /**
-    * @private
-    */
-    Platform.prototype.on = function () { };
-    /**
-    * @private
-    */
-    Platform.prototype.onHardwareBackButton = function () { };
-    /**
-    * @private
-    */
-    Platform.prototype.registerBackButtonAction = function () { };
+    // called by engines (the browser)that do not provide them
     /**
     * @private
     */
     Platform.prototype.exitApp = function () { };
-    /**
-    * @private
-    */
-    Platform.prototype.fullScreen = function () { };
-    /**
-    * @private
-    */
-    Platform.prototype.showStatusBar = function () { };
     // Getter/Setter Methods
     // **********************************************
     /**
@@ -63654,13 +65389,12 @@ var Platform = (function () {
     /**
      * @private
      */
-    Platform.prototype.load = function (platformOverride) {
-        var rootPlatformNode = null;
-        var engineNode = null;
+    Platform.prototype.load = function (config) {
+        var rootPlatformNode;
+        var enginePlatformNode;
         var self = this;
-        this.platformOverride = platformOverride;
         // figure out the most specific platform and active engine
-        var tmpPlatform = null;
+        var tmpPlatform;
         for (var platformName in platformRegistry) {
             tmpPlatform = this.matchPlatform(platformName);
             if (tmpPlatform) {
@@ -63669,7 +65403,7 @@ var Platform = (function () {
                 if (tmpPlatform.isEngine) {
                     // because it matched then this should be the active engine
                     // you cannot have more than one active engine
-                    engineNode = tmpPlatform;
+                    enginePlatformNode = tmpPlatform;
                 }
                 else if (!rootPlatformNode || tmpPlatform.depth > rootPlatformNode.depth) {
                     // only find the root node for platforms that are not engines
@@ -63686,19 +65420,13 @@ var Platform = (function () {
         // hierarchy of active platforms and settings
         if (rootPlatformNode) {
             // check if we found an engine node (cordova/node-webkit/etc)
-            if (engineNode) {
+            if (enginePlatformNode) {
                 // add the engine to the first in the platform hierarchy
                 // the original rootPlatformNode now becomes a child
                 // of the engineNode, which is not the new root
-                engineNode.child = rootPlatformNode;
-                rootPlatformNode.parent = engineNode;
-                rootPlatformNode = engineNode;
-                // add any events which the engine would provide
-                // for example, Cordova provides its own ready event
-                var engineMethods = engineNode.methods();
-                engineMethods._engineReady = engineMethods.ready;
-                delete engineMethods.ready;
-                util_1.assign(this, engineMethods);
+                enginePlatformNode.child = rootPlatformNode;
+                rootPlatformNode.parent = enginePlatformNode;
+                rootPlatformNode = enginePlatformNode;
             }
             var platformNode = rootPlatformNode;
             while (platformNode) {
@@ -63714,11 +65442,12 @@ var Platform = (function () {
             }
             platformNode = rootPlatformNode;
             while (platformNode) {
+                platformNode.initialize(this, config);
                 // set the array of active platforms with
                 // the last one in the array the most important
-                this._platforms.push(platformNode.name());
+                this._platforms.push(platformNode.name);
                 // get the platforms version if a version parser was provided
-                this._versions[platformNode.name()] = platformNode.version(this);
+                this._versions[platformNode.name] = platformNode.version(this);
                 // go to the next platform child
                 platformNode = platformNode.child;
             }
@@ -63763,31 +65492,26 @@ function insertSuperset(platformNode) {
         platformNode.parent = supersetPlatform;
     }
 }
+/**
+ * @private
+ */
 var PlatformNode = (function () {
     function PlatformNode(platformName) {
         this.c = Platform.get(platformName);
+        this.name = platformName;
         this.isEngine = this.c.isEngine;
     }
-    PlatformNode.prototype.name = function () {
-        return this.c.name;
-    };
     PlatformNode.prototype.settings = function () {
         return this.c.settings || {};
     };
     PlatformNode.prototype.superset = function () {
         return this.c.superset;
     };
-    PlatformNode.prototype.methods = function () {
-        return this.c.methods || {};
-    };
     PlatformNode.prototype.isMatch = function (p) {
-        if (p.platformOverride && !this.isEngine) {
-            return (p.platformOverride === this.c.name);
-        }
-        else if (!this.c.isMatch) {
-            return false;
-        }
-        return this.c.isMatch(p);
+        return this.c.isMatch && this.c.isMatch(p) || false;
+    };
+    PlatformNode.prototype.initialize = function (platform, config) {
+        this.c.initialize && this.c.initialize(platform, config);
     };
     PlatformNode.prototype.version = function (p) {
         if (this.c.versionParser) {
@@ -63805,7 +65529,7 @@ var PlatformNode = (function () {
     };
     PlatformNode.prototype.getRoot = function (p) {
         if (this.isMatch(p)) {
-            var parents = this.getSubsetParents(this.name());
+            var parents = this.getSubsetParents(this.name);
             if (!parents.length) {
                 return this;
             }
@@ -63840,7 +65564,7 @@ var PlatformNode = (function () {
 var platformRegistry = {};
 var platformDefault = null;
 
-},{"../util/dom":367,"../util/util":373}],354:[function(require,module,exports){
+},{"../util/dom":367,"../util/util":373,"angular2/core":20}],354:[function(require,module,exports){
 "use strict";
 var platform_1 = require('./platform');
 var dom_1 = require('../util/dom');
@@ -63849,7 +65573,7 @@ var doc = document;
 platform_1.Platform.register({
     name: 'core',
     settings: {
-        mode: 'ios',
+        mode: 'md',
         keyboardHeight: 290,
     }
 });
@@ -63906,7 +65630,6 @@ platform_1.Platform.register({
         hoverCSS: false,
         keyboardHeight: 300,
         mode: 'md',
-        scrollAssist: true,
     },
     isMatch: function (p) {
         return p.isPlatformMatch('android', ['android', 'silk'], ['windows phone']);
@@ -63926,17 +65649,16 @@ platform_1.Platform.register({
         autoFocusAssist: 'delay',
         clickBlock: true,
         hoverCSS: false,
+        inputBlurring: isIOSDevice,
+        inputCloning: isIOSDevice,
         keyboardHeight: 300,
         mode: 'ios',
         scrollAssist: isIOSDevice,
+        statusbarPadding: !!(win.cordova),
         swipeBackEnabled: isIOSDevice,
         swipeBackThreshold: 40,
         tapPolyfill: isIOSDevice,
-        virtualScrollEventAssist: function () {
-            // UIWebView needs help getting scroll events
-            // WKWebView does not (WKWebView supports indexDB)
-            return !(window.indexedDB);
-        }
+        virtualScrollEventAssist: !(win.indexedDB)
     },
     isMatch: function (p) {
         return p.isPlatformMatch('ios', ['iphone', 'ipad', 'ipod'], ['windows phone']);
@@ -63987,16 +65709,33 @@ platform_1.Platform.register({
 platform_1.Platform.register({
     name: 'cordova',
     isEngine: true,
-    methods: {
-        ready: function (resolve) {
-            function isReady() {
-                doc.removeEventListener('deviceready', isReady);
-                resolve();
-            }
+    initialize: function (p, config) {
+        // prepare a custom "ready" for cordova "deviceready"
+        p.prepareReady = function () {
+            // 1) ionic bootstrapped
             dom_1.windowLoad(function () {
-                doc.addEventListener('deviceready', isReady);
+                // 2) window onload triggered or completed
+                doc.addEventListener('deviceready', function () {
+                    // 3) cordova deviceready event triggered
+                    // add cordova listeners to fire platform events
+                    doc.addEventListener('backbutton', function () {
+                        p.backButton.emit(null);
+                    });
+                    // doc.addEventListener('pause', function() {
+                    //   p.pause.emit(null);
+                    // });
+                    // doc.addEventListener('resume', function() {
+                    //   p.resume.emit(null);
+                    // });
+                    // cordova has fully loaded and we've added listeners
+                    p.triggerReady();
+                });
             });
-        }
+        };
+        // cordova has its own exitApp method
+        p.exitApp = function () {
+            win.navigator.app.exitApp();
+        };
     },
     isMatch: function () {
         return !!(win.cordova || win.PhoneGap || win.phonegap);
@@ -64048,7 +65787,7 @@ var storage_1 = require('./storage');
  * export class MyClass{
  *  constructor(){
  *    this.local = new Storage(LocalStorage);
- *    this.local.set('didTutorial', true);
+ *    this.local.set('didTutorial', 'true');
  *  }
  *}
  *```
@@ -64063,7 +65802,7 @@ var LocalStorage = (function (_super) {
     }
     /**
      * Get the value of a key in LocalStorage
-     * @param {String} key the key you want to lookup in LocalStorage
+     * @param {string} key the key you want to lookup in LocalStorage
      */
     LocalStorage.prototype.get = function (key) {
         return new Promise(function (resolve, reject) {
@@ -64078,8 +65817,8 @@ var LocalStorage = (function (_super) {
     };
     /**
      * Set a key value pair and save it to LocalStorage
-     * @param {String} key the key you want to save to LocalStorage
-     * @param {Any} value the value of the key you're saving
+     * @param {string} key the key you want to save to LocalStorage
+     * @param {string} value the value of the key you're saving
      */
     LocalStorage.prototype.set = function (key, value) {
         return new Promise(function (resolve, reject) {
@@ -64094,7 +65833,7 @@ var LocalStorage = (function (_super) {
     };
     /**
      * Remove a key from LocalStorage
-     * @param {String} key the key you want to remove from LocalStorage
+     * @param {string} key the key you want to remove from LocalStorage
      */
     LocalStorage.prototype.remove = function (key) {
         return new Promise(function (resolve, reject) {
@@ -65117,7 +66856,7 @@ var dimensionCache = {};
  * ```ts
  * import {Events} from 'ionic-angular';
  *
- * constructor(public events: Event) {}
+ * constructor(public events: Events) {}
  *
  * // first page (publish an event when a user is created)
  * function createUser(user) {
@@ -65424,8 +67163,9 @@ var Keyboard = (function () {
      * @param {function} callback method you want to call when the keyboard has been closed
      * @return {function} returns a callback that gets fired when the keyboard is closed
      */
-    Keyboard.prototype.onClose = function (callback, pollingInternval) {
+    Keyboard.prototype.onClose = function (callback, pollingInternval, pollingChecksMax) {
         if (pollingInternval === void 0) { pollingInternval = KEYBOARD_CLOSE_POLLING; }
+        if (pollingChecksMax === void 0) { pollingChecksMax = KEYBOARD_POLLING_CHECKS_MAX; }
         void 0;
         var self = this;
         var checks = 0;
@@ -65436,7 +67176,7 @@ var Keyboard = (function () {
         }
         function checkKeyboard() {
             void 0;
-            if (!self.isOpen() || checks > 100) {
+            if (!self.isOpen() || checks > pollingChecksMax) {
                 dom_1.rafFrames(30, function () {
                     self._zone.run(function () {
                         void 0;
@@ -65527,6 +67267,7 @@ var Keyboard = (function () {
 }());
 exports.Keyboard = Keyboard;
 var KEYBOARD_CLOSE_POLLING = 150;
+var KEYBOARD_POLLING_CHECKS_MAX = 100;
 
 },{"../config/config":342,"./dom":367,"./form":370,"angular2/core":20}],372:[function(require,module,exports){
 "use strict";
@@ -65566,13 +67307,14 @@ var ScrollView = (function () {
         var fromX = self._el.scrollLeft;
         var xDistance = Math.abs(x - fromX);
         var yDistance = Math.abs(y - fromY);
+        var maxAttempts = (duration / 16) + 100;
         return new Promise(function (resolve) {
             var startTime;
             var attempts = 0;
             // scroll loop
             function step() {
                 attempts++;
-                if (!self._el || !self.isPlaying || attempts > 200) {
+                if (!self._el || !self.isPlaying || attempts > maxAttempts) {
                     self.isPlaying = false;
                     resolve();
                     return;
@@ -65603,6 +67345,16 @@ var ScrollView = (function () {
                 dom_1.raf(step);
             });
         });
+    };
+    ScrollView.prototype.scrollToTop = function (duration) {
+        return this.scrollTo(0, 0, duration);
+    };
+    ScrollView.prototype.scrollToBottom = function (duration) {
+        var y = 0;
+        if (this._el) {
+            y = this._el.scrollHeight - this._el.clientHeight;
+        }
+        return this.scrollTo(0, y, duration);
     };
     ScrollView.prototype.stop = function () {
         this.isPlaying = false;

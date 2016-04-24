@@ -16,7 +16,6 @@ export class LandingPage {
 	ngOnInit() {
 		this.appData.auth = this.dataService.db.getAuth();
 		if(this.appData && this.appData.auth) {
-			this.dataService.getConfig();
 			this.nav.setRoot(HomePage);
 		} else if(this.appData && this.appData.auth === null) {
 			this.nav.setRoot(StartPage);
