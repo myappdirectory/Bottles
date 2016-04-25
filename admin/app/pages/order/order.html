@@ -39,15 +39,6 @@
 											<a href="javascript:;" class="edit-link" (click)="editItem(item._ref)">
 												<i class="material-icons edit"></i>
 											</a>
-											<a href="javascript:;" class="confirmDelete delete-link" (click)="startProcess(item._ref)">
-												Process
-											</a>
-											<a href="javascript:;" class="confirmDelete delete-link" (click)="completeOrder(item._ref)">
-												Complete
-											</a>
-											<a href="javascript:;" class="confirmDelete delete-link" (click)="cancelOrder(item._ref)">
-												Cancel
-											</a>
 											<a href="javascript:;" class="confirmDelete delete-link" (click)="deleteItem(item._ref)">
 												<i class="material-icons delete"></i>
 											</a>
@@ -70,7 +61,7 @@
 										<div class="sub-title">{{selectedItem.user_email}}</div>
 									</div>
 									<div class="actions table-cell">										
-										<button class="md-button inline cancel-btn f-right" type="button" (click)="cancelEdit();">cancel</button>
+										<button class="md-button inline cancel-btn f-right" type="button" (click)="cancelEdit();">Cancel</button>
 										<button class="md-button inline save-btn f-right" type="submit" [disabled]="!form.valid">save</button>
 									</div>
 								</div>
@@ -156,6 +147,18 @@
 									</div>
 									<div class="row">
 										<div class="col-md-6">
+											<div class="md-input md-textarea" [class.filled]="selectedItem.comment">
+												<span class="placeholder">Comment</span>
+												<textarea class="textbox" ngControl="comment" [ngModel]="selectedItem.comment"></textarea>
+												<control-messages control="comment"></control-messages>
+											</div>
+											<div class="md-input" [class.filled]="selectedItem.grand_total">
+												<span class="placeholder">Total Amount Paid</span>
+												<input type="text" class="textbox" ngControl="grand_total" [ngModel]="selectedItem.grand_total"/>
+												<control-messages control="grand_total"></control-messages>
+											</div>
+										</div>
+										<div class="col-md-6">
 											<div class="md-select" [class.filled]="selectedItem.user_location">
 												<span class="placeholder">Location</span>
 												<select class="selectbox" ngControl="user_location" [ngModel]="selectedItem.user_location" (change)="selectedItem.user_location = $event.target.value">
@@ -163,11 +166,9 @@
 												</select>		
 												<control-messages control="user_location"></control-messages>
 											</div>
-										</div>
-										<div class="col-md-6">
 											<div class="md-select" [class.filled]="selectedItem.status">
 												<span class="placeholder">Status</span>
-												<select class="selectbox" ngControl="status" [ngModel]="selectedItem.status" (change)="selectedItem.status = $event.target.value" [disabled]="selectedItem.status">
+												<select class="selectbox" ngControl="status" [ngModel]="selectedItem.status" (change)="selectedItem.status = $event.target.value">
 													<option *ngFor="#status of app.config.status | MapToIterable" [value]="status.code">{{status.label}}</option>
 												</select>		
 												<control-messages control="status"></control-messages>
@@ -177,6 +178,13 @@
 								</div>
 							</div>
 							</form>
+						</div>
+						
+						<div class="order-history padding2" *ngIf="selectedItem && selectedItem.history">
+							<h2 class="section-title">Order History</h2>
+							<ul>
+								<li *ngFor="#comment of selectedItem.history | MapToIterable">{{comment.created}} - {{comment.message}}</li>
+							</ul>
 						</div>
 					</div>
 				</div>

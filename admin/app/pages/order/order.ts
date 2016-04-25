@@ -28,14 +28,19 @@ export class OrderPage {
 			_ref: [""],
 			uid: ["", Validators.required],
 			user_name: ["", Validators.required],
-			user_email: ["", Validators.required],
+			user_email: ["", Validators.compose([Validators.required, ValidationService.emailValidator])],
 			user_phone: ["", Validators.required],
 			user_address: ["", Validators.required],
 			user_location: ["", Validators.required],
 			ordered_items: ["", Validators.required],
 			convinient_day: ["", Validators.required],
 			convinient_time: ["", Validators.required],
+			comment: [""],
+			grand_total: [""],
 			status: ["", Validators.required]
+		});
+		this.updateform = fb.group({
+			comment: [""]
 		});
 		this.list = {
 			title: 'Manage Order',
@@ -94,7 +99,17 @@ export class OrderPage {
 		if(this.form.valid) {
 			var data = this.form.value;
 			data.code = Math.random().toString(16).slice(-4)+Math.random().toString(16).slice(-2);
-			this.dataService.saveItem(this._moduleRef, data);
+			var comment = data.comment;
+			delete data.comment;
+			this.dataService.saveItem(this._moduleRef, data).then((res) => {
+				var orderID = data._ref ? data._ref : res.key();
+				if(!data._ref) {
+					this.dataService.saveItem(this._moduleRef+'/'+orderID+'/history', {'message': 'New Order has been created'});
+				}
+				if(comment) {
+					this.dataService.saveItem(this._moduleRef+'/'+orderID+'/history', {'message': comment});
+				}
+			});
 			this.selectedItem = null;
 			this.mode = 'list';
 		}

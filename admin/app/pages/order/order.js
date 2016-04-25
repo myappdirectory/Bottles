@@ -1,4 +1,4 @@
-System.register(['angular2/core', 'angular2/common', '../../services/data/data', '../../directives/material/material', '../../directives/common/common', '../../pipes/custom.pipes'], function(exports_1, context_1) {
+System.register(['angular2/core', 'angular2/common', '../../services/data/data', '../../services/validation/validation', '../../directives/material/material', '../../directives/common/common', '../../pipes/custom.pipes'], function(exports_1, context_1) {
     "use strict";
     var __moduleName = context_1 && context_1.id;
     var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
@@ -10,7 +10,7 @@ System.register(['angular2/core', 'angular2/common', '../../services/data/data',
     var __metadata = (this && this.__metadata) || function (k, v) {
         if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
     };
-    var core_1, common_1, data_1, material_1, common_2, custom_pipes_1;
+    var core_1, common_1, data_1, validation_1, material_1, common_2, custom_pipes_1;
     var OrderPage;
     return {
         setters:[
@@ -22,6 +22,9 @@ System.register(['angular2/core', 'angular2/common', '../../services/data/data',
             },
             function (data_1_1) {
                 data_1 = data_1_1;
+            },
+            function (validation_1_1) {
+                validation_1 = validation_1_1;
             },
             function (material_1_1) {
                 material_1 = material_1_1;
@@ -45,14 +48,19 @@ System.register(['angular2/core', 'angular2/common', '../../services/data/data',
                         _ref: [""],
                         uid: ["", common_1.Validators.required],
                         user_name: ["", common_1.Validators.required],
-                        user_email: ["", common_1.Validators.required],
+                        user_email: ["", common_1.Validators.compose([common_1.Validators.required, validation_1.ValidationService.emailValidator])],
                         user_phone: ["", common_1.Validators.required],
                         user_address: ["", common_1.Validators.required],
                         user_location: ["", common_1.Validators.required],
                         ordered_items: ["", common_1.Validators.required],
                         convinient_day: ["", common_1.Validators.required],
                         convinient_time: ["", common_1.Validators.required],
+                        comment: [""],
+                        grand_total: [""],
                         status: ["", common_1.Validators.required]
+                    });
+                    this.updateform = fb.group({
+                        comment: [""]
                     });
                     this.list = {
                         title: 'Manage Order',
@@ -103,10 +111,21 @@ System.register(['angular2/core', 'angular2/common', '../../services/data/data',
                     }
                 };
                 OrderPage.prototype.saveItem = function () {
+                    var _this = this;
                     if (this.form.valid) {
                         var data = this.form.value;
                         data.code = Math.random().toString(16).slice(-4) + Math.random().toString(16).slice(-2);
-                        this.dataService.saveItem(this._moduleRef, data);
+                        var comment = data.comment;
+                        delete data.comment;
+                        this.dataService.saveItem(this._moduleRef, data).then(function (res) {
+                            var orderID = data._ref ? data._ref : res.key();
+                            if (!data._ref) {
+                                _this.dataService.saveItem(_this._moduleRef + '/' + orderID + '/history', { 'message': 'New Order has been created' });
+                            }
+                            if (comment) {
+                                _this.dataService.saveItem(_this._moduleRef + '/' + orderID + '/history', { 'message': comment });
+                            }
+                        });
                         this.selectedItem = null;
                         this.mode = 'list';
                     }

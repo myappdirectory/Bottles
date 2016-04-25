@@ -283,14 +283,15 @@ export class DataService {
 			data = this.removeUndefined(data);
 			if(data._ref) {
 				data.updated = this.getCurrentTime();				
-				this.db.child(moduleRef).child(data._ref).update(data);
+				var res = this.db.child(moduleRef).child(data._ref).update(data);
 				this.hideLoading();
 			} else {
 				data.created = this.getCurrentTime();
 				data.updated = data.created;				
-				this.db.child(moduleRef).push(data);
+				var res = this.db.child(moduleRef).push(data);
 				this.hideLoading();
 			}
+			return res;
 		}
 	}
 	

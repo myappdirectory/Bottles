@@ -4,14 +4,14 @@
 	</ion-refresher>
 	<ion-navbar *navbar class="transparent">
 		<button menuToggle *ngIf="!selectedItem"><ion-icon name="menu"></ion-icon></button>
-		<ion-title *ngIf="appData">{{appData.selectedCategory ? appData.selectedCategory.name : 'All Products'}}</ion-title>
+		<ion-title *ngIf="appData">{{appData.selectedCategory ? '' : 'All Products'}}</ion-title>
 		<ion-buttons end>
 			<button class="cart-icon" (click)="gotoCart()"><ion-icon name="cart"></ion-icon></button>
 		</ion-buttons>
 	</ion-navbar>
 	
 	<div class="main-content" *ngIf="appData">
-		<div class="banner category-banner top-padding" style="{{appData.selectedCategory ? 'background-image: url('+appData.selectedCategory.image+')' : ''}}">
+		<div class="banner category-banner top-padding" style="{{appData.selectedCategory ? 'background-image: url('+appData.selectedCategory.banner+')' : ''}}">
 			
 		</div>
 		<ion-list class="product-list custom-list" *ngIf="appData.products">

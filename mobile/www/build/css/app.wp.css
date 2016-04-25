@@ -8803,6 +8803,9 @@ button:active:after, a:active:after {
     .custom-list ion-item ion-avatar img {
       border-radius: 0; }
 
+.category-list ion-item ion-thumbnail img {
+  max-width: 115px; }
+
 .profile-page .profile-banner .table-cell {
   padding: 40px 0 0; }
 
@@ -8823,6 +8826,9 @@ button:active:after, a:active:after {
     width: 100%;
     height: 100%;
     opacity: 0; }
+
+.category-banner {
+  min-height: 400px; }
 
 .product-list .product-link {
   min-width: 40px; }
