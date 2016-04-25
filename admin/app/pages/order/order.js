@@ -43,16 +43,15 @@ System.register(['angular2/core', 'angular2/common', '../../services/data/data',
                     this.mode = 'list';
                     this.form = fb.group({
                         _ref: [""],
-                        code: [""],
                         uid: ["", common_1.Validators.required],
                         user_name: ["", common_1.Validators.required],
                         user_email: ["", common_1.Validators.required],
                         user_phone: ["", common_1.Validators.required],
                         user_address: ["", common_1.Validators.required],
+                        user_location: ["", common_1.Validators.required],
                         ordered_items: ["", common_1.Validators.required],
                         convinient_day: ["", common_1.Validators.required],
                         convinient_time: ["", common_1.Validators.required],
-                        grand_total: ["", common_1.Validators.required],
                         status: ["", common_1.Validators.required]
                     });
                     this.list = {
@@ -93,13 +92,20 @@ System.register(['angular2/core', 'angular2/common', '../../services/data/data',
                     this.mode = 'list';
                 };
                 OrderPage.prototype.updateItems = function ($event) {
-                    console.log($event.target.selectedOptions);
+                    this.selectedItem.ordered_items = {};
+                    for (var i in $event.target.selectedOptions) {
+                        var option = $event.target.selectedOptions[i];
+                        var product = this.app.products[option.value];
+                        if (product) {
+                            var data = { '_ref': option.value, 'image': product.image, 'name': product.name, 'price': product.price };
+                            this.selectedItem.ordered_items[option.value] = data;
+                        }
+                    }
                 };
                 OrderPage.prototype.saveItem = function () {
                     if (this.form.valid) {
                         var data = this.form.value;
-                        console.log(data);
-                        return false;
+                        data.code = Math.random().toString(16).slice(-4) + Math.random().toString(16).slice(-2);
                         this.dataService.saveItem(this._moduleRef, data);
                         this.selectedItem = null;
                         this.mode = 'list';

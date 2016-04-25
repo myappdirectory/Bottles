@@ -24,6 +24,7 @@
 	.textbox {
 		@include position(absolute, auto 0 0 0);
 		@include transition(all $fast ease-out);
+		background: transparent;
 		border-color: $border-color;
 		border-width: 0 0 1px;
 		outline: none;
@@ -41,8 +42,7 @@
 		@include position(absolute, 35px auto auto 4px);
 		@include transition(all $fast ease-out);
 		color: $font-color2;
-		text-transform: capitalize;
-		z-index: 2;
+		text-transform: capitalize;		
 	}
 	&.md-textarea {
 		height: 105px;
@@ -132,6 +132,21 @@
 		.selectbox {
 			height: 90px;
 		}
+	}
+}
+
+.md-list {
+	margin: 15px 0 0;
+    padding: 25px 0 0;
+	position: relative;	
+	.placeholder {
+		color: $primary;
+		font-size: 12px;
+		top: 10px;
+	}
+	.list-item {
+		font-size: 12px;
+		padding: 0 4px;
 	}
 }
 

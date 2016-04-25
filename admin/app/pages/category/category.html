@@ -81,18 +81,16 @@
 									<div class="row">
 										<div class="col-md-6">
 											<div class="md-input" [class.filled]="selectedItem.image">
-												<input type="hidden" class="textbox" ngControl="image" [ngModel]="selectedItem.image" accept="image/*"/>
-												<input type="file" class="textbox" (change)="saveImage($event, 'image', selectedItem._ref)"/>
+												<input type="hidden" class="textbox" ngControl="image" [ngModel]="selectedItem.image"/>
+												<input type="file" class="textbox" (change)="saveImage($event, 'image', selectedItem._ref)" accept="image/*"/>
 												<control-messages control="image"></control-messages>
 											</div>
 										</div>
 										<div class="col-md-6">
-											<div class="md-select" [class.filled]="selectedItem.color" (change)="selectedItem.color = $event.target.value">
-												<span class="placeholder">Color</span>
-												<select class="selectbox" ngControl="color" [ngModel]="selectedItem.color" (change)="selectedItem.color = $event.target.value">
-													<option *ngFor="#color of app.config.color | MapToIterable" [value]="color.code">{{color.label}}</option>
-												</select>
-												<control-messages control="color"></control-messages>
+											<div class="md-input" [class.filled]="selectedItem.banner">
+												<input type="hidden" class="textbox" ngControl="banner" [ngModel]="selectedItem.banner"/>
+												<input type="file" class="textbox" (change)="saveImage($event, 'banner', selectedItem._ref+'_bg')" accept="image/*"/>
+												<control-messages control="banner"></control-messages>
 											</div>
 										</div>
 									</div>									

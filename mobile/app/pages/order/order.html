@@ -46,7 +46,6 @@
 					</ion-thumbnail>
 					<h2>{{item.name}}</h2>
 					<p>Rs. {{item.price}}</p>
-					<button clear item-right>{{appData.selectedOrder.user_location}}</button>
 				</ion-item>
 			</ion-list>
 			<ion-buttons padding *ngIf="appData.selectedOrder.status <= 2"><button block (click)="cancelOrder();">Cancel Order</button></ion-buttons>

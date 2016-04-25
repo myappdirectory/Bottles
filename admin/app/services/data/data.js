@@ -26,7 +26,7 @@ System.register(['angular2/core', 'rxjs/Observable', 'rxjs/add/operator/share'],
                 function DataService() {
                     var _this = this;
                     this.firebaseUrl = "https://my-bottles.firebaseio.com/";
-                    this.mediaServer = "http://localhost/git/bottles/";
+                    this.mediaServer = "http://myappdirectory.16mb.com/my-bottles/";
                     this._adminRef = 'admin';
                     this._userRef = 'users';
                     this._configRef = 'config';
@@ -61,6 +61,7 @@ System.register(['angular2/core', 'rxjs/Observable', 'rxjs/add/operator/share'],
                 };
                 DataService.prototype.uploadImage = function (file, pathname) {
                     var _this = this;
+                    this.showLoading();
                     return new Promise(function (resolve, reject) {
                         if (file.type.match('image.*')) {
                             var formData = new FormData();
@@ -69,14 +70,20 @@ System.register(['angular2/core', 'rxjs/Observable', 'rxjs/add/operator/share'],
                             var xhr = new XMLHttpRequest();
                             xhr.open('POST', _this.mediaServer + 'ajax.php', true);
                             xhr.onload = function () {
-                                if (xhr.status === 200) {
+                                if (xhr.status == 200) {
                                     var res = JSON.parse(xhr.responseText);
                                     if (res.status == 'success') {
+                                        _this.hideLoading();
                                         resolve(res.imageUrl);
                                     }
                                     else {
-                                        _this.doAlert({ title: 'Error', message: res.message });
+                                        _this.hideLoading();
+                                        _this.doAlert({ title: 'Error', message: 'Error in uploading image' });
                                     }
+                                }
+                                else {
+                                    _this.hideLoading();
+                                    _this.doAlert({ title: 'Error', message: 'Error in uploading image' });
                                 }
                             };
                             xhr.send(formData);
@@ -297,13 +304,13 @@ System.register(['angular2/core', 'rxjs/Observable', 'rxjs/add/operator/share'],
                         this.showLoading();
                         data = this.removeUndefined(data);
                         if (data._ref) {
-                            data.created = this.getCurrentTime();
-                            data.updated = data.created;
+                            data.updated = this.getCurrentTime();
                             this.db.child(moduleRef).child(data._ref).update(data);
                             this.hideLoading();
                         }
                         else {
-                            data.updated = this.getCurrentTime();
+                            data.created = this.getCurrentTime();
+                            data.updated = data.created;
                             this.db.child(moduleRef).push(data);
                             this.hideLoading();
                         }

@@ -44,7 +44,7 @@ System.register(['angular2/core', 'angular2/common', '../../services/data/data',
                         name: ["", common_1.Validators.required],
                         code: ["", common_1.Validators.required],
                         image: ["", common_1.Validators.required],
-                        color: ["", common_1.Validators.required],
+                        banner: ["", common_1.Validators.required],
                         description: ["", common_1.Validators.required],
                         status: ["", common_1.Validators.required]
                     });
@@ -54,8 +54,8 @@ System.register(['angular2/core', 'angular2/common', '../../services/data/data',
                             { code: 'name', title: 'Name', type: 'text', 'formatter': '' },
                             { code: 'code', title: 'code', type: 'text', 'formatter': '' },
                             { code: 'image', title: 'Image', type: 'image', 'formatter': '' },
-                            { code: 'description', title: 'Description', type: 'textarea', 'formatter': '' },
-                            { code: 'color', title: 'Color', type: 'text', 'formatter': '' },
+                            { code: 'banner', title: 'Banner', type: 'image', 'formatter': '' },
+                            { code: 'description', title: 'Description', type: 'text', 'formatter': '' },
                             { code: 'status', title: 'Status', type: 'text', 'formatter': 'StatusLabel' }
                         ]
                     };

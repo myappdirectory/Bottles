@@ -39,6 +39,15 @@
 											<a href="javascript:;" class="edit-link" (click)="editItem(item._ref)">
 												<i class="material-icons edit"></i>
 											</a>
+											<a href="javascript:;" class="confirmDelete delete-link" (click)="startProcess(item._ref)">
+												Process
+											</a>
+											<a href="javascript:;" class="confirmDelete delete-link" (click)="completeOrder(item._ref)">
+												Complete
+											</a>
+											<a href="javascript:;" class="confirmDelete delete-link" (click)="cancelOrder(item._ref)">
+												Cancel
+											</a>
 											<a href="javascript:;" class="confirmDelete delete-link" (click)="deleteItem(item._ref)">
 												<i class="material-icons delete"></i>
 											</a>
@@ -58,7 +67,7 @@
 									<div class="image table-cell" *ngIf="selectedItem.image"><img class="thumbnail" [src]="selectedItem.image"/></div>
 									<div class="detail table-cell">
 										<div class="title">{{selectedItem.code ? selectedItem.code : 'Add New'}}</div>
-										<div class="sub-title">{{selectedItem.uid}}</div>
+										<div class="sub-title">{{selectedItem.user_email}}</div>
 									</div>
 									<div class="actions table-cell">										
 										<button class="md-button inline cancel-btn f-right" type="button" (click)="cancelEdit();">cancel</button>
@@ -66,14 +75,7 @@
 									</div>
 								</div>
 								<div class="editable-part padding1">									
-									<div class="row">
-										<div class="col-md-6">
-											<div class="md-input" [class.filled]="selectedItem.code">
-												<span class="placeholder">Code</span>
-												<input type="text" class="textbox" ngControl="code" [ngModel]="selectedItem.code"/>
-												<control-messages control="code"></control-messages>
-											</div>
-										</div>	
+									<div class="row">											
 										<div class="col-md-6">
 											<div class="md-select" [class.filled]="selectedItem.uid">
 												<span class="placeholder">Customer</span>
@@ -82,54 +84,55 @@
 												</select>		
 												<control-messages control="uid"></control-messages>
 											</div>
-										</div>																			
-									</div>									
-									<div class="row">
+										</div>
 										<div class="col-md-6">
 											<div class="md-input" [class.filled]="selectedItem.user_name">
-												<span class="placeholder">User Name</span>
+												<span class="placeholder">Contact Name</span>
 												<input type="text" class="textbox" ngControl="user_name" [ngModel]="selectedItem.user_name"/>
 												<control-messages control="user_name"></control-messages>
 											</div>
+										</div>
+									</div>									
+									<div class="row">
+										<div class="col-md-6">											
 											<div class="md-input" [class.filled]="selectedItem.user_email">
 												<span class="placeholder">Email</span>
 												<input type="text" class="textbox" ngControl="user_email" [ngModel]="selectedItem.user_email" [disabled]="selectedItem.user_email"/>
 												<control-messages control="user_email"></control-messages>
 											</div>
+										</div>
+										<div class="col-md-6">
 											<div class="md-input" [class.filled]="selectedItem.user_phone">
 												<span class="placeholder">Phone</span>
 												<input type="text" class="textbox" ngControl="user_phone" [ngModel]="selectedItem.user_phone" [disabled]="selectedItem.user_phone"/>
 												<control-messages control="user_phone"></control-messages>
 											</div>
 										</div>
+									</div>	
+									<div class="row">
 										<div class="col-md-6">
 											<div class="md-input md-textarea" [class.filled]="selectedItem.user_address">
 												<span class="placeholder">Address</span>
 												<textarea class="textbox" ngControl="user_address" [ngModel]="selectedItem.user_address"></textarea>
 												<control-messages control="user_address"></control-messages>
 											</div>
-										</div>									
-									</div>	
-									<div class="row">
-										<div class="col-md-6">
-											<div class="md-select multiselect" [class.filled]="selectedItem.ordered_items">
-												<span class="placeholder">Ordered Items</span>
-												<input type="hidden" ngControl="ordered_items" [ngModel]="selectedItem.ordered_items">
-												<select class="selectbox" (change)="updateItems($event)" multiple="true">
-													<option *ngFor="#product of app.products | MapToIterable" value="{{product.price}}" [selected]="selectedItem.ordered_items[product._ref]">
+										</div>	
+										<div class="col-md-6">	
+											<input type="hidden" ngControl="ordered_items" [ngModel]="selectedItem.ordered_items">
+											<div class="md-select multiselect" *ngIf="!selectedItem.code || !selectedItem.ordered_items">
+												<span class="placeholder">Ordered Items</span>												
+												<select class="selectbox" [ngModel]="selectedItem.product_list" (change)="updateItems($event)" multiple="true">
+													<option *ngFor="#product of app.products | MapToIterable" value="{{product._ref}}">
 														{{product.name}}
 													</option>
 												</select>		
 												<control-messages control="ordered_items"></control-messages>
 											</div>
-										</div>
-										<div class="col-md-6">
-											<div class="md-input" [class.filled]="selectedItem.grand_total">
-												<span class="placeholder">Grand Total</span>
-												<input type="text" class="textbox" ngControl="grand_total" [ngModel]="selectedItem.grand_total"/>
-												<control-messages control="grand_total"></control-messages>
+											<div class="md-list" *ngIf="selectedItem.code && selectedItem.ordered_items">
+												<span class="placeholder">Ordered Items</span>
+												<p *ngFor="#item of selectedItem.ordered_items | MapToIterable" class="list-item">{{item.name}} - Rs. {{item.price}}</p>
 											</div>
-										</div>	
+										</div>
 									</div>
 									<div class="row">
 										<div class="col-md-6">
@@ -153,9 +156,18 @@
 									</div>
 									<div class="row">
 										<div class="col-md-6">
+											<div class="md-select" [class.filled]="selectedItem.user_location">
+												<span class="placeholder">Location</span>
+												<select class="selectbox" ngControl="user_location" [ngModel]="selectedItem.user_location" (change)="selectedItem.user_location = $event.target.value">
+													<option *ngFor="#option of app.config.location | MapToIterable" [value]="option.code">{{option.label}}</option>
+												</select>		
+												<control-messages control="user_location"></control-messages>
+											</div>
+										</div>
+										<div class="col-md-6">
 											<div class="md-select" [class.filled]="selectedItem.status">
 												<span class="placeholder">Status</span>
-												<select class="selectbox" ngControl="status" [ngModel]="selectedItem.status" (change)="selectedItem.status = $event.target.value">
+												<select class="selectbox" ngControl="status" [ngModel]="selectedItem.status" (change)="selectedItem.status = $event.target.value" [disabled]="selectedItem.status">
 													<option *ngFor="#status of app.config.status | MapToIterable" [value]="status.code">{{status.label}}</option>
 												</select>		
 												<control-messages control="status"></control-messages>

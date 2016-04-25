@@ -26,16 +26,15 @@ export class OrderPage {
 	constructor(public dataService: DataService, public fb:FormBuilder) {
 		this.form = fb.group({
 			_ref: [""],
-			code: [""],
 			uid: ["", Validators.required],
 			user_name: ["", Validators.required],
 			user_email: ["", Validators.required],
 			user_phone: ["", Validators.required],
 			user_address: ["", Validators.required],
+			user_location: ["", Validators.required],
 			ordered_items: ["", Validators.required],
 			convinient_day: ["", Validators.required],
 			convinient_time: ["", Validators.required],
-			grand_total: ["", Validators.required],
 			status: ["", Validators.required]
 		});
 		this.list = {
@@ -80,12 +79,21 @@ export class OrderPage {
 	}
 	
 	updateItems($event) {
-		console.log($event.target.selectedOptions);
+		this.selectedItem.ordered_items = {};
+		for(var i in $event.target.selectedOptions) {
+			var option = $event.target.selectedOptions[i];
+			var product = this.app.products[option.value];
+			if(product) {
+				var data = {'_ref': option.value, 'image': product.image, 'name': product.name, 'price': product.price};
+				this.selectedItem.ordered_items[option.value] = data;
+			}			
+		}
 	}
 	
 	saveItem() {
 		if(this.form.valid) {
-			var data = this.form.value;console.log(data);return false;
+			var data = this.form.value;
+			data.code = Math.random().toString(16).slice(-4)+Math.random().toString(16).slice(-2);
 			this.dataService.saveItem(this._moduleRef, data);
 			this.selectedItem = null;
 			this.mode = 'list';

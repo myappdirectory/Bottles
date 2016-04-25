@@ -28,7 +28,7 @@ export class CategoryPage {
 			name: ["", Validators.required],
 			code: ["", Validators.required],
 			image: ["", Validators.required],
-			color: ["", Validators.required],
+			banner: ["", Validators.required],
 			description: ["", Validators.required],
 			status: ["", Validators.required]
 		});
@@ -38,8 +38,8 @@ export class CategoryPage {
 				{code: 'name', title: 'Name', type: 'text', 'formatter': ''},
 				{code: 'code', title: 'code', type: 'text', 'formatter': ''},
 				{code: 'image', title: 'Image', type: 'image', 'formatter': ''},
-				{code: 'description', title: 'Description', type: 'textarea', 'formatter': ''},
-				{code: 'color', title: 'Color', type: 'text', 'formatter': ''},
+				{code: 'banner', title: 'Banner', type: 'image', 'formatter': ''},
+				{code: 'description', title: 'Description', type: 'text', 'formatter': ''},				
 				{code: 'status', title: 'Status', type: 'text', 'formatter': 'StatusLabel'}
 			]
 		};
