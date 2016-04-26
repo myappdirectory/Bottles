@@ -12,7 +12,7 @@
 	
 	<div class="main-content" *ngIf="appData">
 		<div class="banner cart-banner top-padding">
-			
+			<img src="../../img/cart-icon.png">
 		</div>
 		<ion-list class="product-list custom-list" *ngIf="appData.cart">
 			<ion-item *ngFor="#product of appData.cart | MapToIterable">

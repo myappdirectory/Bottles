@@ -8729,7 +8729,7 @@ button:active:after, a:active:after {
 
 .start-page {
   background-image: url("../../img/start-bg.jpg");
-  background-size: cover; }
+  background-size: contain; }
   .start-page .main-section {
     color: #fff;
     height: 100%;
@@ -8774,7 +8774,7 @@ button:active:after, a:active:after {
 
 .banner {
   background-image: url("../../img/start-bg.jpg");
-  background-size: cover;
+  background-size: contain;
   color: #fff;
   min-height: 200px;
   padding: 20px;
@@ -8819,6 +8819,9 @@ button:active:after, a:active:after {
   display: inline-block;
   padding: 10px 0;
   position: relative; }
+  .profile-page .edit-profile-photo ion-icon {
+    display: inline-block;
+    padding: 0 2px; }
   .profile-page .edit-profile-photo input[type="file"] {
     position: absolute;
     left: 0;
@@ -8828,10 +8831,13 @@ button:active:after, a:active:after {
     opacity: 0; }
 
 .category-banner {
-  min-height: 400px; }
+  min-height: 390px; }
 
 .product-list .product-link {
   min-width: 40px; }
+
+.product-banner {
+  background-size: cover; }
 
 .order-status {
   background-color: #169CF1;

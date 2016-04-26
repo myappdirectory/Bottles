@@ -5,17 +5,17 @@
   <author email="hi@ionicframework" href="http://ionicframework.com/">Ionic Framework Team</author>
   <content src="index.html"/>
   <access origin="*"/>
+  <access origin="*.firebaseio.com"/>
+  <access origin="auth.firebase.com"/>
   <allow-intent href="http://*/*"/>
   <allow-intent href="https://*/*"/>
   <allow-intent href="tel:*"/>
   <allow-intent href="sms:*"/>
   <allow-intent href="mailto:*"/>
   <allow-intent href="geo:*"/>
-  <allow-navigation href="*" />
-  <allow-intent href="*.firebaseio.com" />
-  <allow-intent href="auth.firebase.com" />
-  <access origin="*.firebaseio.com" />
-  <access origin="auth.firebase.com" />
+  <allow-intent href="*.firebaseio.com"/>
+  <allow-intent href="auth.firebase.com"/>
+  <allow-navigation href="*"/>
   <platform name="android">
     <allow-intent href="market:*"/>
     <icon src="resources\android\icon\drawable-ldpi-icon.png" density="ldpi"/>

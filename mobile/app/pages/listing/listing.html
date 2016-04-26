@@ -11,7 +11,7 @@
 	</ion-navbar>
 	
 	<div class="main-content" *ngIf="appData">
-		<div class="banner category-banner top-padding" style="{{appData.selectedCategory ? 'background-image: url('+appData.selectedCategory.banner+')' : ''}}">
+		<div class="banner category-banner top-padding" style="background-image: url({{appData.selectedCategory ? appData.selectedCategory.banner : '../../img/all-bg.jpg'}})">
 			
 		</div>
 		<ion-list class="product-list custom-list" *ngIf="appData.products">
@@ -25,6 +25,10 @@
 				<button class="product-link" clear item-right (click)="viewProduct(product._ref)"><ion-icon name="arrow-dropright"></ion-icon></button>
 			</ion-item>
 		</ion-list>
-		<ion-buttons padding><button block (click)="saveCart();">save to cart</button></ion-buttons>
+		<ion-buttons padding *ngIf="appData.products"><button block (click)="saveCart();">save to cart</button></ion-buttons>
+		
+		<div class="no-items"  *ngIf="!appData.products">
+			<div class="table"><div class="table-cell"><h2>No items found</h2></div></div>
+		</div>
 	</div>
 </ion-content>
